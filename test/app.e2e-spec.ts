@@ -190,7 +190,7 @@ describe('Personal Finance API E2E', () => {
 
         expect(response.body).toHaveProperty('id');
         expect(response.body.name).toBe('Groceries');
-        expect(response.body.type).toBe('expense');
+        expect(response.body.type).toBe('EXPENSE');
         expect(response.body).toHaveProperty('userId');
         categoryId = response.body.id;
       });
