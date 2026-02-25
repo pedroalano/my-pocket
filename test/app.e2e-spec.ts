@@ -15,16 +15,47 @@ describe('Personal Finance API E2E', () => {
   let transactionId: string;
   let budgetId: string;
 
-  const user1 = {
+  const authUser1 = {
     name: 'Test User 1',
-    email: `user1-${Date.now()}@test.com`,
+    email: `auth-user1-${Date.now()}@test.com`,
     password: 'TestPassword123!',
   };
 
-  const user2 = {
+  const authUser2 = {
     name: 'Test User 2',
-    email: `user2-${Date.now()}@test.com`,
+    email: `auth-user2-${Date.now()}@test.com`,
     password: 'TestPassword456!',
+  };
+
+  const seededUser1 = {
+    name: 'Seeded User 1',
+    email: `seeded-user1-${Date.now()}@test.com`,
+    password: 'SeededPassword123!',
+  };
+
+  const seededUser2 = {
+    name: 'Seeded User 2',
+    email: `seeded-user2-${Date.now()}@test.com`,
+    password: 'SeededPassword456!',
+  };
+
+  const registerAndGetToken = async (user: {
+    name: string;
+    email: string;
+    password: string;
+  }) => {
+    const response = await request(app.getHttpServer())
+      .post('/auths/register')
+      .send(user)
+      .expect(201);
+
+    const token = response.body.access_token as string | undefined;
+
+    if (!token) {
+      throw new Error('Access token missing from auth register response');
+    }
+
+    return token;
   };
 
   beforeAll(async () => {
@@ -42,6 +73,9 @@ describe('Personal Finance API E2E', () => {
     );
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
+
+    user1Token = await registerAndGetToken(seededUser1);
+    user2Token = await registerAndGetToken(seededUser2);
   });
 
   afterAll(async () => {
@@ -70,33 +104,36 @@ describe('Personal Finance API E2E', () => {
 
   // ==================== AUTHENTICATION FLOWS ====================
   describe('Authentication Flows', () => {
+    let authUser1Token: string;
+    let authUser2Token: string;
+
     describe('POST /auths/register', () => {
       it('should register new user and return access token', async () => {
         const response = await request(app.getHttpServer())
           .post('/auths/register')
-          .send(user1)
+          .send(authUser1)
           .expect(201);
 
         expect(response.body).toHaveProperty('access_token');
         expect(typeof response.body.access_token).toBe('string');
-        user1Token = response.body.access_token;
+        authUser1Token = response.body.access_token;
       });
 
       it('should register second user with different email', async () => {
         const response = await request(app.getHttpServer())
           .post('/auths/register')
-          .send(user2)
+          .send(authUser2)
           .expect(201);
 
         expect(response.body).toHaveProperty('access_token');
         expect(typeof response.body.access_token).toBe('string');
-        user2Token = response.body.access_token;
+        authUser2Token = response.body.access_token;
       });
 
       it('should reject duplicate email registration', async () => {
         await request(app.getHttpServer())
           .post('/auths/register')
-          .send(user1)
+          .send(authUser1)
           .expect(409);
       });
 
@@ -137,8 +174,8 @@ describe('Personal Finance API E2E', () => {
         const response = await request(app.getHttpServer())
           .post('/auths/login')
           .send({
-            email: user1.email,
-            password: user1.password,
+            email: authUser1.email,
+            password: authUser1.password,
           })
           .expect(201);
 
@@ -150,7 +187,7 @@ describe('Personal Finance API E2E', () => {
         await request(app.getHttpServer())
           .post('/auths/login')
           .send({
-            email: user1.email,
+            email: authUser1.email,
             password: 'WrongPassword123!',
           })
           .expect(401);

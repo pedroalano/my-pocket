@@ -36,4 +36,6 @@ async function setupTestDatabase() {
   }
 }
 
-setupTestDatabase();
+beforeAll(async () => {
+  await setupTestDatabase();
+});
