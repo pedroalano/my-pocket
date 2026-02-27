@@ -146,6 +146,44 @@ The server will start on `http://localhost:3000`.
 
 ---
 
+## 🐳 Docker
+
+This project includes a multi-stage Docker setup with two targets:
+
+- **production**: optimized image running `npm run start:prod`
+- **development**: image for local development running `npm run start:dev`
+
+### Build Images
+
+```bash
+# Production image
+docker build -t my-pocket-backend:prod --target production .
+
+# Development image
+docker build -t my-pocket-backend:dev --target development .
+```
+
+### Run Containers
+
+```bash
+# Production container
+docker run --rm -p 3000:3000 --env-file .env my-pocket-backend:prod
+
+# Development container
+docker run --rm -p 3000:3000 --env-file .env my-pocket-backend:dev
+```
+
+Required environment variables (see `.env.example`):
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `JWT_EXPIRATION`
+- `PORT` (optional, defaults to 3000)
+
+> Note: Database provisioning/migrations are intentionally outside this Docker scope.
+
+---
+
 ## 📚 API Documentation
 
 Once the server is running, visit the **interactive Swagger documentation**:
