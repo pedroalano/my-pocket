@@ -26,47 +26,195 @@ A secure backend API for personal finance management built with NestJS, featurin
 - ✅ PostgreSQL database with Prisma ORM
 - ✅ Categories, Transactions, and Budgets management
 - ✅ Budget analytics and spending tracking
+- ✅ Dashboard with financial analytics and reports
 - ✅ Strict per-user data isolation (userId derived from JWT)
 - ✅ Comprehensive validation using DTOs
 - ✅ Global exception handling
+- ✅ Interactive API documentation (Swagger/OpenAPI)
 - ✅ 80+ unit tests with good coverage
 - ❌ Refresh tokens (out of scope)
 - ❌ Role-based authorization (future)
 
 ---
 
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** 18+ (tested with v22)
+- **PostgreSQL** 12+
+- **npm** or **yarn**
+
+---
+
 ## ⚙️ Environment Setup
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (you can copy from `.env.example`):
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/my_pocket_db"
-JWT_SECRET="your-secret-key-here"
+# Database Connection (PostgreSQL)
+DATABASE_URL="postgresql://user:password@localhost:5432/my_pocket_db?schema=public"
+
+# Application Port (optional, defaults to 3000)
+PORT=3000
+
+# JWT Authentication
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+JWT_EXPIRATION=3600  # Token expiration in seconds (3600 = 1 hour)
+```
+
+### Testing Environment
+
+For running e2e tests, create a `.env.test` file:
+
+```env
+DATABASE_URL="postgresql://postgres:@localhost:5432/bd_my_pocket_test?schema=public"
+PORT=3001
+JWT_SECRET="test-super-secret-jwt-key-for-e2e-tests"
 JWT_EXPIRATION=3600
+NODE_ENV=test
 ```
 
 ---
 
-## ▶️ Running the Project
+## 🚀 Getting Started from Zero
+
+Follow these steps to set up the project locally:
+
+### 1. Clone and Install
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd my-pocket-backend-nestjs
+
 # Install dependencies
 npm install
-
-# Run database migrations
-npm run db:migrate:dev
-
-# Seed database (optional)
-npm run db:seed
-
-# Start development server
-npm run start:dev
-
-# Run Prisma Studio (database GUI)
-npm run db:studio
 ```
 
-The server will start on port 3000.
+### 2. Setup PostgreSQL Database
+
+```bash
+# Create development database
+createdb my_pocket_db
+
+# Create test database (optional, for e2e tests)
+createdb bd_my_pocket_test
+```
+
+### 3. Configure Environment
+
+```bash
+# Copy example environment file
+cp .env.example .env
+
+# Edit .env with your database credentials
+# Update DATABASE_URL with your PostgreSQL user/password
+# Set a strong JWT_SECRET
+```
+
+### 4. Run Database Migrations
+
+```bash
+# Create all tables and schema
+npm run db:migrate:dev
+
+# Generate Prisma client (usually auto-generated after migration)
+npm run db:generate
+```
+
+### 5. Seed Database (Optional)
+
+```bash
+# Create demo user and categories
+npm run db:seed
+```
+
+### 6. Start Development Server
+
+```bash
+# Start server with hot-reload
+npm run start:dev
+```
+
+The server will start on `http://localhost:3000`.
+
+### 7. Verify Installation
+
+- **Health check:** `GET http://localhost:3000/health`
+- **API documentation:** `http://localhost:3000/docs`
+
+---
+
+## 📚 API Documentation
+
+Once the server is running, visit the **interactive Swagger documentation**:
+
+```
+http://localhost:3000/docs
+```
+
+This provides:
+
+- Complete API reference with request/response schemas
+- Ability to test endpoints directly in the browser
+- Authentication support (click "Authorize" to add your JWT token)
+- Request/response examples for all endpoints
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+├── main.ts                        # Application entry point, Swagger setup
+├── app.module.ts                  # Root module, imports all features
+├── app.controller.ts              # Root controller
+├── app.service.ts                 # Root service
+├── common/
+│   └── filters/
+│       └── http-exception.filter.ts  # Global exception handler
+└── modules/
+    ├── auths/                     # Authentication & Authorization
+    │   ├── auths.controller.ts    # POST /auths/register, /login
+    │   ├── auths.service.ts       # Bcrypt, JWT token generation
+    │   ├── jwt.strategy.ts        # Passport JWT validation
+    │   ├── jwt-auth.guard.ts      # Route protection guard
+    │   └── dto/                   # Register, Login DTOs
+    │
+    ├── categories/                # Category management
+    │   ├── categories.controller.ts
+    │   ├── categories.service.ts
+    │   └── dto/                   # Category DTOs
+    │
+    ├── transactions/              # Transaction management
+    │   ├── transactions.controller.ts
+    │   ├── transactions.service.ts
+    │   └── dto/                   # Transaction DTOs
+    │
+    ├── budgets/                   # Budget management & Analytics
+    │   ├── budget.controller.ts
+    │   ├── budget.service.ts
+    │   └── dto/                   # Budget DTOs
+    │
+    ├── dashboard/                 # Financial analytics & Reports
+    │   ├── dashboard.controller.ts
+    │   ├── dashboard.service.ts
+    │   └── dto/                   # Dashboard query DTOs
+    │
+    ├── health/                    # Health check
+    │   ├── health.controller.ts
+    │   └── health.module.ts
+    │
+    └── shared/                    # Shared services
+        ├── prisma.service.ts      # Database connection
+        └── shared.module.ts
+
+prisma/
+├── schema.prisma                  # Database schema (User, Category, Transaction, Budget)
+├── seed.ts                        # Demo data seeder
+└── migrations/                    # Migration history
+```
 
 ---
 
@@ -143,6 +291,16 @@ The project follows **NestJS modular architecture** with clean separation of con
   - Duplicate prevention (same category/period per user)
   - Category existence validation
 
+### Dashboard Module (Analytics)
+
+- **Monthly Summary:** Aggregated income and expense overview for a specific month/year
+- **Budget vs Actual:** Compare budgeted amounts to actual spending by category
+- **Category Breakdown:** Detailed spending analysis per category with percentages
+- **Top Expenses:** Retrieve top N expense transactions for a period
+- **Query Parameters:** All endpoints support month, year, and optional limit filters
+- **Data Aggregation:** Real-time calculations from transactions and budgets
+- **User-scoped Analytics:** All metrics filtered by authenticated user
+
 ### Database Schema
 
 - **User:** Authentication and ownership
@@ -193,6 +351,13 @@ The project follows **NestJS modular architecture** with clean separation of con
 - `PUT /budgets/:id` - Update a budget
 - `DELETE /budgets/:id` - Delete a budget
 
+### Dashboard (Protected)
+
+- `GET /dashboard/monthly-summary?month=2&year=2026` - Monthly income/expense summary
+- `GET /dashboard/budget-vs-actual?month=2&year=2026` - Budget vs actual spending by category
+- `GET /dashboard/category-breakdown?month=2&year=2026` - Spending breakdown by category with percentages
+- `GET /dashboard/top-expenses?month=2&year=2026&limit=10` - Top expense transactions for the period
+
 ### Health (Public)
 
 - `GET /health` - Health check endpoint
@@ -201,6 +366,214 @@ The project follows **NestJS modular architecture** with clean separation of con
 
 ```
 Authorization: Bearer <your-jwt-token>
+```
+
+---
+
+## 🔐 Authentication Flow
+
+### Registration Flow
+
+1. Client sends `POST /auths/register` with `{ name, email, password }`
+2. Email validated (must be valid format and unique)
+3. Password validated (minimum 6 characters)
+4. Password hashed with bcrypt (10 salt rounds)
+5. User created in database
+6. JWT token generated with payload `{ userId, email }`
+7. Token returned to client (expires in 1 hour by default)
+
+### Login Flow
+
+1. Client sends `POST /auths/login` with `{ email, password }`
+2. User looked up by email
+3. Password compared with bcrypt
+4. If invalid credentials, generic error returned (prevents account enumeration)
+5. JWT token generated and returned to client
+
+### Protected Route Authentication
+
+1. Client includes `Authorization: Bearer <token>` header in request
+2. `JwtAuthGuard` intercepts the request
+3. `JwtStrategy` validates token signature using `JWT_SECRET`
+4. User loaded from database to ensure account still exists
+5. User object attached to request as `req.user` with `{ userId, email, name }`
+6. Controller accesses `req.user.userId` for data isolation
+7. If token is invalid/expired, 401 Unauthorized response returned
+
+---
+
+## 🔌 Example API Usage
+
+### Registration
+
+```bash
+curl -X POST http://localhost:3000/auths/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "secret123"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Login
+
+```bash
+curl -X POST http://localhost:3000/auths/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "secret123"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Create Category (Protected)
+
+```bash
+curl -X POST http://localhost:3000/categories \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "name": "Groceries",
+    "type": "EXPENSE"
+  }'
+```
+
+### Create Transaction (Protected)
+
+```bash
+curl -X POST http://localhost:3000/transactions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "amount": 99.99,
+    "type": "EXPENSE",
+    "categoryId": "uuid-of-category",
+    "date": "2026-02-26T10:00:00.000Z",
+    "description": "Weekly grocery shopping"
+  }'
+```
+
+---
+
+## 🔑 Seed Data
+
+After running `npm run db:seed`, the following demo data is available:
+
+### Demo User Credentials
+
+- **Email:** `demo@example.com`
+- **Password:** `password123`
+
+### Pre-seeded Categories
+
+**Income Categories:**
+
+- Salary
+- Freelance
+- Investments
+
+**Expense Categories:**
+
+- Food
+- Transport
+- Housing
+- Entertainment
+- Healthcare
+- Utilities
+- Shopping
+- Education
+
+---
+
+## 💾 Database Commands
+
+```bash
+# Development
+npm run db:migrate:dev       # Create and apply new migration
+npm run db:generate          # Regenerate Prisma client
+npm run db:push              # Push schema changes without creating migration
+npm run db:studio            # Open Prisma Studio (database GUI)
+npm run db:seed              # Seed database with demo data
+
+# Testing
+npm run db:migrate:test      # Run migrations on test database
+
+# Production
+npm run db:migrate:deploy    # Apply pending migrations (production)
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Database Connection Error
+
+**Problem:** `Can't reach database server`
+
+**Solution:**
+
+- Ensure PostgreSQL is running: `sudo service postgresql status`
+- Verify DATABASE_URL in `.env` has correct credentials
+- Check database exists: `psql -l`
+
+### JWT_SECRET Not Defined
+
+**Problem:** `JWT_SECRET is not defined`
+
+**Solution:**
+
+- Ensure `.env` file exists in project root
+- Add `JWT_SECRET="your-secret-key"` to `.env`
+- Restart the development server
+
+### Port Already in Use
+
+**Problem:** `Port 3000 is already in use`
+
+**Solution:**
+
+- Change PORT in `.env` to another value (e.g., 3001)
+- Or kill the process using port 3000: `lsof -ti:3000 | xargs kill`
+
+### Prisma Client Not Generated
+
+**Problem:** `Cannot find module '@prisma/client'`
+
+**Solution:**
+
+```bash
+npm run db:generate
+```
+
+### Migration Errors
+
+**Problem:** Migration fails or schema out of sync
+
+**Solution:**
+
+```bash
+# Reset database (WARNING: deletes all data)
+npm run db:push -- --force-reset
+
+# Or create a new migration
+npm run db:migrate:dev
 ```
 
 ---
@@ -234,12 +607,14 @@ npm run test:cov
 
 - [ ] **Refresh tokens** for better security
 - [ ] **Role-based authorization** (admin/user roles)
-- [ ] **API documentation** (Swagger/OpenAPI)
 - [ ] **Logging system** (Winston or similar)
 - [ ] **Docker** containerization
 - [ ] **CI/CD** pipeline
 - [ ] **Rate limiting** and security headers
 - [ ] **Email verification** for new users
+- [ ] **Password reset** functionality
+- [ ] **Transaction filters** (date range, category, type)
+- [ ] **Pagination** for list endpoints
 
 ---
 
