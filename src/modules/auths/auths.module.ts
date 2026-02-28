@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthsService } from './auths.service';
@@ -16,23 +16,15 @@ import { JwtAuthGuard } from './jwt-auth.guard';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<number>('JWT_EXPIRATION');
-
-        if (!secret) {
-          throw new Error('JWT_SECRET is not defined in environment variables');
-        }
-
-        if (!expiresIn) {
-          throw new Error(
-            'JWT_EXPIRATION is not defined in environment variables',
-          );
-        }
+        const secret = configService.getOrThrow<string>('jwt.secret');
+        const expiresIn = configService.getOrThrow<number>(
+          'jwt.expiresInSeconds',
+        );
 
         return {
           secret,
           signOptions: {
-            expiresIn: `${expiresIn}s`,
+            expiresIn,
           },
         };
       },

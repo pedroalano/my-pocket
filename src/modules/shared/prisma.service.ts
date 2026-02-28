@@ -1,4 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 
 function isSafeTestDatabaseUrl(databaseUrl: string) {
@@ -41,11 +42,12 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     super();
 
-    if (process.env.NODE_ENV === 'test') {
-      assertTestDatabaseUrl(process.env.DATABASE_URL);
+    if (this.configService.get<string>('app.nodeEnv') === 'test') {
+      const databaseUrl = this.configService.get<string>('database.url');
+      assertTestDatabaseUrl(databaseUrl);
     }
   }
 

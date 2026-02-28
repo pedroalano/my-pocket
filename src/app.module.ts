@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { configurations, envValidationSchema } from './modules/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './modules/health/health.module';
@@ -10,11 +11,24 @@ import { AuthsModule } from './modules/auths/auths.module';
 import { SharedModule } from './modules/shared';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
+const envFileMap: Record<string, string> = {
+  test: '.env.test',
+  docker: '.env.docker',
+};
+
+const resolveEnvFilePath = () =>
+  envFileMap[process.env.NODE_ENV ?? ''] ?? '.env';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
+      envFilePath: resolveEnvFilePath(),
+      load: configurations,
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        abortEarly: false,
+      },
     }),
     SharedModule,
     HealthModule,
