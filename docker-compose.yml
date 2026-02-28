@@ -1,0 +1,73 @@
+services:
+  # PostgreSQL for Development
+  postgres:
+    image: postgres:16-alpine
+    container_name: my-pocket-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bd_my_pocket
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my-pocket-network
+
+  # PostgreSQL for Testing
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: my-pocket-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bd_my_pocket_test
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my-pocket-network
+
+  # NestJS Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: my-pocket-backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bd_my_pocket
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      JWT_EXPIRATION: 3600
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./scripts/docker-entrypoint.sh:/app/docker-entrypoint.sh
+    entrypoint: /bin/sh /app/docker-entrypoint.sh
+    networks:
+      - my-pocket-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  my-pocket-network:
+    driver: bridge
