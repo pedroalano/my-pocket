@@ -52,16 +52,19 @@ Before you begin, ensure you have the following installed:
 Create a `.env` file in the root directory (you can copy from `.env.example`):
 
 ```env
+# Runtime
+NODE_ENV=development
+PORT=3000
+
 # Database Connection (PostgreSQL)
 DATABASE_URL="postgresql://user:password@localhost:5432/my_pocket_db?schema=public"
 
-# Application Port (optional, defaults to 3000)
-PORT=3000
-
-# JWT Authentication
+# JWT Authentication (secret must be >= 32 chars)
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 JWT_EXPIRATION=3600  # Token expiration in seconds (3600 = 1 hour)
 ```
+
+> The ConfigModule validates these variables at startup, so the app fails fast when something is missing or misconfigured.
 
 ### Testing Environment
 
@@ -110,7 +113,7 @@ cp .env.example .env
 
 # Edit .env with your database credentials
 # Update DATABASE_URL with your PostgreSQL user/password
-# Set a strong JWT_SECRET
+# Set a strong JWT_SECRET (minimum 32 characters)
 ```
 
 ### 4. Run Database Migrations
@@ -176,9 +179,10 @@ docker run --rm -p 3000:3000 --env-file .env my-pocket-backend:dev
 Required environment variables (see `.env.example`):
 
 - `DATABASE_URL`
-- `JWT_SECRET`
+- `JWT_SECRET` (minimum 32 characters)
 - `JWT_EXPIRATION`
 - `PORT` (optional, defaults to 3000)
+- `NODE_ENV` (optional, defaults to `development`)
 
 > Note: Database provisioning/migrations are intentionally outside this Docker scope.
 
