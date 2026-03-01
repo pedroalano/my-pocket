@@ -23,6 +23,45 @@ type BudgetWithSpending = {
   utilizationPercentage: number;
 };
 
+type BudgetBase = {
+  id: string;
+  amount: string;
+  categoryId: string;
+  month: number;
+  year: number;
+  type: BudgetType;
+};
+
+type CategoryInfo = {
+  id: string;
+  name: string;
+  type: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+} | null;
+
+type TransactionInfo = {
+  id: string;
+  amount: string;
+  categoryId: string;
+  type: TransactionType;
+  date: string;
+  description: string | null;
+};
+
+type BudgetWithCategory = BudgetBase & {
+  category: CategoryInfo;
+};
+
+type BudgetWithTransactions = BudgetBase & {
+  category: CategoryInfo;
+  transactions: TransactionInfo[];
+  spent: string;
+  remaining: string;
+  utilizationPercentage: number;
+};
+
 @Injectable()
 export class BudgetService {
   constructor(
@@ -65,7 +104,7 @@ export class BudgetService {
 
   private mapBudget(budget: {
     id: string;
-    amount: any;
+    amount: { toString(): string };
     categoryId: string;
     month: number;
     year: number;
@@ -79,7 +118,7 @@ export class BudgetService {
 
   private mapTransaction(transaction: {
     id: string;
-    amount: any;
+    amount: { toString(): string };
     categoryId: string;
     type: TransactionType;
     date: Date;
@@ -141,7 +180,7 @@ export class BudgetService {
       select: this.budgetSelect,
     });
     return budgets.map((budget) => {
-      const { userId: _, ...budgetWithoutUserId } = budget;
+      const { userId: _userId, ...budgetWithoutUserId } = budget;
       return this.mapBudget(budgetWithoutUserId);
     });
   }
@@ -156,7 +195,7 @@ export class BudgetService {
       throw new NotFoundException(`Budget with ID ${id} not found`);
     }
 
-    const { userId: _, ...budgetWithoutUserId } = budget;
+    const { userId: _userId, ...budgetWithoutUserId } = budget;
     return this.mapBudget(budgetWithoutUserId);
   }
 
@@ -193,7 +232,7 @@ export class BudgetService {
         },
         select: this.budgetSelect,
       });
-      const { userId: _, ...budgetWithoutUserId } = newBudget;
+      const { userId: _userId, ...budgetWithoutUserId } = newBudget;
       return this.mapBudget(budgetWithoutUserId);
     } catch (error) {
       if (
@@ -261,7 +300,7 @@ export class BudgetService {
         },
         select: this.budgetSelect,
       });
-      const { userId: _, ...budgetWithoutUserId } = updatedBudget;
+      const { userId: _userId, ...budgetWithoutUserId } = updatedBudget;
       return this.mapBudget(budgetWithoutUserId);
     } catch (error) {
       if (
@@ -297,7 +336,7 @@ export class BudgetService {
       select: this.budgetSelect,
     });
 
-    const { userId: _, ...budgetWithoutUserId } = deletedBudget;
+    const { userId: _userId, ...budgetWithoutUserId } = deletedBudget;
     return this.mapBudget(budgetWithoutUserId);
   }
 
@@ -382,7 +421,10 @@ export class BudgetService {
     return transactions.map((transaction) => this.mapTransaction(transaction));
   }
 
-  async getBudgetWithCategory(budgetId: string, userId: string): Promise<any> {
+  async getBudgetWithCategory(
+    budgetId: string,
+    userId: string,
+  ): Promise<BudgetWithCategory | null> {
     const budget = await this.getBudgetById(budgetId, userId);
     if (!budget) {
       return null;
@@ -410,7 +452,7 @@ export class BudgetService {
   async getBudgetsWithTransactions(
     budgetId: string,
     userId: string,
-  ): Promise<any> {
+  ): Promise<BudgetWithTransactions | null> {
     const budget = await this.getBudgetById(budgetId, userId);
     if (!budget) {
       return null;

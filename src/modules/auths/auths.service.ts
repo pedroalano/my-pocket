@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../shared/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
@@ -34,9 +35,15 @@ export class AuthsService {
 
       // Generate and return JWT token
       return this.generateToken(user.id, user.email);
-    } catch (error: any) {
+    } catch (error) {
       // Handle Prisma unique constraint violation (P2002)
-      if (error.code === 'P2002') {
+      const isPrismaError =
+        error instanceof Prisma.PrismaClientKnownRequestError ||
+        (typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          typeof (error as { code: unknown }).code === 'string');
+      if (isPrismaError && (error as { code: string }).code === 'P2002') {
         throw new ConflictException('Email already exists');
       }
       throw error;
