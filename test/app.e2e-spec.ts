@@ -9,8 +9,8 @@ describe('Personal Finance API E2E', () => {
   let app: INestApplication<App>;
   let user1Token: string;
   let user2Token: string;
-  let user1Id: string;
-  let user2Id: string;
+  let _user1Id: string;
+  let _user2Id: string;
   let categoryId: string;
   let transactionId: string;
   let budgetId: string;
@@ -104,8 +104,8 @@ describe('Personal Finance API E2E', () => {
 
   // ==================== AUTHENTICATION FLOWS ====================
   describe('Authentication Flows', () => {
-    let authUser1Token: string;
-    let authUser2Token: string;
+    let _authUser1Token: string;
+    let _authUser2Token: string;
 
     describe('POST /auths/register', () => {
       it('should register new user and return access token', async () => {
@@ -116,7 +116,7 @@ describe('Personal Finance API E2E', () => {
 
         expect(response.body).toHaveProperty('access_token');
         expect(typeof response.body.access_token).toBe('string');
-        authUser1Token = response.body.access_token;
+        _authUser1Token = response.body.access_token;
       });
 
       it('should register second user with different email', async () => {
@@ -127,7 +127,7 @@ describe('Personal Finance API E2E', () => {
 
         expect(response.body).toHaveProperty('access_token');
         expect(typeof response.body.access_token).toBe('string');
-        authUser2Token = response.body.access_token;
+        _authUser2Token = response.body.access_token;
       });
 
       it('should reject duplicate email registration', async () => {
@@ -400,7 +400,7 @@ describe('Personal Finance API E2E', () => {
           });
 
         // Try to update Category B to Category A name (should fail)
-        const catBId = cat1Response.body.id;
+        const _catBId = cat1Response.body.id;
         const catDiffId = (
           await request(app.getHttpServer())
             .post('/categories')

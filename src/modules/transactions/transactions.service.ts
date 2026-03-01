@@ -30,7 +30,7 @@ export class TransactionsService {
 
   private mapTransaction(transaction: {
     id: string;
-    amount: any;
+    amount: { toString(): string };
     type: TransactionType;
     categoryId: string;
     date: Date;

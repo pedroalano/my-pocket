@@ -73,7 +73,7 @@ const createPrismaMock = () => {
     budget: {
       findMany: jest.fn(({ where } = {}) => {
         if (!where) {
-          return budgets.map(({ userId, ...rest }) => rest);
+          return budgets.map(({ userId: _userId, ...rest }) => rest);
         }
         return budgets
           .filter((budget) => {
@@ -85,7 +85,7 @@ const createPrismaMock = () => {
             }
             return true;
           })
-          .map(({ userId, ...rest }) => rest);
+          .map(({ userId: _userId, ...rest }) => rest);
       }),
       findUnique: jest.fn(({ where: { id } }) => {
         const budget = budgets.find((budget) => budget.id === id);
