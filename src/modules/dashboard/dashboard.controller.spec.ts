@@ -1,7 +1,9 @@
+import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
+import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
 
 describe('DashboardController', () => {
@@ -41,6 +43,11 @@ describe('DashboardController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('should apply JwtAuthGuard at the controller level', () => {
+    const guards = Reflect.getMetadata('__guards__', DashboardController) ?? [];
+    expect(guards).toContain(JwtAuthGuard);
   });
 
   describe('getMonthlySummary', () => {

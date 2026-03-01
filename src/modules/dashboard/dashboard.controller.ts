@@ -7,6 +7,7 @@ import {
   BadRequestException,
   Req,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
@@ -15,6 +16,8 @@ import { MonthlySummaryDto } from './dto/monthly-summary.dto';
 import { CategoryBreakdownDto } from './dto/category-breakdown.dto';
 import { TopExpenseDto } from './dto/top-expenses.dto';
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private dashboardService: DashboardService) {}
@@ -36,7 +39,6 @@ export class DashboardController {
   }
 
   @Get('monthly-summary')
-  @UseGuards(JwtAuthGuard)
   async getMonthlySummary(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
@@ -49,7 +51,6 @@ export class DashboardController {
   }
 
   @Get('budget-vs-actual')
-  @UseGuards(JwtAuthGuard)
   async getBudgetVsActual(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
@@ -62,7 +63,6 @@ export class DashboardController {
   }
 
   @Get('category-breakdown')
-  @UseGuards(JwtAuthGuard)
   async getCategoryBreakdown(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
@@ -75,7 +75,6 @@ export class DashboardController {
   }
 
   @Get('top-expenses')
-  @UseGuards(JwtAuthGuard)
   async getTopExpenses(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,

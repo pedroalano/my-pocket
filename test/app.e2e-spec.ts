@@ -1118,6 +1118,18 @@ describe('Personal Finance API E2E', () => {
         expect(response.body.length).toBeLessThanOrEqual(2);
       });
 
+      it('should reject limit outside the allowed range', async () => {
+        await request(app.getHttpServer())
+          .get('/dashboard/top-expenses?month=1&year=2026&limit=0')
+          .set('Authorization', `Bearer ${user1Token}`)
+          .expect(400);
+
+        await request(app.getHttpServer())
+          .get('/dashboard/top-expenses?month=1&year=2026&limit=101')
+          .set('Authorization', `Bearer ${user1Token}`)
+          .expect(400);
+      });
+
       it('should reject without authentication', async () => {
         await request(app.getHttpServer())
           .get('/dashboard/top-expenses?month=1&year=2026&limit=10')
