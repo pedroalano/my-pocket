@@ -7,7 +7,13 @@ import {
   BadRequestException,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+} from '@nestjs/swagger';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
@@ -16,6 +22,7 @@ import { MonthlySummaryDto } from './dto/monthly-summary.dto';
 import { CategoryBreakdownDto } from './dto/category-breakdown.dto';
 import { TopExpenseDto } from './dto/top-expenses.dto';
 
+@ApiTags('dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('dashboard')
@@ -39,6 +46,21 @@ export class DashboardController {
   }
 
   @Get('monthly-summary')
+  @ApiOperation({ summary: 'Get monthly income, expense and balance summary' })
+  @ApiQuery({
+    name: 'month',
+    type: Number,
+    description: 'Month (1-12)',
+    example: 3,
+  })
+  @ApiQuery({ name: 'year', type: Number, description: 'Year', example: 2026 })
+  @ApiResponse({
+    status: 200,
+    description: 'Monthly summary retrieved successfully',
+    type: MonthlySummaryDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid month parameter' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMonthlySummary(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
@@ -51,6 +73,21 @@ export class DashboardController {
   }
 
   @Get('budget-vs-actual')
+  @ApiOperation({ summary: 'Compare budgets vs actual spending by category' })
+  @ApiQuery({
+    name: 'month',
+    type: Number,
+    description: 'Month (1-12)',
+    example: 3,
+  })
+  @ApiQuery({ name: 'year', type: Number, description: 'Year', example: 2026 })
+  @ApiResponse({
+    status: 200,
+    description: 'Budget vs actual comparison retrieved successfully',
+    type: [BudgetVsActualDto],
+  })
+  @ApiResponse({ status: 400, description: 'Invalid month parameter' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getBudgetVsActual(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
@@ -63,6 +100,21 @@ export class DashboardController {
   }
 
   @Get('category-breakdown')
+  @ApiOperation({ summary: 'Get expense breakdown by category' })
+  @ApiQuery({
+    name: 'month',
+    type: Number,
+    description: 'Month (1-12)',
+    example: 3,
+  })
+  @ApiQuery({ name: 'year', type: Number, description: 'Year', example: 2026 })
+  @ApiResponse({
+    status: 200,
+    description: 'Category breakdown retrieved successfully',
+    type: [CategoryBreakdownDto],
+  })
+  @ApiResponse({ status: 400, description: 'Invalid month parameter' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getCategoryBreakdown(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
@@ -75,6 +127,28 @@ export class DashboardController {
   }
 
   @Get('top-expenses')
+  @ApiOperation({ summary: 'Get top expenses for the month' })
+  @ApiQuery({
+    name: 'month',
+    type: Number,
+    description: 'Month (1-12)',
+    example: 3,
+  })
+  @ApiQuery({ name: 'year', type: Number, description: 'Year', example: 2026 })
+  @ApiQuery({
+    name: 'limit',
+    type: Number,
+    required: false,
+    description: 'Number of top expenses to return (1-100, default: 10)',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Top expenses retrieved successfully',
+    type: [TopExpenseDto],
+  })
+  @ApiResponse({ status: 400, description: 'Invalid month or limit parameter' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getTopExpenses(
     @Req() req: AuthenticatedRequest,
     @Query('month', ParseIntPipe) month: number,
