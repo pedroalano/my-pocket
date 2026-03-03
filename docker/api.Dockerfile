@@ -63,6 +63,6 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=dependencies /app/packages/shared/dist ./packages/shared/dist
 COPY prisma ./prisma
 
-EXPOSE 3000
+EXPOSE 3001
 WORKDIR /app/apps/api
-CMD ["node", "dist/src/main.js"]
+CMD ["node", "dist/main.js"]
