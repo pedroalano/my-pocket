@@ -1,7 +1,16 @@
 # compiled output
 /dist
+**/dist
 /node_modules
+**/node_modules
 /build
+
+# Turbo
+.turbo
+
+# Next.js
+.next/
+out/
 
 # Logs
 logs
