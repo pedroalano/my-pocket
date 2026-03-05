@@ -2,7 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 
-const envFilePath = path.resolve(process.cwd(), '.env.test');
+// Resolve .env.test from monorepo root (3 levels up from apps/api/test/)
+const envFilePath = path.resolve(__dirname, '../../..', '.env.test');
 
 function loadEnvFile(filePath: string) {
   if (!fs.existsSync(filePath)) {
