@@ -32,9 +32,25 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/categories">
-            <h1 className="text-2xl font-bold text-gray-900">My Pocket</h1>
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link href="/categories">
+              <h1 className="text-2xl font-bold text-gray-900">My Pocket</h1>
+            </Link>
+            <nav className="flex items-center gap-4">
+              <Link
+                href="/categories"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Categories
+              </Link>
+              <Link
+                href="/budgets"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Budgets
+              </Link>
+            </nav>
+          </div>
           <Button variant="outline" onClick={logout}>
             Logout
           </Button>
