@@ -26,6 +26,27 @@ export const mockCategories = [
   },
 ];
 
+export const mockBudgets = [
+  {
+    id: 'budget-1',
+    amount: '500.00',
+    categoryId: 'cat-2',
+    month: 3,
+    year: 2026,
+    type: 'EXPENSE',
+    userId: 'test-user-id',
+  },
+  {
+    id: 'budget-2',
+    amount: '3000.00',
+    categoryId: 'cat-1',
+    month: 3,
+    year: 2026,
+    type: 'INCOME',
+    userId: 'test-user-id',
+  },
+];
+
 // Generate a valid-looking JWT for testing
 export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNzA0MDY3MjAwfQ.fake-signature';
@@ -137,6 +158,113 @@ export const handlers = [
     if (!category) {
       return HttpResponse.json(
         { message: 'Category not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Budgets endpoints
+  http.get(`${API_URL}/budgets`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json(mockBudgets);
+  }),
+
+  http.get(`${API_URL}/budgets/:id`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const budget = mockBudgets.find((b) => b.id === params.id);
+    if (!budget) {
+      return HttpResponse.json(
+        { message: 'Budget not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(budget);
+  }),
+
+  http.post(`${API_URL}/budgets`, async ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const body = (await request.json()) as {
+      amount: number;
+      categoryId: string;
+      month: number;
+      year: number;
+      type: string;
+    };
+    return HttpResponse.json({
+      id: 'new-budget-id',
+      amount: body.amount.toFixed(2),
+      categoryId: body.categoryId,
+      month: body.month,
+      year: body.year,
+      type: body.type,
+      userId: 'test-user-id',
+    });
+  }),
+
+  http.put(`${API_URL}/budgets/:id`, async ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const budget = mockBudgets.find((b) => b.id === params.id);
+    if (!budget) {
+      return HttpResponse.json(
+        { message: 'Budget not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    const body = (await request.json()) as {
+      amount?: number;
+      categoryId?: string;
+      month?: number;
+      year?: number;
+      type?: string;
+    };
+    return HttpResponse.json({
+      ...budget,
+      amount:
+        body.amount !== undefined ? body.amount.toFixed(2) : budget.amount,
+      categoryId: body.categoryId ?? budget.categoryId,
+      month: body.month ?? budget.month,
+      year: body.year ?? budget.year,
+      type: body.type ?? budget.type,
+    });
+  }),
+
+  http.delete(`${API_URL}/budgets/:id`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const budget = mockBudgets.find((b) => b.id === params.id);
+    if (!budget) {
+      return HttpResponse.json(
+        { message: 'Budget not found', statusCode: 404 },
         { status: 404 },
       );
     }

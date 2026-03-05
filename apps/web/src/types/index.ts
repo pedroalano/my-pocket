@@ -44,6 +44,38 @@ export interface AuthResponse {
   access_token: string;
 }
 
+// Budget types
+export enum BudgetType {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
+}
+
+export interface Budget {
+  id: string;
+  amount: string;
+  categoryId: string;
+  month: number;
+  year: number;
+  type: BudgetType;
+  userId: string;
+}
+
+export interface CreateBudgetDto {
+  amount: number;
+  categoryId: string;
+  month: number;
+  year: number;
+  type: BudgetType;
+}
+
+export interface UpdateBudgetDto {
+  amount?: number;
+  categoryId?: string;
+  month?: number;
+  year?: number;
+  type?: BudgetType;
+}
+
 // API Response types
 export interface ApiError {
   message: string;
