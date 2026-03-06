@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { budgetsApi } from '@/lib/budgets';
 import { categoriesApi } from '@/lib/categories';
-import { Budget, Category, BudgetType } from '@/types';
+import { Budget, Category, BudgetType, BudgetWithSpending } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { BudgetsTableSkeleton } from '@/components/BudgetsTableSkeleton';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,13 @@ import { ApiException } from '@/lib/api';
 type FilterType = 'ALL' | BudgetType;
 type FilterMonth = 'ALL' | number;
 type FilterYear = 'ALL' | number;
+type FilterCategory = 'ALL' | string;
+
+// Combined type for budgets with optional spending info
+type BudgetDisplay = Budget &
+  Partial<
+    Pick<BudgetWithSpending, 'spent' | 'remaining' | 'utilizationPercentage'>
+  >;
 
 const MONTHS = [
   { value: 1, label: 'January' },
@@ -69,37 +76,37 @@ function formatPeriod(month: number, year: number): string {
 }
 
 // Get unique years from budgets for the filter
-function getUniqueYears(budgets: Budget[]): number[] {
+function getUniqueYears(budgets: BudgetDisplay[]): number[] {
   const years = [...new Set(budgets.map((b) => b.year))];
   return years.sort((a, b) => b - a); // Sort descending
 }
 
+function getUtilizationColor(percentage: number | undefined): string {
+  if (percentage === undefined) return '';
+  if (percentage >= 100) return 'text-red-600';
+  if (percentage >= 75) return 'text-yellow-600';
+  return 'text-green-600';
+}
+
 export default function BudgetsPage() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgets, setBudgets] = useState<BudgetDisplay[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [deleteBudget, setDeleteBudget] = useState<Budget | null>(null);
+  const [deleteBudget, setDeleteBudget] = useState<BudgetDisplay | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [filterMonth, setFilterMonth] = useState<FilterMonth>('ALL');
   const [filterYear, setFilterYear] = useState<FilterYear>('ALL');
   const [filterType, setFilterType] = useState<FilterType>('ALL');
+  const [filterCategory, setFilterCategory] = useState<FilterCategory>('ALL');
+  const [hasSpendingInfo, setHasSpendingInfo] = useState(false);
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated]);
-
-  const loadData = async () => {
+  const loadAllBudgets = useCallback(async () => {
     try {
-      const [budgetsData, categoriesData] = await Promise.all([
-        budgetsApi.getAll(),
-        categoriesApi.getAll(),
-      ]);
+      const budgetsData = await budgetsApi.getAll();
       setBudgets(budgetsData);
-      setCategories(categoriesData);
+      setHasSpendingInfo(false);
     } catch (error) {
       if (error instanceof ApiException) {
         if (error.statusCode === 401) {
@@ -111,10 +118,66 @@ export default function BudgetsPage() {
       } else {
         toast.error('Failed to load budgets');
       }
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [logout, router]);
+
+  const loadBudgetsByCategory = useCallback(
+    async (categoryId: string) => {
+      try {
+        const budgetsData = await budgetsApi.getByCategory(categoryId);
+        // Add userId property to match Budget type (for display purposes)
+        const budgetsWithUserId = budgetsData.map((b) => ({
+          ...b,
+          userId: '',
+        }));
+        setBudgets(budgetsWithUserId);
+        setHasSpendingInfo(true);
+      } catch (error) {
+        if (error instanceof ApiException) {
+          if (error.statusCode === 401) {
+            logout();
+            router.push('/login');
+            return;
+          }
+          toast.error(error.message);
+        } else {
+          toast.error('Failed to load budgets');
+        }
+      }
+    },
+    [logout, router],
+  );
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await categoriesApi.getAll();
+        setCategories(categoriesData);
+      } catch (error) {
+        if (error instanceof ApiException && error.statusCode === 401) {
+          logout();
+          router.push('/login');
+          return;
+        }
+        toast.error('Failed to load categories');
+      }
+    };
+
+    if (isAuthenticated) {
+      loadCategories();
+    }
+  }, [isAuthenticated, logout, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    setIsLoading(true);
+    if (filterCategory === 'ALL') {
+      loadAllBudgets().finally(() => setIsLoading(false));
+    } else {
+      loadBudgetsByCategory(filterCategory).finally(() => setIsLoading(false));
+    }
+  }, [isAuthenticated, filterCategory, loadAllBudgets, loadBudgetsByCategory]);
 
   const categoryMap = useMemo(() => {
     return categories.reduce(
@@ -219,7 +282,30 @@ export default function BudgetsPage() {
             <SelectItem value="EXPENSE">Expense</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select
+          value={filterCategory}
+          onValueChange={(value) => setFilterCategory(value as FilterCategory)}
+        >
+          <SelectTrigger className="w-[180px]" data-testid="category-filter">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Categories</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {hasSpendingInfo && filterCategory !== 'ALL' && (
+        <p className="text-sm text-muted-foreground mb-2">
+          Showing spending information for {categoryMap[filterCategory]}
+        </p>
+      )}
 
       <div className="bg-white rounded-lg shadow">
         {isLoading ? (
@@ -238,6 +324,13 @@ export default function BudgetsPage() {
               <TableRow>
                 <TableHead>Category</TableHead>
                 <TableHead>Amount</TableHead>
+                {hasSpendingInfo && (
+                  <>
+                    <TableHead>Spent</TableHead>
+                    <TableHead>Remaining</TableHead>
+                    <TableHead>Usage</TableHead>
+                  </>
+                )}
                 <TableHead>Period</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -245,11 +338,34 @@ export default function BudgetsPage() {
             </TableHeader>
             <TableBody>
               {filteredBudgets.map((budget) => (
-                <TableRow key={budget.id}>
+                <TableRow
+                  key={budget.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/budgets/${budget.id}`)}
+                >
                   <TableCell className="font-medium">
                     {categoryMap[budget.categoryId] || 'Unknown'}
                   </TableCell>
                   <TableCell>{formatAmount(budget.amount)}</TableCell>
+                  {hasSpendingInfo && budget.spent !== undefined && (
+                    <>
+                      <TableCell>{formatAmount(budget.spent)}</TableCell>
+                      <TableCell
+                        className={
+                          parseFloat(budget.remaining || '0') < 0
+                            ? 'text-red-600'
+                            : ''
+                        }
+                      >
+                        {formatAmount(budget.remaining || '0')}
+                      </TableCell>
+                      <TableCell
+                        className={`font-medium ${getUtilizationColor(budget.utilizationPercentage)}`}
+                      >
+                        {budget.utilizationPercentage?.toFixed(1)}%
+                      </TableCell>
+                    </>
+                  )}
                   <TableCell className="text-gray-500">
                     {formatPeriod(budget.month, budget.year)}
                   </TableCell>
@@ -265,7 +381,10 @@ export default function BudgetsPage() {
                     </span>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Link href={`/budgets/${budget.id}/edit`}>
+                    <Link
+                      href={`/budgets/${budget.id}/edit`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Button variant="outline" size="sm">
                         Edit
                       </Button>
@@ -273,7 +392,10 @@ export default function BudgetsPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => setDeleteBudget(budget)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteBudget(budget);
+                      }}
                     >
                       Delete
                     </Button>

@@ -72,6 +72,46 @@ export const mockTransactions = [
   },
 ];
 
+// Mock budget with spending calculations
+export const mockBudgetWithDetails = {
+  id: 'budget-1',
+  amount: '500.00',
+  categoryId: 'cat-2',
+  month: 3,
+  year: 2026,
+  type: 'EXPENSE',
+  category: mockCategories[1], // Groceries
+  transactions: [mockTransactions[0]], // Only grocery transaction
+  spent: '150.00',
+  remaining: '350.00',
+  utilizationPercentage: 30,
+};
+
+export const mockBudgetsWithSpending = [
+  {
+    id: 'budget-1',
+    amount: '500.00',
+    categoryId: 'cat-2',
+    month: 3,
+    year: 2026,
+    type: 'EXPENSE',
+    spent: '150.00',
+    remaining: '350.00',
+    utilizationPercentage: 30,
+  },
+  {
+    id: 'budget-2',
+    amount: '3000.00',
+    categoryId: 'cat-1',
+    month: 3,
+    year: 2026,
+    type: 'INCOME',
+    spent: '3000.00',
+    remaining: '0.00',
+    utilizationPercentage: 100,
+  },
+];
+
 // Generate a valid-looking JWT for testing
 export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNzA0MDY3MjAwfQ.fake-signature';
@@ -276,6 +316,50 @@ export const handlers = [
       year: body.year ?? budget.year,
       type: body.type ?? budget.type,
     });
+  }),
+
+  http.get(`${API_URL}/budgets/:id/details`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const budget = mockBudgets.find((b) => b.id === params.id);
+    if (!budget) {
+      return HttpResponse.json(
+        { message: 'Budget not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    // Return the budget with spending details
+    const budgetWithSpending = mockBudgetsWithSpending.find(
+      (b) => b.id === params.id,
+    );
+    const category = mockCategories.find((c) => c.id === budget.categoryId);
+    const transactions = mockTransactions.filter(
+      (t) => t.categoryId === budget.categoryId,
+    );
+    return HttpResponse.json({
+      ...budgetWithSpending,
+      category: category || null,
+      transactions,
+    });
+  }),
+
+  http.get(`${API_URL}/budgets/category/:categoryId`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const filteredBudgets = mockBudgetsWithSpending.filter(
+      (b) => b.categoryId === params.categoryId,
+    );
+    return HttpResponse.json(filteredBudgets);
   }),
 
   http.delete(`${API_URL}/budgets/:id`, ({ params, request }) => {
