@@ -89,6 +89,8 @@ services:
       # Source code for hot-reload
       - ./apps/web/src:/app/apps/web/src
       - ./packages/shared/src:/app/packages/shared/src
+      # Next.js cache (keeps route manifest in sync with host)
+      - ./apps/web/.next:/app/apps/web/.next
       # Config files
       - ./apps/web/next.config.mjs:/app/apps/web/next.config.mjs
       - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json

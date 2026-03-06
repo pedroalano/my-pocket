@@ -225,6 +225,31 @@ Tasks are defined in `turbo.json`:
 
 ---
 
+## 🔨 Troubleshooting
+
+### New routes returning 404 in Docker
+
+If you add a new route file (e.g., `apps/web/src/app/newpage/page.tsx`) and it returns 404:
+
+1. **Clear Next.js cache:**
+
+   ```bash
+   cd apps/web && npm run clean
+   ```
+
+2. **Restart the web container:**
+
+   ```bash
+   docker compose -f docker-compose.dev.yml restart web
+   ```
+
+3. **Or rebuild from scratch:**
+   ```bash
+   docker compose -f docker-compose.dev.yml up web --build
+   ```
+
+---
+
 ## 🤝 Contributing
 
 1. Create a feature branch
