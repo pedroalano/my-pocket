@@ -76,22 +76,43 @@ export interface UpdateBudgetDto {
   type?: BudgetType;
 }
 
-export interface BudgetWithSpending {
+interface BudgetWithSpendingBase {
   id: string;
   amount: string;
   categoryId: string;
   month: number;
   year: number;
-  type: BudgetType;
-  spent: string;
   remaining: string;
   utilizationPercentage: number;
 }
 
-export interface BudgetWithDetails extends BudgetWithSpending {
+export interface BudgetWithSpendingExpense extends BudgetWithSpendingBase {
+  type: BudgetType.EXPENSE;
+  spent: string;
+}
+
+export interface BudgetWithSpendingIncome extends BudgetWithSpendingBase {
+  type: BudgetType.INCOME;
+  earned: string;
+}
+
+export type BudgetWithSpending =
+  | BudgetWithSpendingExpense
+  | BudgetWithSpendingIncome;
+
+export interface BudgetWithDetailsExpense extends BudgetWithSpendingExpense {
   category: Category | null;
   transactions: Transaction[];
 }
+
+export interface BudgetWithDetailsIncome extends BudgetWithSpendingIncome {
+  category: Category | null;
+  transactions: Transaction[];
+}
+
+export type BudgetWithDetails =
+  | BudgetWithDetailsExpense
+  | BudgetWithDetailsIncome;
 
 // Transaction types
 export enum TransactionType {

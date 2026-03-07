@@ -11,17 +11,31 @@ import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
 
-type BudgetWithSpending = {
+type BudgetWithSpendingExpense = {
   id: string;
   amount: string;
   categoryId: string;
   month: number;
   year: number;
-  type: BudgetType;
+  type: typeof BudgetType.EXPENSE;
   spent: string;
   remaining: string;
   utilizationPercentage: number;
 };
+
+type BudgetWithSpendingIncome = {
+  id: string;
+  amount: string;
+  categoryId: string;
+  month: number;
+  year: number;
+  type: typeof BudgetType.INCOME;
+  earned: string;
+  remaining: string;
+  utilizationPercentage: number;
+};
+
+type BudgetWithSpending = BudgetWithSpendingExpense | BudgetWithSpendingIncome;
 
 type BudgetBase = {
   id: string;
@@ -54,13 +68,27 @@ type BudgetWithCategory = BudgetBase & {
   category: CategoryInfo;
 };
 
-type BudgetWithTransactions = BudgetBase & {
+type BudgetWithTransactionsExpense = BudgetBase & {
+  type: typeof BudgetType.EXPENSE;
   category: CategoryInfo;
   transactions: TransactionInfo[];
   spent: string;
   remaining: string;
   utilizationPercentage: number;
 };
+
+type BudgetWithTransactionsIncome = BudgetBase & {
+  type: typeof BudgetType.INCOME;
+  category: CategoryInfo;
+  transactions: TransactionInfo[];
+  earned: string;
+  remaining: string;
+  utilizationPercentage: number;
+};
+
+type BudgetWithTransactions =
+  | BudgetWithTransactionsExpense
+  | BudgetWithTransactionsIncome;
 
 @Injectable()
 export class BudgetService {
@@ -383,15 +411,26 @@ export class BudgetService {
       return null;
     }
 
-    const spent = await this.calculateSpentAmount(budget, userId);
+    const progressAmount = await this.calculateSpentAmount(budget, userId);
     const numericAmount = Number(budget.amount);
-    const remaining = numericAmount - spent;
+    const remaining = numericAmount - progressAmount;
     const utilizationPercentage =
-      numericAmount > 0 ? (spent / numericAmount) * 100 : 0;
+      numericAmount > 0 ? (progressAmount / numericAmount) * 100 : 0;
+
+    if (budget.type === BudgetType.INCOME) {
+      return {
+        ...budget,
+        type: BudgetType.INCOME,
+        earned: formatDecimal(progressAmount),
+        remaining: formatDecimal(remaining),
+        utilizationPercentage,
+      };
+    }
 
     return {
       ...budget,
-      spent: formatDecimal(spent),
+      type: BudgetType.EXPENSE,
+      spent: formatDecimal(progressAmount),
       remaining: formatDecimal(remaining),
       utilizationPercentage,
     };
@@ -471,20 +510,33 @@ export class BudgetService {
       }
     }
 
-    const [transactions, spent] = await Promise.all([
+    const [transactions, progressAmount] = await Promise.all([
       this.getTransactionsForBudget(budgetId, userId),
       this.calculateSpentAmount(budget, userId),
     ]);
     const numericAmount = Number(budget.amount);
-    const remaining = numericAmount - spent;
+    const remaining = numericAmount - progressAmount;
     const utilizationPercentage =
-      numericAmount > 0 ? (spent / numericAmount) * 100 : 0;
+      numericAmount > 0 ? (progressAmount / numericAmount) * 100 : 0;
+
+    if (budget.type === BudgetType.INCOME) {
+      return {
+        ...budget,
+        type: BudgetType.INCOME,
+        category: category || null,
+        transactions,
+        earned: formatDecimal(progressAmount),
+        remaining: formatDecimal(remaining),
+        utilizationPercentage,
+      };
+    }
 
     return {
       ...budget,
+      type: BudgetType.EXPENSE,
       category: category || null,
       transactions,
-      spent: formatDecimal(spent),
+      spent: formatDecimal(progressAmount),
       remaining: formatDecimal(remaining),
       utilizationPercentage,
     };
@@ -502,15 +554,26 @@ export class BudgetService {
     const results = await Promise.all(
       budgets.map(async (budget) => {
         const mapped = this.mapBudget(budget);
-        const spent = await this.calculateSpentAmount(mapped, userId);
+        const progressAmount = await this.calculateSpentAmount(mapped, userId);
         const numericAmount = Number(mapped.amount);
-        const remaining = numericAmount - spent;
+        const remaining = numericAmount - progressAmount;
         const utilizationPercentage =
-          numericAmount > 0 ? (spent / numericAmount) * 100 : 0;
+          numericAmount > 0 ? (progressAmount / numericAmount) * 100 : 0;
+
+        if (budget.type === BudgetType.INCOME) {
+          return {
+            ...mapped,
+            type: BudgetType.INCOME,
+            earned: formatDecimal(progressAmount),
+            remaining: formatDecimal(remaining),
+            utilizationPercentage,
+          };
+        }
 
         return {
           ...mapped,
-          spent: formatDecimal(spent),
+          type: BudgetType.EXPENSE,
+          spent: formatDecimal(progressAmount),
           remaining: formatDecimal(remaining),
           utilizationPercentage,
         };
