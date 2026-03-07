@@ -35,7 +35,7 @@ export default function RegisterPage() {
     try {
       await register({ name, email, password });
       toast.success('Account created successfully!');
-      router.push('/categories');
+      router.push('/dashboard');
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
@@ -114,7 +114,7 @@ export default function RegisterPage() {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="mt-4 flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
