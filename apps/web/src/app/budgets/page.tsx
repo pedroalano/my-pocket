@@ -43,9 +43,25 @@ type FilterCategory = 'ALL' | string;
 
 // Combined type for budgets with optional spending info
 type BudgetDisplay = Budget &
-  Partial<
-    Pick<BudgetWithSpending, 'spent' | 'remaining' | 'utilizationPercentage'>
-  >;
+  Partial<{
+    spent?: string;
+    earned?: string;
+    remaining: string;
+    utilizationPercentage: number;
+  }>;
+
+// Get the progress value (spent for EXPENSE, earned for INCOME)
+function getProgressValue(budget: BudgetDisplay): string | undefined {
+  if (budget.type === BudgetType.INCOME) {
+    return budget.earned;
+  }
+  return budget.spent;
+}
+
+// Get the progress label based on budget type
+function getProgressLabel(budgetType: BudgetType): string {
+  return budgetType === BudgetType.INCOME ? 'Earned' : 'Spent';
+}
 
 const MONTHS = [
   { value: 1, label: 'January' },
@@ -81,8 +97,18 @@ function getUniqueYears(budgets: BudgetDisplay[]): number[] {
   return years.sort((a, b) => b - a); // Sort descending
 }
 
-function getUtilizationColor(percentage: number | undefined): string {
+function getUtilizationColor(
+  percentage: number | undefined,
+  budgetType?: BudgetType,
+): string {
   if (percentage === undefined) return '';
+  if (budgetType === BudgetType.INCOME) {
+    // For INCOME: higher percentage is better (more earned toward goal)
+    if (percentage >= 75) return 'text-green-600';
+    if (percentage >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  }
+  // For EXPENSE: lower percentage is better (less spent)
   if (percentage >= 100) return 'text-red-600';
   if (percentage >= 75) return 'text-yellow-600';
   return 'text-green-600';
@@ -326,7 +352,7 @@ export default function BudgetsPage() {
                 <TableHead>Amount</TableHead>
                 {hasSpendingInfo && (
                   <>
-                    <TableHead>Spent</TableHead>
+                    <TableHead>Spent/Earned</TableHead>
                     <TableHead>Remaining</TableHead>
                     <TableHead>Usage</TableHead>
                   </>
@@ -337,71 +363,74 @@ export default function BudgetsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredBudgets.map((budget) => (
-                <TableRow
-                  key={budget.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/budgets/${budget.id}`)}
-                >
-                  <TableCell className="font-medium">
-                    {categoryMap[budget.categoryId] || 'Unknown'}
-                  </TableCell>
-                  <TableCell>{formatAmount(budget.amount)}</TableCell>
-                  {hasSpendingInfo && budget.spent !== undefined && (
-                    <>
-                      <TableCell>{formatAmount(budget.spent)}</TableCell>
-                      <TableCell
-                        className={
-                          parseFloat(budget.remaining || '0') < 0
-                            ? 'text-red-600'
-                            : ''
-                        }
+              {filteredBudgets.map((budget) => {
+                const progressValue = getProgressValue(budget);
+                return (
+                  <TableRow
+                    key={budget.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => router.push(`/budgets/${budget.id}`)}
+                  >
+                    <TableCell className="font-medium">
+                      {categoryMap[budget.categoryId] || 'Unknown'}
+                    </TableCell>
+                    <TableCell>{formatAmount(budget.amount)}</TableCell>
+                    {hasSpendingInfo && progressValue !== undefined && (
+                      <>
+                        <TableCell>{formatAmount(progressValue)}</TableCell>
+                        <TableCell
+                          className={
+                            parseFloat(budget.remaining || '0') < 0
+                              ? 'text-red-600'
+                              : ''
+                          }
+                        >
+                          {formatAmount(budget.remaining || '0')}
+                        </TableCell>
+                        <TableCell
+                          className={`font-medium ${getUtilizationColor(budget.utilizationPercentage, budget.type)}`}
+                        >
+                          {budget.utilizationPercentage?.toFixed(1)}%
+                        </TableCell>
+                      </>
+                    )}
+                    <TableCell className="text-gray-500">
+                      {formatPeriod(budget.month, budget.year)}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          budget.type === 'INCOME'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
                       >
-                        {formatAmount(budget.remaining || '0')}
-                      </TableCell>
-                      <TableCell
-                        className={`font-medium ${getUtilizationColor(budget.utilizationPercentage)}`}
+                        {budget.type}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Link
+                        href={`/budgets/${budget.id}/edit`}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {budget.utilizationPercentage?.toFixed(1)}%
-                      </TableCell>
-                    </>
-                  )}
-                  <TableCell className="text-gray-500">
-                    {formatPeriod(budget.month, budget.year)}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        budget.type === 'INCOME'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {budget.type}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Link
-                      href={`/budgets/${budget.id}/edit`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button variant="outline" size="sm">
-                        Edit
+                        <Button variant="outline" size="sm">
+                          Edit
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteBudget(budget);
+                        }}
+                      >
+                        Delete
                       </Button>
-                    </Link>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteBudget(budget);
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

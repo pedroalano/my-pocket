@@ -59,24 +59,59 @@ function formatDate(dateString: string): string {
   });
 }
 
-function getUtilizationColor(percentage: number): string {
+function getUtilizationColor(
+  percentage: number,
+  budgetType: BudgetType,
+): string {
+  if (budgetType === BudgetType.INCOME) {
+    // For INCOME: higher percentage is better (more earned toward goal)
+    if (percentage >= 100) return 'bg-green-500';
+    if (percentage >= 75) return 'bg-green-500';
+    if (percentage >= 50) return 'bg-yellow-500';
+    return 'bg-red-500';
+  }
+  // For EXPENSE: lower percentage is better (less spent)
   if (percentage >= 100) return 'bg-red-500';
   if (percentage >= 75) return 'bg-yellow-500';
   return 'bg-green-500';
 }
 
-function getUtilizationTextColor(percentage: number): string {
+function getUtilizationTextColor(
+  percentage: number,
+  budgetType: BudgetType,
+): string {
+  if (budgetType === BudgetType.INCOME) {
+    // For INCOME: higher percentage is better
+    if (percentage >= 75) return 'text-green-600';
+    if (percentage >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  }
+  // For EXPENSE: lower percentage is better
   if (percentage >= 100) return 'text-red-600';
   if (percentage >= 75) return 'text-yellow-600';
   return 'text-green-600';
 }
 
+function getProgressValue(budget: BudgetWithDetails): string {
+  return budget.type === BudgetType.INCOME ? budget.earned : budget.spent;
+}
+
+function getProgressLabel(budgetType: BudgetType): string {
+  return budgetType === BudgetType.INCOME ? 'Earned' : 'Spent';
+}
+
 export function BudgetDetails({ budget }: BudgetDetailsProps) {
-  const utilizationColor = getUtilizationColor(budget.utilizationPercentage);
+  const utilizationColor = getUtilizationColor(
+    budget.utilizationPercentage,
+    budget.type,
+  );
   const utilizationTextColor = getUtilizationTextColor(
     budget.utilizationPercentage,
+    budget.type,
   );
   const progressWidth = Math.min(budget.utilizationPercentage, 100);
+  const progressLabel = getProgressLabel(budget.type);
+  const progressValue = getProgressValue(budget);
 
   return (
     <div className="space-y-6">
@@ -136,15 +171,15 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
             </div>
           </div>
 
-          {/* Spent and Remaining */}
+          {/* Spent/Earned and Remaining */}
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-lg bg-gray-50">
-              <p className="text-sm text-muted-foreground">Spent</p>
+              <p className="text-sm text-muted-foreground">{progressLabel}</p>
               <p
                 className="text-lg font-semibold text-gray-900"
-                data-testid="budget-spent"
+                data-testid="budget-progress-value"
               >
-                {formatAmount(budget.spent)}
+                {formatAmount(progressValue)}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-gray-50">

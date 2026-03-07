@@ -788,6 +788,122 @@ describe('BudgetService', () => {
         service.getBudgetWithSpending(missingBudgetId, userId),
       ).rejects.toThrow(NotFoundException);
     });
+
+    describe('INCOME budgets', () => {
+      it('should return earned field instead of spent for INCOME budgets', async () => {
+        const createDto: CreateBudgetDto = {
+          amount: 1000,
+          categoryId,
+          month: 3,
+          year: 2026,
+          type: BudgetType.INCOME,
+        };
+        const budget = await service.createBudget(createDto, userId);
+
+        prismaMock.__setTransactions([
+          {
+            id: 't1',
+            amount: 400,
+            categoryId,
+            type: TransactionType.INCOME,
+            date: new Date('2026-03-15T00:00:00.000Z'),
+            description: 'Income 1',
+            userId,
+          },
+        ]);
+
+        const result = await service.getBudgetWithSpending(budget.id, userId);
+
+        if (!result) {
+          throw new Error('Expected budget with spending to be defined');
+        }
+
+        expect(result.type).toBe(BudgetType.INCOME);
+        expect('earned' in result && result.earned).toBe('400.00');
+        expect('spent' in result).toBe(false);
+        expect(result.remaining).toBe('600.00');
+        expect(result.utilizationPercentage).toBe(40);
+      });
+
+      it('should calculate INCOME utilization correctly with multiple transactions', async () => {
+        const createDto: CreateBudgetDto = {
+          amount: 2000,
+          categoryId,
+          month: 4,
+          year: 2026,
+          type: BudgetType.INCOME,
+        };
+        const budget = await service.createBudget(createDto, userId);
+
+        prismaMock.__setTransactions([
+          {
+            id: 't1',
+            amount: 800,
+            categoryId,
+            type: TransactionType.INCOME,
+            date: new Date('2026-04-10T00:00:00.000Z'),
+            description: 'Salary',
+            userId,
+          },
+          {
+            id: 't2',
+            amount: 400,
+            categoryId,
+            type: TransactionType.INCOME,
+            date: new Date('2026-04-20T00:00:00.000Z'),
+            description: 'Bonus',
+            userId,
+          },
+        ]);
+
+        const result = await service.getBudgetWithSpending(budget.id, userId);
+
+        if (!result) {
+          throw new Error('Expected budget with spending to be defined');
+        }
+
+        expect(result.type).toBe(BudgetType.INCOME);
+        expect('earned' in result && result.earned).toBe('1200.00');
+        expect(result.remaining).toBe('800.00');
+        expect(result.utilizationPercentage).toBe(60);
+      });
+    });
+
+    describe('EXPENSE budgets (regression)', () => {
+      it('should return spent field for EXPENSE budgets', async () => {
+        const createDto: CreateBudgetDto = {
+          amount: 500,
+          categoryId,
+          month: 5,
+          year: 2026,
+          type: BudgetType.EXPENSE,
+        };
+        const budget = await service.createBudget(createDto, userId);
+
+        prismaMock.__setTransactions([
+          {
+            id: 't1',
+            amount: 200,
+            categoryId,
+            type: TransactionType.EXPENSE,
+            date: new Date('2026-05-15T00:00:00.000Z'),
+            description: 'Expense 1',
+            userId,
+          },
+        ]);
+
+        const result = await service.getBudgetWithSpending(budget.id, userId);
+
+        if (!result) {
+          throw new Error('Expected budget with spending to be defined');
+        }
+
+        expect(result.type).toBe(BudgetType.EXPENSE);
+        expect('spent' in result && result.spent).toBe('200.00');
+        expect('earned' in result).toBe(false);
+        expect(result.remaining).toBe('300.00');
+      });
+    });
   });
 
   describe('getBudgetWithCategory', () => {
@@ -952,6 +1068,95 @@ describe('BudgetService', () => {
       expect(result?.transactions).toEqual([]);
       expect(result?.spent).toBe('0.00');
       expect(result?.utilizationPercentage).toBe(0);
+    });
+
+    describe('INCOME budgets', () => {
+      it('should return earned field instead of spent for INCOME budget with transactions', async () => {
+        const createDto: CreateBudgetDto = {
+          amount: 3000,
+          categoryId,
+          month: 6,
+          year: 2026,
+          type: BudgetType.INCOME,
+        };
+        const budget = await service.createBudget(createDto, userId);
+
+        prismaMock.__setTransactions([
+          {
+            id: 't1',
+            amount: 1500,
+            categoryId,
+            type: TransactionType.INCOME,
+            date: new Date('2026-06-10T00:00:00.000Z'),
+            description: 'Salary',
+            userId,
+          },
+          {
+            id: 't2',
+            amount: 500,
+            categoryId,
+            type: TransactionType.INCOME,
+            date: new Date('2026-06-25T00:00:00.000Z'),
+            description: 'Freelance',
+            userId,
+          },
+        ]);
+
+        const result = await service.getBudgetsWithTransactions(
+          budget.id,
+          userId,
+        );
+
+        if (!result) {
+          throw new Error('Expected budget with transactions to be defined');
+        }
+
+        expect(result.type).toBe(BudgetType.INCOME);
+        expect('earned' in result && result.earned).toBe('2000.00');
+        expect('spent' in result).toBe(false);
+        expect(result.remaining).toBe('1000.00');
+        expect(result.utilizationPercentage).toBeCloseTo(66.67, 1);
+        expect(result.transactions).toHaveLength(2);
+      });
+    });
+
+    describe('EXPENSE budgets (regression)', () => {
+      it('should return spent field for EXPENSE budget with transactions', async () => {
+        const createDto: CreateBudgetDto = {
+          amount: 800,
+          categoryId,
+          month: 7,
+          year: 2026,
+          type: BudgetType.EXPENSE,
+        };
+        const budget = await service.createBudget(createDto, userId);
+
+        prismaMock.__setTransactions([
+          {
+            id: 't1',
+            amount: 300,
+            categoryId,
+            type: TransactionType.EXPENSE,
+            date: new Date('2026-07-15T00:00:00.000Z'),
+            description: 'Groceries',
+            userId,
+          },
+        ]);
+
+        const result = await service.getBudgetsWithTransactions(
+          budget.id,
+          userId,
+        );
+
+        if (!result) {
+          throw new Error('Expected budget with transactions to be defined');
+        }
+
+        expect(result.type).toBe(BudgetType.EXPENSE);
+        expect('spent' in result && result.spent).toBe('300.00');
+        expect('earned' in result).toBe(false);
+        expect(result.remaining).toBe('500.00');
+      });
     });
   });
 
@@ -1210,7 +1415,7 @@ describe('BudgetService', () => {
       expect(budget.amount).toMatch(/^\d+\.\d{2}$/);
     });
 
-    it('should serialize spending fields as fixed-precision strings', async () => {
+    it('should serialize spending fields as fixed-precision strings for EXPENSE budgets', async () => {
       const createDto: CreateBudgetDto = {
         amount: 500,
         categoryId,
@@ -1227,11 +1432,52 @@ describe('BudgetService', () => {
 
       // Monetary fields should be strings with 2 decimal places
       expect(typeof result.amount).toBe('string');
-      expect(typeof result.spent).toBe('string');
       expect(typeof result.remaining).toBe('string');
       expect(result.amount).toMatch(/^-?\d+\.\d{2}$/);
-      expect(result.spent).toMatch(/^-?\d+\.\d{2}$/);
       expect(result.remaining).toMatch(/^-?\d+\.\d{2}$/);
+
+      // EXPENSE budget should have spent field
+      expect(result.type).toBe(BudgetType.EXPENSE);
+      if ('spent' in result) {
+        expect(typeof result.spent).toBe('string');
+        expect(result.spent).toMatch(/^-?\d+\.\d{2}$/);
+      } else {
+        throw new Error('Expected spent field for EXPENSE budget');
+      }
+
+      // utilizationPercentage should remain a number
+      expect(typeof result.utilizationPercentage).toBe('number');
+    });
+
+    it('should serialize earned field as fixed-precision string for INCOME budgets', async () => {
+      const createDto: CreateBudgetDto = {
+        amount: 1000,
+        categoryId,
+        month: 2,
+        year: 2026,
+        type: BudgetType.INCOME,
+      };
+      const budget = await service.createBudget(createDto, userId);
+      const result = await service.getBudgetWithSpending(budget.id, userId);
+
+      if (!result) {
+        throw new Error('Expected budget with spending to be defined');
+      }
+
+      // Monetary fields should be strings with 2 decimal places
+      expect(typeof result.amount).toBe('string');
+      expect(typeof result.remaining).toBe('string');
+      expect(result.amount).toMatch(/^-?\d+\.\d{2}$/);
+      expect(result.remaining).toMatch(/^-?\d+\.\d{2}$/);
+
+      // INCOME budget should have earned field
+      expect(result.type).toBe(BudgetType.INCOME);
+      if ('earned' in result) {
+        expect(typeof result.earned).toBe('string');
+        expect(result.earned).toMatch(/^-?\d+\.\d{2}$/);
+      } else {
+        throw new Error('Expected earned field for INCOME budget');
+      }
 
       // utilizationPercentage should remain a number
       expect(typeof result.utilizationPercentage).toBe('number');

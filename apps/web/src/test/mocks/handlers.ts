@@ -106,7 +106,7 @@ export const mockBudgetsWithSpending = [
     month: 3,
     year: 2026,
     type: 'INCOME',
-    spent: '3000.00',
+    earned: '3000.00',
     remaining: '0.00',
     utilizationPercentage: 100,
   },
