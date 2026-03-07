@@ -34,7 +34,7 @@ export default function LoginPage() {
     try {
       await login({ email, password });
       toast.success('Login successful!');
-      router.push('/categories');
+      router.push('/dashboard');
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
@@ -100,7 +100,7 @@ export default function LoginPage() {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="mt-4 flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
