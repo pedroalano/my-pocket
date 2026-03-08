@@ -52,8 +52,8 @@ describe('TransactionsPage', () => {
     });
 
     expect(screen.getByText('$3,000.00')).toBeInTheDocument();
-    expect(screen.getByText('INCOME')).toBeInTheDocument();
-    expect(screen.getByText('EXPENSE')).toBeInTheDocument();
+    expect(screen.getByText('Income')).toBeInTheDocument();
+    expect(screen.getByText('Expense')).toBeInTheDocument();
   });
 
   it('displays category names for transactions', async () => {

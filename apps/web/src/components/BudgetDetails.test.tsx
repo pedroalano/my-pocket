@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithProviders } from '@/test/test-utils';
 import { BudgetDetails } from './BudgetDetails';
 import {
   BudgetType,
@@ -60,36 +61,36 @@ const mockIncomeBudget: BudgetWithDetailsIncome = {
 
 describe('BudgetDetails', () => {
   it('should render budget title and category', () => {
-    render(<BudgetDetails budget={mockExpenseBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
     expect(screen.getByTestId('budget-title')).toHaveTextContent('Groceries');
     expect(screen.getByText('March 2026')).toBeInTheDocument();
   });
 
   it('should render budget type badge', () => {
-    render(<BudgetDetails budget={mockExpenseBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
     const badge = screen.getByTestId('budget-type-badge');
-    expect(badge).toHaveTextContent('EXPENSE');
+    expect(badge).toHaveTextContent('Expense');
     expect(badge).toHaveClass('bg-red-100', 'text-red-800');
   });
 
   it('should render income type badge with correct styling', () => {
-    render(<BudgetDetails budget={mockIncomeBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockIncomeBudget} />);
 
     const badge = screen.getByTestId('budget-type-badge');
-    expect(badge).toHaveTextContent('INCOME');
+    expect(badge).toHaveTextContent('Income');
     expect(badge).toHaveClass('bg-green-100', 'text-green-800');
   });
 
   it('should render budget amount formatted as currency', () => {
-    render(<BudgetDetails budget={mockExpenseBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
     expect(screen.getByTestId('budget-amount')).toHaveTextContent('$500.00');
   });
 
   it('should render spent label and amount for EXPENSE budgets', () => {
-    render(<BudgetDetails budget={mockExpenseBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
     expect(screen.getByText('Spent')).toBeInTheDocument();
     expect(screen.getByTestId('budget-progress-value')).toHaveTextContent(
@@ -99,7 +100,7 @@ describe('BudgetDetails', () => {
   });
 
   it('should render earned label and amount for INCOME budgets', () => {
-    render(<BudgetDetails budget={mockIncomeBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockIncomeBudget} />);
 
     expect(screen.getByText('Earned')).toBeInTheDocument();
     expect(screen.getByTestId('budget-progress-value')).toHaveTextContent(
@@ -109,7 +110,7 @@ describe('BudgetDetails', () => {
   });
 
   it('should render utilization percentage', () => {
-    render(<BudgetDetails budget={mockExpenseBudget} />);
+    renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
     expect(screen.getByTestId('utilization-percentage')).toHaveTextContent(
       '30.0%',
@@ -125,7 +126,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 30,
       };
 
-      render(<BudgetDetails budget={lowUsageBudget} />);
+      renderWithProviders(<BudgetDetails budget={lowUsageBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveClass('bg-green-500');
@@ -139,7 +140,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 80,
       };
 
-      render(<BudgetDetails budget={mediumUsageBudget} />);
+      renderWithProviders(<BudgetDetails budget={mediumUsageBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveClass('bg-yellow-500');
@@ -153,7 +154,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 110,
       };
 
-      render(<BudgetDetails budget={highUsageBudget} />);
+      renderWithProviders(<BudgetDetails budget={highUsageBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveClass('bg-red-500');
@@ -167,7 +168,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 150,
       };
 
-      render(<BudgetDetails budget={overBudget} />);
+      renderWithProviders(<BudgetDetails budget={overBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveStyle({ width: '100%' });
@@ -183,7 +184,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 20,
       };
 
-      render(<BudgetDetails budget={lowEarnedBudget} />);
+      renderWithProviders(<BudgetDetails budget={lowEarnedBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveClass('bg-red-500');
@@ -197,7 +198,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 60,
       };
 
-      render(<BudgetDetails budget={mediumEarnedBudget} />);
+      renderWithProviders(<BudgetDetails budget={mediumEarnedBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveClass('bg-yellow-500');
@@ -211,7 +212,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 90,
       };
 
-      render(<BudgetDetails budget={highEarnedBudget} />);
+      renderWithProviders(<BudgetDetails budget={highEarnedBudget} />);
 
       const progressBar = screen.getByTestId('progress-bar');
       expect(progressBar).toHaveClass('bg-green-500');
@@ -227,7 +228,7 @@ describe('BudgetDetails', () => {
         utilizationPercentage: 120,
       };
 
-      render(<BudgetDetails budget={overBudget} />);
+      renderWithProviders(<BudgetDetails budget={overBudget} />);
 
       const remaining = screen.getByTestId('budget-remaining');
       expect(remaining).toHaveTextContent('-$100.00');
@@ -237,7 +238,7 @@ describe('BudgetDetails', () => {
 
   describe('transactions', () => {
     it('should show no transactions message when empty', () => {
-      render(<BudgetDetails budget={mockExpenseBudget} />);
+      renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
       expect(screen.getByTestId('no-transactions')).toHaveTextContent(
         'No transactions found for this budget period.',
@@ -273,7 +274,7 @@ describe('BudgetDetails', () => {
         ],
       };
 
-      render(<BudgetDetails budget={budgetWithTransactions} />);
+      renderWithProviders(<BudgetDetails budget={budgetWithTransactions} />);
 
       expect(screen.queryByTestId('no-transactions')).not.toBeInTheDocument();
       const table = screen.getByTestId('transactions-table');
@@ -296,7 +297,7 @@ describe('BudgetDetails', () => {
         category: null,
       };
 
-      render(<BudgetDetails budget={budgetWithNullCategory} />);
+      renderWithProviders(<BudgetDetails budget={budgetWithNullCategory} />);
 
       expect(screen.getByTestId('budget-title')).toHaveTextContent(
         'Unknown Category',
@@ -306,14 +307,14 @@ describe('BudgetDetails', () => {
 
   describe('navigation links', () => {
     it('should render Edit Budget link', () => {
-      render(<BudgetDetails budget={mockExpenseBudget} />);
+      renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
       const editLink = screen.getByRole('link', { name: 'Edit Budget' });
       expect(editLink).toHaveAttribute('href', '/budgets/budget-1/edit');
     });
 
     it('should render Back to Budgets link', () => {
-      render(<BudgetDetails budget={mockExpenseBudget} />);
+      renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
 
       const backLink = screen.getByRole('link', { name: 'Back to Budgets' });
       expect(backLink).toHaveAttribute('href', '/budgets');

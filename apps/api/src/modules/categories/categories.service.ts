@@ -6,13 +6,21 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Category, CategoryType } from '@prisma/client';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { PrismaService } from '../shared/prisma.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
+
+  private get lang(): string {
+    return I18nContext.current()?.lang ?? 'en';
+  }
 
   async getAllCategories(userId: string) {
     const categories = await this.prisma.category.findMany({
@@ -31,7 +39,12 @@ export class CategoriesService {
     });
 
     if (!category || category.userId !== userId) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('categories.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
 
     return this.toApiCategory(category);
@@ -53,7 +66,10 @@ export class CategoriesService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          `Category with name "${createCategoryDto.name}" and type "${createCategoryDto.type}" already exists`,
+          this.i18n.t('categories.errors.alreadyExists', {
+            args: { name: createCategoryDto.name, type: createCategoryDto.type },
+            lang: this.lang,
+          }),
         );
       }
       throw error;
@@ -89,7 +105,10 @@ export class CategoriesService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          `Category with name "${updateCategoryDto.name}" and type "${updateCategoryDto.type}" already exists`,
+          this.i18n.t('categories.errors.alreadyExists', {
+            args: { name: updateCategoryDto.name, type: updateCategoryDto.type },
+            lang: this.lang,
+          }),
         );
       }
       throw error;
@@ -110,7 +129,12 @@ export class CategoriesService {
     const normalizedType = type?.toUpperCase();
 
     if (normalizedType !== 'INCOME' && normalizedType !== 'EXPENSE') {
-      throw new BadRequestException(`Invalid category type: ${type}`);
+      throw new BadRequestException(
+        this.i18n.t('categories.errors.invalidType', {
+          args: { type },
+          lang: this.lang,
+        }),
+      );
     }
 
     return normalizedType as CategoryType;
@@ -127,7 +151,12 @@ export class CategoriesService {
     });
 
     if (!category || category.userId !== userId) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('categories.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
   }
 }

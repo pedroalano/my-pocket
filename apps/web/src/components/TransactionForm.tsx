@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +61,8 @@ export function TransactionForm({
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const router = useRouter();
+  const t = useTranslations('transactionForm');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -67,7 +70,7 @@ export function TransactionForm({
         const data = await categoriesApi.getAll();
         setCategories(data);
       } catch {
-        toast.error('Failed to load categories');
+        toast.error(t('failedToLoadCategories'));
       } finally {
         setIsLoadingCategories(false);
       }
@@ -81,27 +84,27 @@ export function TransactionForm({
     const amountNum = parseFloat(amount);
 
     if (!amount || isNaN(amountNum)) {
-      toast.error('Amount is required');
+      toast.error(t('amountRequired'));
       return;
     }
 
     if (amountNum <= 0) {
-      toast.error('Amount must be greater than 0');
+      toast.error(t('amountPositive'));
       return;
     }
 
     if (!type) {
-      toast.error('Type is required');
+      toast.error(t('typeRequired'));
       return;
     }
 
     if (!categoryId) {
-      toast.error('Category is required');
+      toast.error(t('categoryRequired'));
       return;
     }
 
     if (!date) {
-      toast.error('Date is required');
+      toast.error(t('dateRequired'));
       return;
     }
 
@@ -114,17 +117,13 @@ export function TransactionForm({
         date: new Date(date).toISOString(),
         description: description || undefined,
       });
-      toast.success(
-        initialData
-          ? 'Transaction updated successfully'
-          : 'Transaction created successfully',
-      );
+      toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
       router.push('/transactions');
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
       } else {
-        toast.error('An unexpected error occurred');
+        toast.error(tCommon('unexpectedError'));
       }
     } finally {
       setIsLoading(false);
@@ -139,13 +138,13 @@ export function TransactionForm({
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="amount">{tCommon('amount')}</Label>
             <Input
               id="amount"
               type="number"
               step="0.01"
               min="0.01"
-              placeholder="e.g., 99.99"
+              placeholder={t('amountPlaceholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
@@ -154,27 +153,31 @@ export function TransactionForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{tCommon('type')}</Label>
             <Select
               value={type}
               onValueChange={(value) => setType(value as TransactionType)}
               disabled={isLoading}
             >
               <SelectTrigger id="type">
-                <SelectValue placeholder="Select a type" />
+                <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={TransactionType.INCOME}>Income</SelectItem>
-                <SelectItem value={TransactionType.EXPENSE}>Expense</SelectItem>
+                <SelectItem value={TransactionType.INCOME}>
+                  {tCommon('income')}
+                </SelectItem>
+                <SelectItem value={TransactionType.EXPENSE}>
+                  {tCommon('expense')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{tCommon('category')}</Label>
             {isLoadingCategories ? (
               <div className="text-sm text-muted-foreground">
-                Loading categories...
+                {t('loadingCategories')}
               </div>
             ) : (
               <Select
@@ -183,7 +186,7 @@ export function TransactionForm({
                 disabled={isLoading}
               >
                 <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -197,7 +200,7 @@ export function TransactionForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
+            <Label htmlFor="date">{tCommon('date')}</Label>
             <Input
               id="date"
               type="date"
@@ -209,11 +212,11 @@ export function TransactionForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
+            <Label htmlFor="description">{t('descriptionOptional')}</Label>
             <Input
               id="description"
               type="text"
-              placeholder="e.g., Grocery shopping"
+              placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isLoading}
@@ -227,10 +230,10 @@ export function TransactionForm({
             onClick={() => router.push('/transactions')}
             disabled={isLoading}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : submitLabel}
+            {isLoading ? tCommon('saving') : submitLabel}
           </Button>
         </CardFooter>
       </form>

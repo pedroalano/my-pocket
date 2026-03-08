@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { categoriesApi } from '@/lib/categories';
 import { Category, CategoryType } from '@/types';
@@ -47,6 +48,8 @@ export default function CategoriesPage() {
   const [filterType, setFilterType] = useState<FilterType>('ALL');
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations('categories');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -67,7 +70,7 @@ export default function CategoriesPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load categories');
+        toast.error(t('failedToLoad'));
       }
     } finally {
       setIsLoading(false);
@@ -91,13 +94,13 @@ export default function CategoriesPage() {
     try {
       await categoriesApi.delete(deleteCategory.id);
       setCategories((prev) => prev.filter((c) => c.id !== deleteCategory.id));
-      toast.success('Category deleted successfully');
+      toast.success(t('deleteSuccess'));
       setDeleteCategory(null);
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
       } else {
-        toast.error('Failed to delete category');
+        toast.error(t('failedToDelete'));
       }
     } finally {
       setIsDeleting(false);
@@ -107,15 +110,15 @@ export default function CategoriesPage() {
   return (
     <AuthLayout>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Categories</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('title')}</h2>
         <Link href="/categories/new">
-          <Button>New Category</Button>
+          <Button>{t('newCategory')}</Button>
         </Link>
       </div>
 
       <div className="flex gap-4 mb-4">
         <Input
-          placeholder="Search categories..."
+          placeholder={t('searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-xs"
@@ -125,12 +128,12 @@ export default function CategoriesPage() {
           onValueChange={(value) => setFilterType(value as FilterType)}
         >
           <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Filter by type" />
+            <SelectValue placeholder={tCommon('filterByType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Types</SelectItem>
-            <SelectItem value={CategoryType.INCOME}>Income</SelectItem>
-            <SelectItem value={CategoryType.EXPENSE}>Expense</SelectItem>
+            <SelectItem value="ALL">{tCommon('allTypes')}</SelectItem>
+            <SelectItem value={CategoryType.INCOME}>{tCommon('income')}</SelectItem>
+            <SelectItem value={CategoryType.EXPENSE}>{tCommon('expense')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -140,20 +143,20 @@ export default function CategoriesPage() {
           <CategoriesTableSkeleton />
         ) : categories.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No categories yet. Create your first category to get started.
+            {t('noCategories')}
           </div>
         ) : filteredCategories.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No categories match your search.
+            {t('noMatch')}
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{tCommon('name')}</TableHead>
+                <TableHead>{tCommon('type')}</TableHead>
+                <TableHead>{t('created')}</TableHead>
+                <TableHead className="text-right">{tCommon('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,7 +171,7 @@ export default function CategoriesPage() {
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}
                     >
-                      {category.type}
+                      {category.type === 'INCOME' ? tCommon('income') : tCommon('expense')}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -177,7 +180,7 @@ export default function CategoriesPage() {
                   <TableCell className="text-right space-x-2">
                     <Link href={`/categories/${category.id}/edit`}>
                       <Button variant="outline" size="sm">
-                        Edit
+                        {tCommon('edit')}
                       </Button>
                     </Link>
                     <Button
@@ -185,7 +188,7 @@ export default function CategoriesPage() {
                       size="sm"
                       onClick={() => setDeleteCategory(category)}
                     >
-                      Delete
+                      {tCommon('delete')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -201,10 +204,9 @@ export default function CategoriesPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{deleteCategory?.name}
-              &quot;? This action cannot be undone.
+              {t('deleteConfirm', { name: deleteCategory?.name ?? '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -213,14 +215,14 @@ export default function CategoriesPage() {
               onClick={() => setDeleteCategory(null)}
               disabled={isDeleting}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

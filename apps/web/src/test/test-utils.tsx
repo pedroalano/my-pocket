@@ -2,14 +2,20 @@ import { ReactNode } from 'react';
 import { render, RenderOptions, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, expect } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { AuthProvider } from '@/contexts/AuthContext';
+import enMessages from '../../messages/en.json';
 
 interface WrapperProps {
   children: ReactNode;
 }
 
 function AllProviders({ children }: WrapperProps) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      <AuthProvider>{children}</AuthProvider>
+    </NextIntlClientProvider>
+  );
 }
 
 export function renderWithProviders(

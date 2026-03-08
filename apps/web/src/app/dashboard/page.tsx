@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardApi } from '@/lib/dashboard';
 import {
@@ -12,6 +13,7 @@ import {
 } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { ApiException } from '@/lib/api';
+import { formatCurrency, formatDate, formatMonthYear } from '@/lib/formatters';
 import {
   PieChart,
   Pie,
@@ -35,25 +37,6 @@ const COLORS = [
   '#06b6d4',
 ];
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
-
-function formatMonthYear(date: Date): string {
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 export default function DashboardPage() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
@@ -66,6 +49,9 @@ export default function DashboardPage() {
   const [summaryError, setSummaryError] = useState(false);
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
 
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
@@ -142,21 +128,21 @@ export default function DashboardPage() {
     <AuthLayout>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Dashboard</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('title')}</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={goToPrev}
-            aria-label="Previous month"
+            aria-label={t('previousMonth')}
             className="p-1 rounded hover:bg-muted text-muted-foreground"
           >
             ←
           </button>
           <span className="text-sm font-medium text-foreground min-w-[120px] text-center">
-            {formatMonthYear(currentDate)}
+            {formatMonthYear(currentDate, locale)}
           </span>
           <button
             onClick={goToNext}
-            aria-label="Next month"
+            aria-label={t('nextMonth')}
             className="p-1 rounded hover:bg-muted text-muted-foreground"
           >
             →
@@ -179,28 +165,28 @@ export default function DashboardPage() {
         </div>
       ) : summaryError ? (
         <div className="bg-card rounded-lg shadow p-6 mb-6 text-center text-muted-foreground">
-          Failed to load monthly summary.
+          {t('failedToLoad')}
         </div>
       ) : summary ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">Total Income</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('totalIncome')}</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(summary.totalIncome)}
+              {formatCurrency(summary.totalIncome, locale)}
             </p>
           </div>
           <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">Total Expenses</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('totalExpenses')}</p>
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {formatCurrency(summary.totalExpense)}
+              {formatCurrency(summary.totalExpense, locale)}
             </p>
           </div>
           <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">Balance</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('balance')}</p>
             <p
               className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}
             >
-              {formatCurrency(summary.balance)}
+              {formatCurrency(summary.balance, locale)}
             </p>
           </div>
         </div>
@@ -224,11 +210,11 @@ export default function DashboardPage() {
           {/* Category Breakdown Pie Chart */}
           <div className="bg-card rounded-lg shadow p-6">
             <h3 className="text-base font-semibold text-foreground mb-4">
-              Category Breakdown
+              {t('categoryBreakdown')}
             </h3>
             {categoryBreakdown.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-8">
-                No category data for this period.
+                {t('noCategoryData')}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
@@ -260,7 +246,7 @@ export default function DashboardPage() {
                     }}
                   />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number) => formatCurrency(value, locale)}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -270,28 +256,28 @@ export default function DashboardPage() {
           {/* Budget vs Actual Bar Chart */}
           <div className="bg-card rounded-lg shadow p-6">
             <h3 className="text-base font-semibold text-foreground mb-4">
-              Budget vs Actual
+              {t('budgetVsActual')}
             </h3>
             {budgetVsActual.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-8">
-                No budget data for this period.
+                {t('noBudgetData')}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart
                   data={budgetVsActual.map((b) => ({
                     name: b.category.name,
-                    Budget: b.budget,
-                    Actual: b.actual,
+                    [t('budget')]: b.budget,
+                    [t('actual')]: b.actual,
                   }))}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value, locale)} />
                   <Legend />
-                  <Bar dataKey="Budget" fill="#3b82f6" />
-                  <Bar dataKey="Actual" fill="#ef4444" />
+                  <Bar dataKey={t('budget')} fill="#3b82f6" />
+                  <Bar dataKey={t('actual')} fill="#ef4444" />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -303,7 +289,7 @@ export default function DashboardPage() {
       <div className="bg-card rounded-lg shadow">
         <div className="p-6 border-b">
           <h3 className="text-base font-semibold text-foreground">
-            Top Expenses
+            {t('topExpenses')}
           </h3>
         </div>
         {isLoading ? (
@@ -319,23 +305,23 @@ export default function DashboardPage() {
           </div>
         ) : topExpenses.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No expenses for this period.
+            {t('noExpenses')}
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                  Date
+                  {t('date')}
                 </th>
                 <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                  Category
+                  {tCommon('category')}
                 </th>
                 <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                  Description
+                  {tCommon('description')}
                 </th>
                 <th className="px-6 py-3 text-right font-medium text-muted-foreground">
-                  Amount
+                  {tCommon('amount')}
                 </th>
               </tr>
             </thead>
@@ -343,7 +329,7 @@ export default function DashboardPage() {
               {topExpenses.map((expense) => (
                 <tr key={expense.id} className="border-b last:border-0">
                   <td className="px-6 py-4 text-muted-foreground">
-                    {formatDate(expense.date)}
+                    {formatDate(expense.date, locale)}
                   </td>
                   <td className="px-6 py-4 font-medium">
                     {expense.category.name}
@@ -352,7 +338,7 @@ export default function DashboardPage() {
                     {expense.description ?? '—'}
                   </td>
                   <td className="px-6 py-4 text-right font-medium text-red-600 dark:text-red-400">
-                    {formatCurrency(expense.amount)}
+                    {formatCurrency(expense.amount, locale)}
                   </td>
                 </tr>
               ))}

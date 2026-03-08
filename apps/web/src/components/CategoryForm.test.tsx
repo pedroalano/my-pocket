@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { setupUser, selectOption } from '@/test/test-utils';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders, setupUser, selectOption } from '@/test/test-utils';
 import { CategoryForm } from './CategoryForm';
 import { CategoryType } from '@/types';
 import { ApiException } from '@/lib/api';
@@ -36,7 +36,7 @@ describe('CategoryForm', () => {
   });
 
   it('should render form with title and submit label', () => {
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -50,7 +50,7 @@ describe('CategoryForm', () => {
   });
 
   it('should render form with initial data', () => {
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Edit Category"
         submitLabel="Save"
@@ -63,7 +63,7 @@ describe('CategoryForm', () => {
   });
 
   it('should have required attribute on name input', () => {
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -78,7 +78,7 @@ describe('CategoryForm', () => {
   it('should show error toast when type is not selected', async () => {
     const user = setupUser();
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -99,7 +99,7 @@ describe('CategoryForm', () => {
   it('should submit form with valid data', async () => {
     const user = setupUser();
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -128,7 +128,7 @@ describe('CategoryForm', () => {
   it('should show success message for update', async () => {
     const user = setupUser();
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Edit Category"
         submitLabel="Save"
@@ -152,7 +152,7 @@ describe('CategoryForm', () => {
       new ApiException(409, 'Category already exists'),
     );
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -172,7 +172,7 @@ describe('CategoryForm', () => {
     const user = setupUser();
     mockOnSubmit.mockRejectedValue(new Error('Network error'));
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -193,7 +193,7 @@ describe('CategoryForm', () => {
     // Make the submit never resolve to keep loading state
     mockOnSubmit.mockImplementation(() => new Promise(() => {}));
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -215,7 +215,7 @@ describe('CategoryForm', () => {
   it('should navigate to categories on cancel', async () => {
     const user = setupUser();
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"
@@ -231,7 +231,7 @@ describe('CategoryForm', () => {
   it('should trim whitespace from name', async () => {
     const user = setupUser();
 
-    render(
+    renderWithProviders(
       <CategoryForm
         title="Create Category"
         submitLabel="Create"

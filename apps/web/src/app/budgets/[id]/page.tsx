@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { budgetsApi } from '@/lib/budgets';
 import { BudgetDetails } from '@/components/BudgetDetails';
@@ -49,6 +50,7 @@ export default function BudgetDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const budgetId = params.id as string;
+  const t = useTranslations('budgets');
 
   useEffect(() => {
     if (isAuthenticated && budgetId) {
@@ -63,7 +65,7 @@ export default function BudgetDetailsPage() {
     } catch (error) {
       if (error instanceof ApiException) {
         if (error.statusCode === 404) {
-          toast.error('Budget not found');
+          toast.error(t('notFound'));
           router.push('/budgets');
           return;
         }
@@ -74,7 +76,7 @@ export default function BudgetDetailsPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load budget details');
+        toast.error(t('failedToLoadSingle'));
       }
       router.push('/budgets');
     } finally {
@@ -86,7 +88,7 @@ export default function BudgetDetailsPage() {
     <AuthLayout>
       <div className="max-w-3xl mx-auto">
         <h2 className="text-xl font-semibold text-foreground mb-6">
-          Budget Details
+          {t('detailsTitle')}
         </h2>
         {isLoading ? (
           <BudgetDetailsSkeleton />

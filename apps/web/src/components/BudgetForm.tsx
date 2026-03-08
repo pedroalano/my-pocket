@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,21 +38,6 @@ interface BudgetFormProps {
   submitLabel: string;
 }
 
-const MONTHS = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
-];
-
 export function BudgetForm({
   initialData,
   onSubmit,
@@ -73,6 +59,14 @@ export function BudgetForm({
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const router = useRouter();
+  const t = useTranslations('budgetForm');
+  const tCommon = useTranslations('common');
+  const tMonths = useTranslations('months');
+
+  const MONTHS = Array.from({ length: 12 }, (_, i) => ({
+    value: i + 1,
+    label: tMonths(String(i + 1)),
+  }));
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -80,7 +74,7 @@ export function BudgetForm({
         const data = await categoriesApi.getAll();
         setCategories(data);
       } catch {
-        toast.error('Failed to load categories');
+        toast.error(t('failedToLoadCategories'));
       } finally {
         setIsLoadingCategories(false);
       }
@@ -95,32 +89,32 @@ export function BudgetForm({
     const yearNum = parseInt(year, 10);
 
     if (!amount || isNaN(amountNum)) {
-      toast.error('Amount is required');
+      toast.error(t('amountRequired'));
       return;
     }
 
     if (amountNum <= 0) {
-      toast.error('Amount must be greater than 0');
+      toast.error(t('amountPositive'));
       return;
     }
 
     if (!categoryId) {
-      toast.error('Category is required');
+      toast.error(t('categoryRequired'));
       return;
     }
 
     if (!month) {
-      toast.error('Month is required');
+      toast.error(t('monthRequired'));
       return;
     }
 
     if (!year || isNaN(yearNum)) {
-      toast.error('Year is required');
+      toast.error(t('yearRequired'));
       return;
     }
 
     if (!type) {
-      toast.error('Type is required');
+      toast.error(t('typeRequired'));
       return;
     }
 
@@ -133,17 +127,13 @@ export function BudgetForm({
         year: yearNum,
         type,
       });
-      toast.success(
-        initialData
-          ? 'Budget updated successfully'
-          : 'Budget created successfully',
-      );
+      toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
       router.push('/budgets');
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
       } else {
-        toast.error('An unexpected error occurred');
+        toast.error(tCommon('unexpectedError'));
       }
     } finally {
       setIsLoading(false);
@@ -158,13 +148,13 @@ export function BudgetForm({
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="amount">{tCommon('amount')}</Label>
             <Input
               id="amount"
               type="number"
               step="0.01"
               min="0.01"
-              placeholder="e.g., 500.00"
+              placeholder={t('amountPlaceholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
@@ -173,10 +163,10 @@ export function BudgetForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{tCommon('category')}</Label>
             {isLoadingCategories ? (
               <div className="text-sm text-muted-foreground">
-                Loading categories...
+                {t('loadingCategories')}
               </div>
             ) : (
               <Select
@@ -185,7 +175,7 @@ export function BudgetForm({
                 disabled={isLoading}
               >
                 <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -200,14 +190,14 @@ export function BudgetForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="month">Month</Label>
+              <Label htmlFor="month">{tCommon('month')}</Label>
               <Select
                 value={month.toString()}
                 onValueChange={(value) => setMonth(parseInt(value, 10))}
                 disabled={isLoading}
               >
                 <SelectTrigger id="month">
-                  <SelectValue placeholder="Select month" />
+                  <SelectValue placeholder={t('selectMonth')} />
                 </SelectTrigger>
                 <SelectContent>
                   {MONTHS.map((m) => (
@@ -220,13 +210,13 @@ export function BudgetForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="year">Year</Label>
+              <Label htmlFor="year">{tCommon('year')}</Label>
               <Input
                 id="year"
                 type="number"
                 min="2000"
                 max="2100"
-                placeholder="e.g., 2026"
+                placeholder={t('yearPlaceholder')}
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 required
@@ -236,18 +226,22 @@ export function BudgetForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{tCommon('type')}</Label>
             <Select
               value={type}
               onValueChange={(value) => setType(value as BudgetType)}
               disabled={isLoading}
             >
               <SelectTrigger id="type">
-                <SelectValue placeholder="Select a type" />
+                <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={BudgetType.INCOME}>Income</SelectItem>
-                <SelectItem value={BudgetType.EXPENSE}>Expense</SelectItem>
+                <SelectItem value={BudgetType.INCOME}>
+                  {tCommon('income')}
+                </SelectItem>
+                <SelectItem value={BudgetType.EXPENSE}>
+                  {tCommon('expense')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -259,10 +253,10 @@ export function BudgetForm({
             onClick={() => router.push('/budgets')}
             disabled={isLoading}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : submitLabel}
+            {isLoading ? tCommon('saving') : submitLabel}
           </Button>
         </CardFooter>
       </form>

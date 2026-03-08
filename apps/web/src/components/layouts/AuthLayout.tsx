@@ -3,9 +3,11 @@
 import { useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -14,6 +16,8 @@ interface AuthLayoutProps {
 export function AuthLayout({ children }: AuthLayoutProps) {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations('navigation');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -24,7 +28,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -42,32 +46,33 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 href="/dashboard"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                Dashboard
+                {t('dashboard')}
               </Link>
               <Link
                 href="/categories"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                Categories
+                {t('categories')}
               </Link>
               <Link
                 href="/budgets"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                Budgets
+                {t('budgets')}
               </Link>
               <Link
                 href="/transactions"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                Transactions
+                {t('transactions')}
               </Link>
             </nav>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <ThemeToggle />
             <Button variant="outline" onClick={logout}>
-              Logout
+              {t('logout')}
             </Button>
           </div>
         </div>

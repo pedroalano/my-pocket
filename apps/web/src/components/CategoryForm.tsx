@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,34 +44,32 @@ export function CategoryForm({
   const [type, setType] = useState<CategoryType | ''>(initialData?.type || '');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const t = useTranslations('categoryForm');
+  const tCommon = useTranslations('common');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
-      toast.error('Name is required');
+      toast.error(t('nameRequired'));
       return;
     }
 
     if (!type) {
-      toast.error('Type is required');
+      toast.error(t('typeRequired'));
       return;
     }
 
     setIsLoading(true);
     try {
       await onSubmit({ name: name.trim(), type });
-      toast.success(
-        initialData
-          ? 'Category updated successfully'
-          : 'Category created successfully',
-      );
+      toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
       router.push('/categories');
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
       } else {
-        toast.error('An unexpected error occurred');
+        toast.error(tCommon('unexpectedError'));
       }
     } finally {
       setIsLoading(false);
@@ -85,11 +84,11 @@ export function CategoryForm({
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{tCommon('name')}</Label>
             <Input
               id="name"
               type="text"
-              placeholder="e.g., Groceries, Salary"
+              placeholder={t('namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -97,18 +96,22 @@ export function CategoryForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{tCommon('type')}</Label>
             <Select
               value={type}
               onValueChange={(value) => setType(value as CategoryType)}
               disabled={isLoading}
             >
               <SelectTrigger id="type">
-                <SelectValue placeholder="Select a type" />
+                <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CategoryType.INCOME}>Income</SelectItem>
-                <SelectItem value={CategoryType.EXPENSE}>Expense</SelectItem>
+                <SelectItem value={CategoryType.INCOME}>
+                  {tCommon('income')}
+                </SelectItem>
+                <SelectItem value={CategoryType.EXPENSE}>
+                  {tCommon('expense')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -120,10 +123,10 @@ export function CategoryForm({
             onClick={() => router.push('/categories')}
             disabled={isLoading}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : submitLabel}
+            {isLoading ? tCommon('saving') : submitLabel}
           </Button>
         </CardFooter>
       </form>

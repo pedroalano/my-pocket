@@ -108,10 +108,10 @@ describe('DashboardPage', () => {
     renderWithProviders(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Top Expenses')).toBeInTheDocument();
+      expect(screen.getByText('Groceries')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Groceries')).toBeInTheDocument();
+    expect(screen.getByText('Top Expenses')).toBeInTheDocument();
     expect(screen.getByText('Grocery shopping')).toBeInTheDocument();
     // Amount formatted as currency
     const amounts = screen.getAllByText('$150.00');

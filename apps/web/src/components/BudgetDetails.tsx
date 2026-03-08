@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { BudgetWithDetails, BudgetType } from '@/types';
 import {
   Card,
@@ -18,45 +19,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  formatCurrencyFromString,
+  formatDateUTC,
+} from '@/lib/formatters';
 
 interface BudgetDetailsProps {
   budget: BudgetWithDetails;
-}
-
-const MONTHS = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
-];
-
-function formatAmount(amount: string): string {
-  const num = parseFloat(amount);
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(num);
-}
-
-function formatPeriod(month: number, year: number): string {
-  const monthObj = MONTHS.find((m) => m.value === month);
-  return `${monthObj?.label || month} ${year}`;
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 function getUtilizationColor(
@@ -94,11 +63,12 @@ function getProgressValue(budget: BudgetWithDetails): string {
   return budget.type === BudgetType.INCOME ? budget.earned : budget.spent;
 }
 
-function getProgressLabel(budgetType: BudgetType): string {
-  return budgetType === BudgetType.INCOME ? 'Earned' : 'Spent';
-}
-
 export function BudgetDetails({ budget }: BudgetDetailsProps) {
+  const t = useTranslations('budgetDetails');
+  const tCommon = useTranslations('common');
+  const tMonths = useTranslations('months');
+  const locale = useLocale();
+
   const utilizationColor = getUtilizationColor(
     budget.utilizationPercentage,
     budget.type,
@@ -108,8 +78,10 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
     budget.type,
   );
   const progressWidth = Math.min(budget.utilizationPercentage, 100);
-  const progressLabel = getProgressLabel(budget.type);
+  const progressLabel =
+    budget.type === BudgetType.INCOME ? t('earned') : t('spent');
   const progressValue = getProgressValue(budget);
+  const period = `${tMonths(String(budget.month))} ${budget.year}`;
 
   return (
     <div className="space-y-6">
@@ -119,11 +91,9 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle data-testid="budget-title">
-                {budget.category?.name || 'Unknown Category'}
+                {budget.category?.name || t('unknownCategory')}
               </CardTitle>
-              <CardDescription>
-                {formatPeriod(budget.month, budget.year)}
-              </CardDescription>
+              <CardDescription>{period}</CardDescription>
             </div>
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -133,23 +103,25 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
               }`}
               data-testid="budget-type-badge"
             >
-              {budget.type}
+              {budget.type === BudgetType.INCOME
+                ? tCommon('income')
+                : tCommon('expense')}
             </span>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Budget Amount */}
           <div>
-            <p className="text-sm text-muted-foreground">Budget Amount</p>
+            <p className="text-sm text-muted-foreground">{t('budgetAmount')}</p>
             <p className="text-2xl font-bold" data-testid="budget-amount">
-              {formatAmount(budget.amount)}
+              {formatCurrencyFromString(budget.amount, locale)}
             </p>
           </div>
 
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Utilization</span>
+              <span className="text-muted-foreground">{t('utilization')}</span>
               <span
                 className={`font-medium ${utilizationTextColor}`}
                 data-testid="utilization-percentage"
@@ -177,11 +149,11 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
                 className="text-lg font-semibold text-foreground"
                 data-testid="budget-progress-value"
               >
-                {formatAmount(progressValue)}
+                {formatCurrencyFromString(progressValue, locale)}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground">Remaining</p>
+              <p className="text-sm text-muted-foreground">{t('remaining')}</p>
               <p
                 className={`text-lg font-semibold ${
                   parseFloat(budget.remaining) < 0
@@ -190,7 +162,7 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
                 }`}
                 data-testid="budget-remaining"
               >
-                {formatAmount(budget.remaining)}
+                {formatCurrencyFromString(budget.remaining, locale)}
               </p>
             </div>
           </div>
@@ -198,10 +170,10 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
           {/* Actions */}
           <div className="flex gap-2 pt-4 border-t">
             <Link href={`/budgets/${budget.id}/edit`}>
-              <Button variant="outline">Edit Budget</Button>
+              <Button variant="outline">{t('editBudget')}</Button>
             </Link>
             <Link href="/budgets">
-              <Button variant="ghost">Back to Budgets</Button>
+              <Button variant="ghost">{t('backToBudgets')}</Button>
             </Link>
           </div>
         </CardContent>
@@ -210,10 +182,12 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
       {/* Transactions Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Related Transactions</CardTitle>
+          <CardTitle>{t('relatedTransactions')}</CardTitle>
           <CardDescription>
-            Transactions in {budget.category?.name || 'this category'} for{' '}
-            {formatPeriod(budget.month, budget.year)}
+            {t('transactionsFor', {
+              categoryName: budget.category?.name || t('unknownCategory'),
+              period,
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -222,28 +196,28 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
               className="text-center py-8 text-muted-foreground"
               data-testid="no-transactions"
             >
-              No transactions found for this budget period.
+              {t('noTransactions')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>{tCommon('date')}</TableHead>
+                  <TableHead>{tCommon('description')}</TableHead>
+                  <TableHead className="text-right">{tCommon('amount')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody data-testid="transactions-table">
                 {budget.transactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell className="text-muted-foreground">
-                      {formatDate(transaction.date)}
+                      {formatDateUTC(transaction.date, locale)}
                     </TableCell>
                     <TableCell>
-                      {transaction.description || 'No description'}
+                      {transaction.description || t('noDescriptionLabel')}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatAmount(transaction.amount)}
+                      {formatCurrencyFromString(transaction.amount, locale)}
                     </TableCell>
                   </TableRow>
                 ))}

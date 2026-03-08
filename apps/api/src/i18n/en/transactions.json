@@ -1,0 +1,7 @@
+{
+  "errors": {
+    "notFound": "Transaction with ID {id} not found",
+    "categoryNotFound": "Category with ID {id} does not exist",
+    "invalidType": "Invalid transaction type: {type}"
+  }
+}

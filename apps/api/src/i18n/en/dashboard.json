@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "invalidMonth": "Invalid month. Month must be between 1 and 12.",
+    "invalidLimit": "Invalid limit. Limit must be between 1 and 100."
+  }
+}

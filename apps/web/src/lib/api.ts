@@ -17,6 +17,14 @@ function getToken(): string | null {
   return localStorage.getItem('token');
 }
 
+function getLocale(): string {
+  if (typeof document === 'undefined') return 'en';
+  const match = document.cookie
+    .split('; ')
+    .find((r) => r.startsWith('NEXT_LOCALE='));
+  return match ? match.split('=')[1] : 'en';
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -24,6 +32,7 @@ export async function apiRequest<T>(
   const token = getToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    'Accept-Language': getLocale(),
     ...options.headers,
   };
 

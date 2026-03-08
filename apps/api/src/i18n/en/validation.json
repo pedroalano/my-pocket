@@ -1,0 +1,13 @@
+{
+  "isString": "{property} must be a string",
+  "isNotEmpty": "{property} should not be empty",
+  "isEmail": "{property} must be an email",
+  "minLength": "{property} must be longer than or equal to {constraints.0} characters",
+  "isNumber": "{property} must be a number",
+  "isPositive": "{property} must be a positive number",
+  "isInt": "{property} must be an integer",
+  "min": "{property} must not be less than {constraints.0}",
+  "max": "{property} must not be greater than {constraints.0}",
+  "isDateString": "{property} must be a valid ISO 8601 date string",
+  "isOptional": "{property} is optional"
+}

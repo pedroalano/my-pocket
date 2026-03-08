@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
+import { I18nService } from 'nestjs-i18n';
 import { TransactionsService } from './transactions.service';
 import { CategoriesService } from '../categories/categories.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -125,6 +126,10 @@ describe('TransactionsService', () => {
         {
           provide: PrismaService,
           useValue: prismaMock,
+        },
+        {
+          provide: I18nService,
+          useValue: { t: jest.fn((key: string) => key) },
         },
       ],
     }).compile();
@@ -288,7 +293,7 @@ describe('TransactionsService', () => {
       ).rejects.toThrow(BadRequestException);
       await expect(
         service.createTransaction(createDto, userId),
-      ).rejects.toThrow(`Category with ID ${otherCategoryId} does not exist`);
+      ).rejects.toThrow('transactions.errors.categoryNotFound');
     });
 
     it('should persist transaction with userId', async () => {
@@ -413,7 +418,7 @@ describe('TransactionsService', () => {
       ).rejects.toThrow(BadRequestException);
       await expect(
         service.updateTransaction(existing.id, updateDto, userId),
-      ).rejects.toThrow(`Category with ID ${otherCategoryId} does not exist`);
+      ).rejects.toThrow('transactions.errors.categoryNotFound');
     });
 
     it('should not validate category if categoryId is not being updated', async () => {

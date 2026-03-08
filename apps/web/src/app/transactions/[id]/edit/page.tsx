@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { transactionsApi } from '@/lib/transactions';
 import { TransactionForm } from '@/components/TransactionForm';
@@ -17,6 +18,8 @@ export default function EditTransactionPage() {
   const router = useRouter();
   const params = useParams();
   const transactionId = params.id as string;
+  const t = useTranslations('transactions');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (isAuthenticated && transactionId) {
@@ -31,7 +34,7 @@ export default function EditTransactionPage() {
     } catch (error) {
       if (error instanceof ApiException) {
         if (error.statusCode === 404) {
-          toast.error('Transaction not found');
+          toast.error(t('failedToLoadSingle'));
           router.push('/transactions');
           return;
         }
@@ -42,7 +45,7 @@ export default function EditTransactionPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load transaction');
+        toast.error(t('failedToLoadSingle'));
       }
       router.push('/transactions');
     } finally {
@@ -64,11 +67,11 @@ export default function EditTransactionPage() {
     <AuthLayout>
       <div className="flex justify-center">
         {isLoadingTransaction ? (
-          <p className="text-gray-500">Loading transaction...</p>
+          <p className="text-gray-500">{tCommon('loading')}</p>
         ) : transaction ? (
           <TransactionForm
-            title="Edit Transaction"
-            submitLabel="Save Changes"
+            title={t('editTitle')}
+            submitLabel={tCommon('save')}
             initialData={{
               amount: parseFloat(transaction.amount),
               type: transaction.type as TransactionType,
