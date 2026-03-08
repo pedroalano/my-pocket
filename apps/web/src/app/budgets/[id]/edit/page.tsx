@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { budgetsApi } from '@/lib/budgets';
 import { BudgetForm } from '@/components/BudgetForm';
@@ -17,6 +18,8 @@ export default function EditBudgetPage() {
   const router = useRouter();
   const params = useParams();
   const budgetId = params.id as string;
+  const t = useTranslations('budgets');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (isAuthenticated && budgetId) {
@@ -31,7 +34,7 @@ export default function EditBudgetPage() {
     } catch (error) {
       if (error instanceof ApiException) {
         if (error.statusCode === 404) {
-          toast.error('Budget not found');
+          toast.error(t('notFound'));
           router.push('/budgets');
           return;
         }
@@ -42,7 +45,7 @@ export default function EditBudgetPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load budget');
+        toast.error(t('failedToLoadSingle'));
       }
       router.push('/budgets');
     } finally {
@@ -58,11 +61,11 @@ export default function EditBudgetPage() {
     <AuthLayout>
       <div className="flex justify-center">
         {isLoadingBudget ? (
-          <p className="text-gray-500">Loading budget...</p>
+          <p className="text-gray-500">{tCommon('loading')}</p>
         ) : budget ? (
           <BudgetForm
-            title="Edit Budget"
-            submitLabel="Save Changes"
+            title={t('editTitle')}
+            submitLabel={tCommon('save')}
             initialData={{
               amount: parseFloat(budget.amount),
               categoryId: budget.categoryId,

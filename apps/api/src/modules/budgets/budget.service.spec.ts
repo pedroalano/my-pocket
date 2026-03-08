@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BudgetType, Prisma, TransactionType } from '@prisma/client';
+import { I18nService } from 'nestjs-i18n';
 import { BudgetService } from './budget.service';
 import { CategoriesService } from '../categories/categories.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
@@ -252,6 +253,10 @@ describe('BudgetService', () => {
           provide: PrismaService,
           useValue: (prismaMock = createPrismaMock()),
         },
+        {
+          provide: I18nService,
+          useValue: { t: jest.fn((key: string) => key) },
+        },
       ],
     }).compile();
 
@@ -305,7 +310,7 @@ describe('BudgetService', () => {
         BadRequestException,
       );
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
-        'Month must be between 1 and 12',
+        'budgets.errors.invalidMonth',
       );
     });
 
@@ -322,7 +327,7 @@ describe('BudgetService', () => {
         BadRequestException,
       );
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
-        'Month must be between 1 and 12',
+        'budgets.errors.invalidMonth',
       );
     });
 
@@ -347,7 +352,7 @@ describe('BudgetService', () => {
         BadRequestException,
       );
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
-        `Category with ID ${otherCategoryId} does not exist`,
+        'budgets.errors.categoryNotFound',
       );
     });
 
@@ -366,7 +371,7 @@ describe('BudgetService', () => {
         ConflictException,
       );
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
-        `Budget for category ${categoryId}, type ${BudgetType.EXPENSE}, month 1, and year 2026 already exists`,
+        'budgets.errors.alreadyExists',
       );
     });
 
@@ -447,7 +452,7 @@ describe('BudgetService', () => {
       ).rejects.toThrow(BadRequestException);
       await expect(
         service.updateBudget(budget.id, updateDto, userId),
-      ).rejects.toThrow('Month must be between 1 and 12');
+      ).rejects.toThrow('budgets.errors.invalidMonth');
     });
 
     it('should throw BadRequestException when updating to non-existent category', async () => {
@@ -470,7 +475,7 @@ describe('BudgetService', () => {
       ).rejects.toThrow(BadRequestException);
       await expect(
         service.updateBudget(budget.id, updateDto, userId),
-      ).rejects.toThrow(`Category with ID ${otherCategoryId} does not exist`);
+      ).rejects.toThrow('budgets.errors.categoryNotFound');
     });
 
     it('should allow budget to update itself without duplicate error', async () => {
@@ -533,7 +538,7 @@ describe('BudgetService', () => {
       await expect(
         service.updateBudget(secondBudget.id, updateDto, userId),
       ).rejects.toThrow(
-        `Budget for category ${categoryId}, type ${BudgetType.EXPENSE}, month 1, and year 2026 already exists`,
+        'budgets.errors.alreadyExists',
       );
     });
   });

@@ -39,7 +39,7 @@ describe('EditTransactionPage', () => {
   it('shows loading state initially', async () => {
     renderWithProviders(<EditTransactionPage />);
 
-    expect(screen.getByText('Loading transaction...')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('renders Edit Transaction page with form pre-filled', async () => {
@@ -86,7 +86,7 @@ describe('EditTransactionPage', () => {
     renderWithProviders(<EditTransactionPage />);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Transaction not found');
+      expect(toast.error).toHaveBeenCalledWith('Failed to load transaction');
     });
 
     expect(mockRouterPush).toHaveBeenCalledWith('/transactions');

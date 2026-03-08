@@ -3,10 +3,11 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { budgetsApi } from '@/lib/budgets';
 import { categoriesApi } from '@/lib/categories';
-import { Budget, Category, BudgetType, BudgetWithSpending } from '@/types';
+import { Budget, Category, BudgetType } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { BudgetsTableSkeleton } from '@/components/BudgetsTableSkeleton';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ApiException } from '@/lib/api';
+import { formatCurrencyFromString } from '@/lib/formatters';
 
 type FilterType = 'ALL' | BudgetType;
 type FilterMonth = 'ALL' | number;
@@ -56,39 +58,6 @@ function getProgressValue(budget: BudgetDisplay): string | undefined {
     return budget.earned;
   }
   return budget.spent;
-}
-
-// Get the progress label based on budget type
-function getProgressLabel(budgetType: BudgetType): string {
-  return budgetType === BudgetType.INCOME ? 'Earned' : 'Spent';
-}
-
-const MONTHS = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
-];
-
-function formatAmount(amount: string): string {
-  const num = parseFloat(amount);
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(num);
-}
-
-function formatPeriod(month: number, year: number): string {
-  const monthObj = MONTHS.find((m) => m.value === month);
-  return `${monthObj?.label || month} ${year}`;
 }
 
 // Get unique years from budgets for the filter
@@ -125,6 +94,15 @@ export default function BudgetsPage() {
   const [hasSpendingInfo, setHasSpendingInfo] = useState(false);
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations('budgets');
+  const tCommon = useTranslations('common');
+  const tMonths = useTranslations('months');
+  const locale = useLocale();
+
+  const MONTHS = Array.from({ length: 12 }, (_, i) => ({
+    value: i + 1,
+    label: tMonths(String(i + 1)),
+  }));
 
   const loadAllBudgets = useCallback(async () => {
     try {
@@ -140,10 +118,10 @@ export default function BudgetsPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load budgets');
+        toast.error(t('failedToLoad'));
       }
     }
-  }, [logout, router]);
+  }, [logout, router, t]);
 
   const loadBudgetsByCategory = useCallback(
     async (categoryId: string) => {
@@ -165,11 +143,11 @@ export default function BudgetsPage() {
           }
           toast.error(error.message);
         } else {
-          toast.error('Failed to load budgets');
+          toast.error(t('failedToLoad'));
         }
       }
     },
-    [logout, router],
+    [logout, router, t],
   );
 
   useEffect(() => {
@@ -183,14 +161,14 @@ export default function BudgetsPage() {
           router.push('/login');
           return;
         }
-        toast.error('Failed to load categories');
+        toast.error(t('failedToLoadCategories'));
       }
     };
 
     if (isAuthenticated) {
       loadCategories();
     }
-  }, [isAuthenticated, logout, router]);
+  }, [isAuthenticated, logout, router, t]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -232,13 +210,13 @@ export default function BudgetsPage() {
     try {
       await budgetsApi.delete(deleteBudget.id);
       setBudgets((prev) => prev.filter((b) => b.id !== deleteBudget.id));
-      toast.success('Budget deleted successfully');
+      toast.success(t('deleteSuccess'));
       setDeleteBudget(null);
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
       } else {
-        toast.error('Failed to delete budget');
+        toast.error(t('failedToDelete'));
       }
     } finally {
       setIsDeleting(false);
@@ -248,9 +226,9 @@ export default function BudgetsPage() {
   return (
     <AuthLayout>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Budgets</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('title')}</h2>
         <Link href="/budgets/new">
-          <Button>New Budget</Button>
+          <Button>{t('newBudget')}</Button>
         </Link>
       </div>
 
@@ -262,10 +240,10 @@ export default function BudgetsPage() {
           }
         >
           <SelectTrigger className="w-[150px]" data-testid="month-filter">
-            <SelectValue placeholder="Filter by month" />
+            <SelectValue placeholder={tCommon('filterByMonth')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Months</SelectItem>
+            <SelectItem value="ALL">{tCommon('allMonths')}</SelectItem>
             {MONTHS.map((month) => (
               <SelectItem key={month.value} value={String(month.value)}>
                 {month.label}
@@ -281,10 +259,10 @@ export default function BudgetsPage() {
           }
         >
           <SelectTrigger className="w-[120px]" data-testid="year-filter">
-            <SelectValue placeholder="Filter by year" />
+            <SelectValue placeholder={tCommon('filterByYear')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Years</SelectItem>
+            <SelectItem value="ALL">{tCommon('allYears')}</SelectItem>
             {availableYears.map((year) => (
               <SelectItem key={year} value={String(year)}>
                 {year}
@@ -298,12 +276,12 @@ export default function BudgetsPage() {
           onValueChange={(value) => setFilterType(value as FilterType)}
         >
           <SelectTrigger className="w-[150px]" data-testid="type-filter">
-            <SelectValue placeholder="Filter by type" />
+            <SelectValue placeholder={tCommon('filterByType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Types</SelectItem>
-            <SelectItem value="INCOME">Income</SelectItem>
-            <SelectItem value="EXPENSE">Expense</SelectItem>
+            <SelectItem value="ALL">{tCommon('allTypes')}</SelectItem>
+            <SelectItem value="INCOME">{tCommon('income')}</SelectItem>
+            <SelectItem value="EXPENSE">{tCommon('expense')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -312,10 +290,10 @@ export default function BudgetsPage() {
           onValueChange={(value) => setFilterCategory(value as FilterCategory)}
         >
           <SelectTrigger className="w-[180px]" data-testid="category-filter">
-            <SelectValue placeholder="Filter by category" />
+            <SelectValue placeholder={tCommon('filterByCategory')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Categories</SelectItem>
+            <SelectItem value="ALL">{tCommon('allCategories')}</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
@@ -327,7 +305,7 @@ export default function BudgetsPage() {
 
       {hasSpendingInfo && filterCategory !== 'ALL' && (
         <p className="text-sm text-muted-foreground mb-2">
-          Showing spending information for {categoryMap[filterCategory]}
+          {t('showingSpending', { categoryName: categoryMap[filterCategory] })}
         </p>
       )}
 
@@ -336,28 +314,28 @@ export default function BudgetsPage() {
           <BudgetsTableSkeleton />
         ) : budgets.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No budgets yet. Create your first budget to get started.
+            {t('noBudgets')}
           </div>
         ) : filteredBudgets.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No budgets match your filters.
+            {t('noMatch')}
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Amount</TableHead>
+                <TableHead>{tCommon('category')}</TableHead>
+                <TableHead>{tCommon('amount')}</TableHead>
                 {hasSpendingInfo && (
                   <>
-                    <TableHead>Spent/Earned</TableHead>
-                    <TableHead>Remaining</TableHead>
-                    <TableHead>Usage</TableHead>
+                    <TableHead>{t('spentEarned')}</TableHead>
+                    <TableHead>{t('remaining')}</TableHead>
+                    <TableHead>{t('usage')}</TableHead>
                   </>
                 )}
-                <TableHead>Period</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('period')}</TableHead>
+                <TableHead>{tCommon('type')}</TableHead>
+                <TableHead className="text-right">{tCommon('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -370,12 +348,16 @@ export default function BudgetsPage() {
                     onClick={() => router.push(`/budgets/${budget.id}`)}
                   >
                     <TableCell className="font-medium">
-                      {categoryMap[budget.categoryId] || 'Unknown'}
+                      {categoryMap[budget.categoryId] || tCommon('unknown')}
                     </TableCell>
-                    <TableCell>{formatAmount(budget.amount)}</TableCell>
+                    <TableCell>
+                      {formatCurrencyFromString(budget.amount, locale)}
+                    </TableCell>
                     {hasSpendingInfo && progressValue !== undefined && (
                       <>
-                        <TableCell>{formatAmount(progressValue)}</TableCell>
+                        <TableCell>
+                          {formatCurrencyFromString(progressValue, locale)}
+                        </TableCell>
                         <TableCell
                           className={
                             parseFloat(budget.remaining || '0') < 0
@@ -383,7 +365,7 @@ export default function BudgetsPage() {
                               : ''
                           }
                         >
-                          {formatAmount(budget.remaining || '0')}
+                          {formatCurrencyFromString(budget.remaining || '0', locale)}
                         </TableCell>
                         <TableCell
                           className={`font-medium ${getUtilizationColor(budget.utilizationPercentage, budget.type)}`}
@@ -393,7 +375,7 @@ export default function BudgetsPage() {
                       </>
                     )}
                     <TableCell className="text-muted-foreground">
-                      {formatPeriod(budget.month, budget.year)}
+                      {tMonths(String(budget.month))} {budget.year}
                     </TableCell>
                     <TableCell>
                       <span
@@ -403,7 +385,9 @@ export default function BudgetsPage() {
                             : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                         }`}
                       >
-                        {budget.type}
+                        {budget.type === 'INCOME'
+                          ? tCommon('income')
+                          : tCommon('expense')}
                       </span>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
@@ -412,7 +396,7 @@ export default function BudgetsPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Button variant="outline" size="sm">
-                          Edit
+                          {tCommon('edit')}
                         </Button>
                       </Link>
                       <Button
@@ -423,7 +407,7 @@ export default function BudgetsPage() {
                           setDeleteBudget(budget);
                         }}
                       >
-                        Delete
+                        {tCommon('delete')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -437,11 +421,8 @@ export default function BudgetsPage() {
       <Dialog open={!!deleteBudget} onOpenChange={() => setDeleteBudget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Budget</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this budget? This action cannot be
-              undone.
-            </DialogDescription>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
+            <DialogDescription>{t('deleteConfirm')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -449,14 +430,14 @@ export default function BudgetsPage() {
               onClick={() => setDeleteBudget(null)}
               disabled={isDeleting}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { categoriesApi } from '@/lib/categories';
 import { CategoryForm } from '@/components/CategoryForm';
@@ -17,6 +18,8 @@ export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
   const categoryId = params.id as string;
+  const t = useTranslations('categories');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (isAuthenticated && categoryId) {
@@ -31,7 +34,7 @@ export default function EditCategoryPage() {
     } catch (error) {
       if (error instanceof ApiException) {
         if (error.statusCode === 404) {
-          toast.error('Category not found');
+          toast.error(t('notFound'));
           router.push('/categories');
           return;
         }
@@ -42,7 +45,7 @@ export default function EditCategoryPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load category');
+        toast.error(t('failedToLoadSingle'));
       }
       router.push('/categories');
     } finally {
@@ -58,11 +61,11 @@ export default function EditCategoryPage() {
     <AuthLayout>
       <div className="flex justify-center">
         {isLoadingCategory ? (
-          <p className="text-gray-500">Loading category...</p>
+          <p className="text-gray-500">{t('loadingCategory')}</p>
         ) : category ? (
           <CategoryForm
-            title="Edit Category"
-            submitLabel="Save Changes"
+            title={t('editTitle')}
+            submitLabel={tCommon('save')}
             initialData={{
               name: category.name,
               type: category.type,

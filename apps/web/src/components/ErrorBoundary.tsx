@@ -3,6 +3,7 @@
 import React, { Component, ReactNode } from 'react';
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,8 +14,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-interface ErrorBoundaryProps {
+interface ErrorBoundaryInnerProps {
   children: ReactNode;
+  title: string;
+  description: string;
+  tryAgain: string;
+  goHome: string;
 }
 
 interface ErrorBoundaryState {
@@ -22,11 +27,11 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
+class ErrorBoundaryInner extends Component<
+  ErrorBoundaryInnerProps,
   ErrorBoundaryState
 > {
-  constructor(props: ErrorBoundaryProps) {
+  constructor(props: ErrorBoundaryInnerProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -45,6 +50,7 @@ export class ErrorBoundary extends Component<
 
   render(): ReactNode {
     if (this.state.hasError) {
+      const { title, description, tryAgain, goHome } = this.props;
       return (
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
           <Card className="w-full max-w-md">
@@ -52,13 +58,8 @@ export class ErrorBoundary extends Component<
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
                 <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
-              <CardTitle className="text-2xl font-bold">
-                Something went wrong
-              </CardTitle>
-              <CardDescription>
-                An unexpected error occurred. Please try again or return to the
-                home page.
-              </CardDescription>
+              <CardTitle className="text-2xl font-bold">{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
             </CardHeader>
             {this.state.error && (
               <CardContent>
@@ -71,11 +72,11 @@ export class ErrorBoundary extends Component<
             )}
             <CardFooter className="flex flex-col space-y-2">
               <Button onClick={this.handleRetry} className="w-full">
-                Try Again
+                {tryAgain}
               </Button>
               <Link href="/categories" className="w-full">
                 <Button variant="outline" className="w-full">
-                  Go Home
+                  {goHome}
                 </Button>
               </Link>
             </CardFooter>
@@ -86,4 +87,22 @@ export class ErrorBoundary extends Component<
 
     return this.props.children;
   }
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+export function ErrorBoundary({ children }: ErrorBoundaryProps) {
+  const t = useTranslations('errorBoundary');
+  return (
+    <ErrorBoundaryInner
+      title={t('title')}
+      description={t('description')}
+      tryAgain={t('tryAgain')}
+      goHome={t('goHome')}
+    >
+      {children}
+    </ErrorBoundaryInner>
+  );
 }

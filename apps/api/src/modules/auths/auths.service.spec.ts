@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { I18nService } from 'nestjs-i18n';
 import { AuthsService } from './auths.service';
 import { PrismaService } from '../shared/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -22,6 +23,10 @@ describe('AuthsService', () => {
     signAsync: jest.fn(),
   };
 
+  const i18nServiceMock = {
+    t: jest.fn((key: string) => key),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -35,6 +40,10 @@ describe('AuthsService', () => {
         {
           provide: JwtService,
           useValue: jwtServiceMock,
+        },
+        {
+          provide: I18nService,
+          useValue: i18nServiceMock,
         },
       ],
     }).compile();
@@ -108,7 +117,7 @@ describe('AuthsService', () => {
         ConflictException,
       );
       await expect(service.register(registerDto)).rejects.toThrow(
-        'Email already exists',
+        'auth.errors.emailAlreadyExists',
       );
     });
 

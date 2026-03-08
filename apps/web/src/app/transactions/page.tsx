@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { transactionsApi } from '@/lib/transactions';
 import { categoriesApi } from '@/lib/categories';
@@ -37,27 +38,10 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ApiException } from '@/lib/api';
+import { formatCurrencyFromString, formatDateUTC } from '@/lib/formatters';
 
 type FilterType = 'ALL' | TransactionType;
 type FilterCategory = 'ALL' | string;
-
-function formatAmount(amount: string): string {
-  const num = parseFloat(amount);
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(num);
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
-}
 
 function parseFilterDate(dateString: string): Date | null {
   if (!dateString) return null;
@@ -78,6 +62,9 @@ export default function TransactionsPage() {
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('ALL');
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations('transactions');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -102,7 +89,7 @@ export default function TransactionsPage() {
         }
         toast.error(error.message);
       } else {
-        toast.error('Failed to load transactions');
+        toast.error(t('failedToLoad'));
       }
     } finally {
       setIsLoading(false);
@@ -164,13 +151,13 @@ export default function TransactionsPage() {
       setTransactions((prev) =>
         prev.filter((t) => t.id !== deleteTransaction.id),
       );
-      toast.success('Transaction deleted successfully');
+      toast.success(t('deleteSuccess'));
       setDeleteTransaction(null);
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
       } else {
-        toast.error('Failed to delete transaction');
+        toast.error(t('failedToDelete'));
       }
     } finally {
       setIsDeleting(false);
@@ -180,15 +167,15 @@ export default function TransactionsPage() {
   return (
     <AuthLayout>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Transactions</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('title')}</h2>
         <Link href="/transactions/new">
-          <Button>New Transaction</Button>
+          <Button>{t('newTransaction')}</Button>
         </Link>
       </div>
 
       <div className="flex flex-wrap gap-4 mb-4 items-end">
         <div className="space-y-1">
-          <Label htmlFor="start-date">Start Date</Label>
+          <Label htmlFor="start-date">{t('startDate')}</Label>
           <Input
             id="start-date"
             type="date"
@@ -199,7 +186,7 @@ export default function TransactionsPage() {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="end-date">End Date</Label>
+          <Label htmlFor="end-date">{t('endDate')}</Label>
           <Input
             id="end-date"
             type="date"
@@ -214,12 +201,12 @@ export default function TransactionsPage() {
           onValueChange={(value) => setFilterType(value as FilterType)}
         >
           <SelectTrigger className="w-[150px]" data-testid="type-filter">
-            <SelectValue placeholder="Filter by type" />
+            <SelectValue placeholder={tCommon('filterByType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Types</SelectItem>
-            <SelectItem value="INCOME">Income</SelectItem>
-            <SelectItem value="EXPENSE">Expense</SelectItem>
+            <SelectItem value="ALL">{tCommon('allTypes')}</SelectItem>
+            <SelectItem value="INCOME">{tCommon('income')}</SelectItem>
+            <SelectItem value="EXPENSE">{tCommon('expense')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -228,10 +215,10 @@ export default function TransactionsPage() {
           onValueChange={(value) => setFilterCategory(value as FilterCategory)}
         >
           <SelectTrigger className="w-[180px]" data-testid="category-filter">
-            <SelectValue placeholder="Filter by category" />
+            <SelectValue placeholder={tCommon('filterByCategory')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Categories</SelectItem>
+            <SelectItem value="ALL">{tCommon('allCategories')}</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
@@ -241,7 +228,7 @@ export default function TransactionsPage() {
         </Select>
 
         <Button variant="outline" onClick={clearFilters}>
-          Clear Filters
+          {tCommon('clearFilters')}
         </Button>
       </div>
 
@@ -250,35 +237,35 @@ export default function TransactionsPage() {
           <TransactionsTableSkeleton />
         ) : transactions.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No transactions yet. Create your first transaction to get started.
+            {t('noTransactions')}
           </div>
         ) : filteredTransactions.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No transactions match your filters.
+            {t('noMatch')}
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{tCommon('date')}</TableHead>
+                <TableHead>{tCommon('description')}</TableHead>
+                <TableHead>{tCommon('category')}</TableHead>
+                <TableHead>{tCommon('type')}</TableHead>
+                <TableHead className="text-right">{tCommon('amount')}</TableHead>
+                <TableHead className="text-right">{tCommon('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="text-muted-foreground">
-                    {formatDate(transaction.date)}
+                    {formatDateUTC(transaction.date, locale)}
                   </TableCell>
                   <TableCell className="font-medium">
                     {transaction.description || '-'}
                   </TableCell>
                   <TableCell>
-                    {categoryMap[transaction.categoryId] || 'Unknown'}
+                    {categoryMap[transaction.categoryId] || tCommon('unknown')}
                   </TableCell>
                   <TableCell>
                     <span
@@ -288,16 +275,16 @@ export default function TransactionsPage() {
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}
                     >
-                      {transaction.type}
+                      {transaction.type === 'INCOME' ? tCommon('income') : tCommon('expense')}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatAmount(transaction.amount)}
+                    {formatCurrencyFromString(transaction.amount, locale)}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Link href={`/transactions/${transaction.id}/edit`}>
                       <Button variant="outline" size="sm">
-                        Edit
+                        {tCommon('edit')}
                       </Button>
                     </Link>
                     <Button
@@ -305,7 +292,7 @@ export default function TransactionsPage() {
                       size="sm"
                       onClick={() => setDeleteTransaction(transaction)}
                     >
-                      Delete
+                      {tCommon('delete')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -321,11 +308,8 @@ export default function TransactionsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Transaction</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this transaction? This action
-              cannot be undone.
-            </DialogDescription>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
+            <DialogDescription>{t('deleteConfirm')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -333,14 +317,14 @@ export default function TransactionsPage() {
               onClick={() => setDeleteTransaction(null)}
               disabled={isDeleting}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

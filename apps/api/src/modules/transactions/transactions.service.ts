@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { CategoriesService } from '../categories/categories.service';
@@ -15,7 +16,12 @@ export class TransactionsService {
   constructor(
     private categoriesService: CategoriesService,
     private prisma: PrismaService,
+    private i18n: I18nService,
   ) {}
+
+  private get lang(): string {
+    return I18nContext.current()?.lang ?? 'en';
+  }
 
   private normalizeTransactionType(type: string): TransactionType {
     const normalized = type?.toUpperCase();
@@ -25,7 +31,12 @@ export class TransactionsService {
     if (normalized === TransactionType.EXPENSE) {
       return TransactionType.EXPENSE;
     }
-    throw new BadRequestException(`Invalid transaction type: ${type}`);
+    throw new BadRequestException(
+      this.i18n.t('transactions.errors.invalidType', {
+        args: { type },
+        lang: this.lang,
+      }),
+    );
   }
 
   private mapTransaction(transaction: {
@@ -67,7 +78,12 @@ export class TransactionsService {
       select: this.transactionSelect,
     });
     if (!transaction || transaction.userId !== userId) {
-      throw new NotFoundException(`Transaction with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('transactions.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
     return this.mapTransaction(transaction);
   }
@@ -92,7 +108,10 @@ export class TransactionsService {
 
     if (!category) {
       throw new BadRequestException(
-        `Category with ID ${createTransactionDto.categoryId} does not exist`,
+        this.i18n.t('transactions.errors.categoryNotFound', {
+          args: { id: createTransactionDto.categoryId },
+          lang: this.lang,
+        }),
       );
     }
 
@@ -121,7 +140,12 @@ export class TransactionsService {
     });
 
     if (!existingTransaction || existingTransaction.userId !== userId) {
-      throw new NotFoundException(`Transaction with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('transactions.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
 
     // Validate category existence if categoryId is being updated
@@ -141,7 +165,10 @@ export class TransactionsService {
 
       if (!category) {
         throw new BadRequestException(
-          `Category with ID ${updateTransactionDto.categoryId} does not exist`,
+          this.i18n.t('transactions.errors.categoryNotFound', {
+            args: { id: updateTransactionDto.categoryId },
+            lang: this.lang,
+          }),
         );
       }
     }
@@ -174,7 +201,12 @@ export class TransactionsService {
     });
 
     if (!existingTransaction || existingTransaction.userId !== userId) {
-      throw new NotFoundException(`Transaction with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('transactions.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
 
     const deletedTransaction = await this.prisma.transaction.delete({

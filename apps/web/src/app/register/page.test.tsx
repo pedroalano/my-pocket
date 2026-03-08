@@ -38,7 +38,7 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Create account' }),
+      screen.getByRole('button', { name: 'Create an account' }),
     ).toBeInTheDocument();
   });
 
@@ -72,7 +72,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Name'), 'John Doe');
     await user.type(screen.getByLabelText('Email'), 'john@example.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith(
@@ -92,7 +92,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Name'), 'Existing User');
     await user.type(screen.getByLabelText('Email'), 'existing@example.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Email already exists');
@@ -116,7 +116,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Name'), 'John Doe');
     await user.type(screen.getByLabelText('Email'), 'john@example.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('An unexpected error occurred');
@@ -139,7 +139,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Name'), 'John Doe');
     await user.type(screen.getByLabelText('Email'), 'john@example.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
 
     // Button should show loading text
     expect(
@@ -199,7 +199,8 @@ describe('RegisterPage', () => {
   it('displays create account message', () => {
     renderWithProviders(<RegisterPage />);
 
-    expect(screen.getByText('Create an account')).toBeInTheDocument();
+    // CardTitle renders as a div (not a heading); button also shows "Create an account"
+    expect(screen.getAllByText('Create an account').length).toBeGreaterThan(0);
     expect(
       screen.getByText('Enter your details to get started'),
     ).toBeInTheDocument();
@@ -213,7 +214,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Name'), 'John Doe');
     await user.type(screen.getByLabelText('Email'), 'john@example.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
 
     await waitFor(() => {
       expect(localStorage.setItem).toHaveBeenCalled();
@@ -238,7 +239,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Name'), 'John Doe');
     await user.type(screen.getByLabelText('Email'), 'john@example.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Name is required');

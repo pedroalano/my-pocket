@@ -1,0 +1,7 @@
+{
+  "errors": {
+    "notFound": "Category with ID {id} not found",
+    "alreadyExists": "Category with name \"{name}\" and type \"{type}\" already exists",
+    "invalidType": "Invalid category type: {type}"
+  }
+}

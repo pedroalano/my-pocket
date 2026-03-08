@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CategoriesService } from './categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 
 describe('CategoriesService', () => {
   let service: CategoriesService;
@@ -40,6 +41,10 @@ describe('CategoriesService', () => {
         {
           provide: PrismaService,
           useValue: prismaMock,
+        },
+        {
+          provide: I18nService,
+          useValue: { t: jest.fn((key: string) => key) },
         },
       ],
     }).compile();

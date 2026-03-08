@@ -51,8 +51,8 @@ describe('CategoriesPage', () => {
     });
 
     expect(screen.getByText('Groceries')).toBeInTheDocument();
-    expect(screen.getByText('INCOME')).toBeInTheDocument();
-    expect(screen.getByText('EXPENSE')).toBeInTheDocument();
+    expect(screen.getByText('Income')).toBeInTheDocument();
+    expect(screen.getByText('Expense')).toBeInTheDocument();
   });
 
   it('shows empty state when no categories exist', async () => {

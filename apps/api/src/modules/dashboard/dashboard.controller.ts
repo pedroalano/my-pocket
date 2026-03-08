@@ -7,6 +7,7 @@ import {
   BadRequestException,
   Req,
 } from '@nestjs/common';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -27,12 +28,19 @@ import { TopExpenseDto } from './dto/top-expenses.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private dashboardService: DashboardService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private i18n: I18nService,
+  ) {}
+
+  private get lang(): string {
+    return I18nContext.current()?.lang ?? 'en';
+  }
 
   private validateMonth(month: number): void {
     if (month < 1 || month > 12) {
       throw new BadRequestException(
-        'Invalid month. Month must be between 1 and 12.',
+        this.i18n.t('dashboard.errors.invalidMonth', { lang: this.lang }),
       );
     }
   }
@@ -40,7 +48,7 @@ export class DashboardController {
   private validateLimit(limit: number): void {
     if (limit < 1 || limit > 100) {
       throw new BadRequestException(
-        'Invalid limit. Limit must be between 1 and 100.',
+        this.i18n.t('dashboard.errors.invalidLimit', { lang: this.lang }),
       );
     }
   }

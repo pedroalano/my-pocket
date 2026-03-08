@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "invalidMonth": "Mês inválido. O mês deve estar entre 1 e 12.",
+    "invalidLimit": "Limite inválido. O limite deve estar entre 1 e 100."
+  }
+}

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BudgetType, Prisma, TransactionType } from '@prisma/client';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { CategoriesService } from '../categories/categories.service';
@@ -95,7 +96,12 @@ export class BudgetService {
   constructor(
     private categoriesService: CategoriesService,
     private prisma: PrismaService,
+    private i18n: I18nService,
   ) {}
+
+  private get lang(): string {
+    return I18nContext.current()?.lang ?? 'en';
+  }
 
   private readonly budgetSelect = {
     id: true,
@@ -127,7 +133,12 @@ export class BudgetService {
       return BudgetType.INCOME;
     }
 
-    throw new BadRequestException(`Invalid budget type: ${type}`);
+    throw new BadRequestException(
+      this.i18n.t('budgets.errors.invalidType', {
+        args: { type },
+        lang: this.lang,
+      }),
+    );
   }
 
   private mapBudget(budget: {
@@ -220,7 +231,12 @@ export class BudgetService {
     });
 
     if (!budget || budget.userId !== userId) {
-      throw new NotFoundException(`Budget with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('budgets.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
 
     const { userId: _userId, ...budgetWithoutUserId } = budget;
@@ -244,7 +260,10 @@ export class BudgetService {
     }
     if (!category) {
       throw new BadRequestException(
-        `Category with ID ${budgetData.categoryId} does not exist`,
+        this.i18n.t('budgets.errors.categoryNotFound', {
+          args: { id: budgetData.categoryId },
+          lang: this.lang,
+        }),
       );
     }
 
@@ -268,7 +287,15 @@ export class BudgetService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          `Budget for category ${budgetData.categoryId}, type ${budgetData.type}, month ${budgetData.month}, and year ${budgetData.year} already exists`,
+          this.i18n.t('budgets.errors.alreadyExists', {
+            args: {
+              categoryId: budgetData.categoryId,
+              type: budgetData.type,
+              month: budgetData.month,
+              year: budgetData.year,
+            },
+            lang: this.lang,
+          }),
         );
       }
       throw error;
@@ -282,7 +309,12 @@ export class BudgetService {
     });
 
     if (!existingBudget || existingBudget.userId !== userId) {
-      throw new NotFoundException(`Budget with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('budgets.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
 
     if (
@@ -308,7 +340,10 @@ export class BudgetService {
       }
       if (!category) {
         throw new BadRequestException(
-          `Category with ID ${budgetData.categoryId} does not exist`,
+          this.i18n.t('budgets.errors.categoryNotFound', {
+            args: { id: budgetData.categoryId },
+            lang: this.lang,
+          }),
         );
       }
     }
@@ -342,7 +377,15 @@ export class BudgetService {
           year: budgetData.year ?? existingBudget.year,
         };
         throw new ConflictException(
-          `Budget for category ${payload.categoryId}, type ${payload.type}, month ${payload.month}, and year ${payload.year} already exists`,
+          this.i18n.t('budgets.errors.alreadyExists', {
+            args: {
+              categoryId: payload.categoryId,
+              type: payload.type,
+              month: payload.month,
+              year: payload.year,
+            },
+            lang: this.lang,
+          }),
         );
       }
       throw error;
@@ -356,7 +399,12 @@ export class BudgetService {
     });
 
     if (!existingBudget || existingBudget.userId !== userId) {
-      throw new NotFoundException(`Budget with ID ${id} not found`);
+      throw new NotFoundException(
+        this.i18n.t('budgets.errors.notFound', {
+          args: { id },
+          lang: this.lang,
+        }),
+      );
     }
 
     const deletedBudget = await this.prisma.budget.delete({
@@ -370,7 +418,9 @@ export class BudgetService {
 
   private validateBudgetData(budgetData: CreateBudgetDto): void {
     if (budgetData.month < 1 || budgetData.month > 12) {
-      throw new BadRequestException('Month must be between 1 and 12');
+      throw new BadRequestException(
+        this.i18n.t('budgets.errors.invalidMonth', { lang: this.lang }),
+      );
     }
   }
 
@@ -379,7 +429,9 @@ export class BudgetService {
       budgetData.month !== undefined &&
       (budgetData.month < 1 || budgetData.month > 12)
     ) {
-      throw new BadRequestException('Month must be between 1 and 12');
+      throw new BadRequestException(
+        this.i18n.t('budgets.errors.invalidMonth', { lang: this.lang }),
+      );
     }
   }
 

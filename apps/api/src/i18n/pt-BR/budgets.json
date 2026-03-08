@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "notFound": "Orçamento com ID {id} não encontrado",
+    "categoryNotFound": "Categoria com ID {id} não existe",
+    "alreadyExists": "Orçamento para categoria {categoryId}, tipo {type}, mês {month}, e ano {year} já existe",
+    "invalidType": "Tipo de orçamento inválido: {type}",
+    "invalidMonth": "O mês deve estar entre 1 e 12"
+  }
+}

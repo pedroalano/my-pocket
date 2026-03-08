@@ -12,14 +12,11 @@ import BudgetsPage from './page';
 
 const API_URL = 'http://localhost:3001';
 
-// Mock next/navigation
+// Mock next/navigation — return a stable router reference to avoid useCallback re-creation loops
 const mockRouterPush = vi.fn();
+const _mockBudgetsRouter = { push: mockRouterPush, replace: vi.fn(), back: vi.fn() };
 vi.mock('next/navigation', async () => ({
-  useRouter: () => ({
-    push: mockRouterPush,
-    replace: vi.fn(),
-    back: vi.fn(),
-  }),
+  useRouter: () => _mockBudgetsRouter,
 }));
 
 // Mock toast
@@ -52,8 +49,8 @@ describe('BudgetsPage', () => {
     });
 
     expect(screen.getByText('$3,000.00')).toBeInTheDocument();
-    expect(screen.getByText('INCOME')).toBeInTheDocument();
-    expect(screen.getByText('EXPENSE')).toBeInTheDocument();
+    expect(screen.getByText('Income')).toBeInTheDocument();
+    expect(screen.getByText('Expense')).toBeInTheDocument();
   });
 
   it('displays category names for budgets', async () => {

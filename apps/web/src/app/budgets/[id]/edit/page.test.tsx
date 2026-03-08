@@ -39,7 +39,7 @@ describe('EditBudgetPage', () => {
   it('shows loading state initially', async () => {
     renderWithProviders(<EditBudgetPage />);
 
-    expect(screen.getByText('Loading budget...')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('renders Edit Budget page with form pre-filled', async () => {

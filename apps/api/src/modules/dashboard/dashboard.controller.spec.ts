@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
@@ -33,6 +34,10 @@ describe('DashboardController', () => {
         {
           provide: DashboardService,
           useValue: mockDashboardService,
+        },
+        {
+          provide: I18nService,
+          useValue: { t: jest.fn((key: string) => key) },
         },
       ],
     }).compile();
