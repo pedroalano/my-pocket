@@ -9,5 +9,6 @@
   "min": "{property} must not be less than {constraints.0}",
   "max": "{property} must not be greater than {constraints.0}",
   "isDateString": "{property} must be a valid ISO 8601 date string",
-  "isOptional": "{property} is optional"
+  "isOptional": "{property} is optional",
+  "passwordComplexity": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
 }

@@ -5,6 +5,7 @@ import {
   IsPositive,
   IsString,
   IsUUID,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -23,6 +24,7 @@ export class CreateTransactionDto {
     example: 'EXPENSE',
   })
   @IsString()
+  @MaxLength(20)
   type: string;
 
   @ApiProperty({
@@ -46,5 +48,6 @@ export class CreateTransactionDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   description?: string;
 }

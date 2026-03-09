@@ -9,5 +9,6 @@
   "min": "{property} não pode ser menor que {constraints.0}",
   "max": "{property} não pode ser maior que {constraints.0}",
   "isDateString": "{property} deve ser uma data ISO 8601 válida",
-  "isOptional": "{property} é opcional"
+  "isOptional": "{property} é opcional",
+  "passwordComplexity": "A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula e um número"
 }

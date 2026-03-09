@@ -63,7 +63,8 @@
     "creatingAccount": "Criando conta...",
     "alreadyHaveAccount": "Já tem uma conta?",
     "loginSuccess": "Login realizado com sucesso!",
-    "registerSuccess": "Conta criada com sucesso!"
+    "registerSuccess": "Conta criada com sucesso!",
+    "passwordComplexity": "A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula e um número"
   },
   "dashboard": {
     "title": "Painel",
