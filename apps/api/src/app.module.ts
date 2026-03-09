@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { I18nModule, AcceptLanguageResolver } from 'nestjs-i18n';
 import * as path from 'path';
 import { configurations, envValidationSchema } from './modules/config';
@@ -32,6 +33,7 @@ const resolveEnvFilePath = () =>
         abortEarly: false,
       },
     }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     I18nModule.forRoot({
       fallbackLanguage: 'en',
       loaderOptions: {

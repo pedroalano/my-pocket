@@ -16,6 +16,7 @@ describe('AuthsService', () => {
   const prismaMock = {
     user: {
       create: jest.fn(),
+      findUnique: jest.fn(),
     },
   } as unknown as PrismaService;
 
@@ -132,6 +133,46 @@ describe('AuthsService', () => {
       expect(result).toEqual({ access_token: mockToken });
       expect(result).not.toHaveProperty('user');
       expect(Object.keys(result)).toHaveLength(1);
+    });
+  });
+
+  describe('login', () => {
+    const loginDto = { email: 'john@example.com', password: 'password123' };
+    const mockUser = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashedPassword',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should return access_token on valid credentials', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      jwtServiceMock.signAsync.mockResolvedValue('token');
+
+      const result = await service.login(loginDto);
+
+      expect(result).toEqual({ access_token: 'token' });
+    });
+
+    it('should throw UnauthorizedException on invalid password', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.login(loginDto)).rejects.toThrow('auth.errors.invalidCredentials');
+    });
+
+    it('should call bcrypt.compare even when user is not found (timing-safe)', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.login(loginDto)).rejects.toThrow('auth.errors.invalidCredentials');
+
+      expect(bcrypt.compare).toHaveBeenCalledTimes(1);
+      const [, hashArg] = (bcrypt.compare as jest.Mock).mock.calls[0];
+      expect(hashArg).toMatch(/^\$2b\$/);
     });
   });
 
