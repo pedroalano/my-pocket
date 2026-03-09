@@ -65,15 +65,13 @@ export class AuthsService {
       where: { email },
     });
 
-    if (!user) {
-      throw new UnauthorizedException(
-        this.i18n.t('auth.errors.invalidCredentials', { lang: this.lang }),
-      );
-    }
+    // Always run bcrypt.compare to prevent timing-based email enumeration
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user?.password ?? '$2b$10$invalidhashfortimingneutralization00000000000',
+    );
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
+    if (!user || !isPasswordValid) {
       throw new UnauthorizedException(
         this.i18n.t('auth.errors.invalidCredentials', { lang: this.lang }),
       );
