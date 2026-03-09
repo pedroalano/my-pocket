@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 import { PrismaService } from '../shared/prisma.service';
@@ -16,6 +17,7 @@ export class AuthsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly i18n: I18nService,
   ) {}
 
@@ -23,7 +25,9 @@ export class AuthsService {
     return I18nContext.current()?.lang ?? 'en';
   }
 
-  async register(registerDto: RegisterDto): Promise<{ access_token: string }> {
+  async register(
+    registerDto: RegisterDto,
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const { name, email, password } = registerDto;
 
     // Hash password with bcrypt (10 salt rounds)
@@ -39,7 +43,7 @@ export class AuthsService {
         },
       });
 
-      // Generate and return JWT token
+      // Generate and return JWT tokens
       return this.generateToken(user.id, user.email);
     } catch (error) {
       // Handle Prisma unique constraint violation (P2002)
@@ -58,7 +62,9 @@ export class AuthsService {
     }
   }
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const { email, password } = loginDto;
 
     const user = await this.prisma.user.findUnique({
@@ -80,13 +86,77 @@ export class AuthsService {
     return this.generateToken(user.id, user.email);
   }
 
+  async refresh(
+    refreshToken: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    let payload: { userId: string; email: string };
+
+    try {
+      payload = await this.jwtService.verifyAsync<{
+        userId: string;
+        email: string;
+      }>(refreshToken);
+    } catch {
+      throw new UnauthorizedException(
+        this.i18n.t('auth.errors.invalidRefreshToken', { lang: this.lang }),
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.userId },
+    });
+
+    if (!user?.refreshToken) {
+      throw new UnauthorizedException(
+        this.i18n.t('auth.errors.invalidRefreshToken', { lang: this.lang }),
+      );
+    }
+
+    const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+    if (!isValid) {
+      throw new UnauthorizedException(
+        this.i18n.t('auth.errors.invalidRefreshToken', { lang: this.lang }),
+      );
+    }
+
+    return this.generateToken(user.id, user.email);
+  }
+
+  async logout(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+  }
+
   async generateToken(
     userId: string,
     email: string,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const payload = { userId, email };
-    const access_token = await this.jwtService.signAsync(payload);
 
-    return { access_token };
+    const accessExpiresIn = this.configService.get<number>(
+      'jwt.expiresInSeconds',
+      900,
+    );
+    const refreshExpiresIn = this.configService.get<number>(
+      'jwt.refreshExpiresInSeconds',
+      604800,
+    );
+
+    const access_token = await this.jwtService.signAsync(payload, {
+      expiresIn: accessExpiresIn,
+    });
+    const refresh_token = await this.jwtService.signAsync(payload, {
+      expiresIn: refreshExpiresIn,
+    });
+
+    const hashedRefreshToken = await bcrypt.hash(refresh_token, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashedRefreshToken },
+    });
+
+    return { access_token, refresh_token };
   }
 }

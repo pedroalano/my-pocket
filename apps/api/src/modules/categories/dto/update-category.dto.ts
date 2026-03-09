@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateCategoryDto {
@@ -7,6 +7,7 @@ export class UpdateCategoryDto {
   @ApiProperty({ description: 'The name of the category', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   name?: string;
 
   @ApiProperty({
@@ -15,5 +16,6 @@ export class UpdateCategoryDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(20)
   type?: string;
 }

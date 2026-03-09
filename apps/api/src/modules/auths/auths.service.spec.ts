@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { I18nService } from 'nestjs-i18n';
 import { AuthsService } from './auths.service';
 import { PrismaService } from '../shared/prisma.service';
@@ -17,11 +18,21 @@ describe('AuthsService', () => {
     user: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
   } as unknown as PrismaService;
 
   const jwtServiceMock = {
     signAsync: jest.fn(),
+    verifyAsync: jest.fn(),
+  };
+
+  const configServiceMock = {
+    get: jest.fn((key: string, defaultValue?: number) => {
+      if (key === 'jwt.expiresInSeconds') return 900;
+      if (key === 'jwt.refreshExpiresInSeconds') return 604800;
+      return defaultValue;
+    }),
   };
 
   const i18nServiceMock = {
@@ -43,6 +54,10 @@ describe('AuthsService', () => {
           useValue: jwtServiceMock,
         },
         {
+          provide: ConfigService,
+          useValue: configServiceMock,
+        },
+        {
           provide: I18nService,
           useValue: i18nServiceMock,
         },
@@ -62,7 +77,7 @@ describe('AuthsService', () => {
     const registerDto = {
       name: 'John Doe',
       email: 'john@example.com',
-      password: 'password123',
+      password: 'Password1',
     };
 
     const mockUser = {
@@ -70,6 +85,7 @@ describe('AuthsService', () => {
       name: 'John Doe',
       email: 'john@example.com',
       password: 'hashedPassword',
+      refreshToken: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -78,11 +94,12 @@ describe('AuthsService', () => {
       const hashedPassword = 'hashedPassword';
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
       (prismaService.user.create as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
       jwtServiceMock.signAsync.mockResolvedValue('mock.token');
 
       await service.register(registerDto);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('password123', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('Password1', 10);
       expect(prismaService.user.create).toHaveBeenCalledWith({
         data: {
           name: 'John Doe',
@@ -92,19 +109,28 @@ describe('AuthsService', () => {
       });
     });
 
-    it('should create user and return JWT token', async () => {
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken';
+    it('should create user and return access and refresh tokens', async () => {
+      const mockAccessToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.accessToken';
+      const mockRefreshToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refreshToken';
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.user.create as jest.Mock).mockResolvedValue(mockUser);
-      jwtServiceMock.signAsync.mockResolvedValue(mockToken);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+      jwtServiceMock.signAsync
+        .mockResolvedValueOnce(mockAccessToken)
+        .mockResolvedValueOnce(mockRefreshToken);
 
       const result = await service.register(registerDto);
 
-      expect(result).toEqual({ access_token: mockToken });
-      expect(jwtService.signAsync).toHaveBeenCalledWith({
-        userId: mockUser.id,
-        email: mockUser.email,
+      expect(result).toEqual({
+        access_token: mockAccessToken,
+        refresh_token: mockRefreshToken,
       });
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        { userId: mockUser.id, email: mockUser.email },
+        { expiresIn: 900 },
+      );
     });
 
     it('should throw ConflictException when email already exists', async () => {
@@ -122,53 +148,69 @@ describe('AuthsService', () => {
       );
     });
 
-    it('should return only access_token without user data', async () => {
+    it('should return access_token and refresh_token without user data', async () => {
       const mockToken = 'token.jwt.value';
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.user.create as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
       jwtServiceMock.signAsync.mockResolvedValue(mockToken);
 
       const result = await service.register(registerDto);
 
-      expect(result).toEqual({ access_token: mockToken });
+      expect(result).toEqual({
+        access_token: mockToken,
+        refresh_token: mockToken,
+      });
       expect(result).not.toHaveProperty('user');
-      expect(Object.keys(result)).toHaveLength(1);
+      expect(Object.keys(result)).toHaveLength(2);
     });
   });
 
   describe('login', () => {
-    const loginDto = { email: 'john@example.com', password: 'password123' };
+    const loginDto = { email: 'john@example.com', password: 'Password1' };
     const mockUser = {
       id: '123e4567-e89b-12d3-a456-426614174000',
       name: 'John Doe',
       email: 'john@example.com',
       password: 'hashedPassword',
+      refreshToken: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    it('should return access_token on valid credentials', async () => {
+    it('should return access_token and refresh_token on valid credentials', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      jwtServiceMock.signAsync.mockResolvedValue('token');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRefreshToken');
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+      jwtServiceMock.signAsync
+        .mockResolvedValueOnce('access.token')
+        .mockResolvedValueOnce('refresh.token');
 
       const result = await service.login(loginDto);
 
-      expect(result).toEqual({ access_token: 'token' });
+      expect(result).toEqual({
+        access_token: 'access.token',
+        refresh_token: 'refresh.token',
+      });
     });
 
     it('should throw UnauthorizedException on invalid password', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login(loginDto)).rejects.toThrow('auth.errors.invalidCredentials');
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'auth.errors.invalidCredentials',
+      );
     });
 
     it('should call bcrypt.compare even when user is not found (timing-safe)', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login(loginDto)).rejects.toThrow('auth.errors.invalidCredentials');
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'auth.errors.invalidCredentials',
+      );
 
       expect(bcrypt.compare).toHaveBeenCalledTimes(1);
       const [, hashArg] = (bcrypt.compare as jest.Mock).mock.calls[0];
@@ -176,48 +218,157 @@ describe('AuthsService', () => {
     });
   });
 
+  describe('refresh', () => {
+    const mockUser = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      email: 'john@example.com',
+      refreshToken: 'storedHashedRefreshToken',
+    };
+
+    it('should return new tokens when refresh token is valid', async () => {
+      jwtServiceMock.verifyAsync.mockResolvedValue({
+        userId: mockUser.id,
+        email: mockUser.email,
+      });
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('newHashedRefreshToken');
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+      jwtServiceMock.signAsync
+        .mockResolvedValueOnce('new.access.token')
+        .mockResolvedValueOnce('new.refresh.token');
+
+      const result = await service.refresh('old.refresh.token');
+
+      expect(result).toEqual({
+        access_token: 'new.access.token',
+        refresh_token: 'new.refresh.token',
+      });
+    });
+
+    it('should throw UnauthorizedException when JWT verification fails', async () => {
+      jwtServiceMock.verifyAsync.mockRejectedValue(new Error('jwt expired'));
+
+      await expect(service.refresh('expired.token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.refresh('expired.token')).rejects.toThrow(
+        'auth.errors.invalidRefreshToken',
+      );
+    });
+
+    it('should throw UnauthorizedException when user has no stored refresh token', async () => {
+      jwtServiceMock.verifyAsync.mockResolvedValue({
+        userId: mockUser.id,
+        email: mockUser.email,
+      });
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        refreshToken: null,
+      });
+
+      await expect(service.refresh('some.refresh.token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.refresh('some.refresh.token')).rejects.toThrow(
+        'auth.errors.invalidRefreshToken',
+      );
+    });
+
+    it('should throw UnauthorizedException when token hash does not match', async () => {
+      jwtServiceMock.verifyAsync.mockResolvedValue({
+        userId: mockUser.id,
+        email: mockUser.email,
+      });
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.refresh('tampered.token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.refresh('tampered.token')).rejects.toThrow(
+        'auth.errors.invalidRefreshToken',
+      );
+    });
+  });
+
+  describe('logout', () => {
+    it('should clear the stored refresh token', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      (prismaService.user.update as jest.Mock).mockResolvedValue({});
+
+      await service.logout(userId);
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { refreshToken: null },
+      });
+    });
+  });
+
   describe('generateToken', () => {
-    it('should generate a valid JWT token with correct payload', async () => {
+    it('should generate access and refresh tokens with correct payloads', async () => {
       const userId = '123e4567-e89b-12d3-a456-426614174000';
       const email = 'test@example.com';
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken';
+      const mockAccessToken = 'access.mock.token';
+      const mockRefreshToken = 'refresh.mock.token';
 
-      jwtServiceMock.signAsync.mockResolvedValue(mockToken);
+      jwtServiceMock.signAsync
+        .mockResolvedValueOnce(mockAccessToken)
+        .mockResolvedValueOnce(mockRefreshToken);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRefreshToken');
+      (prismaService.user.update as jest.Mock).mockResolvedValue({});
 
       const result = await service.generateToken(userId, email);
 
-      expect(result).toEqual({ access_token: mockToken });
-      expect(jwtService.signAsync).toHaveBeenCalledWith({
-        userId,
-        email,
+      expect(result).toEqual({
+        access_token: mockAccessToken,
+        refresh_token: mockRefreshToken,
       });
-      expect(jwtService.signAsync).toHaveBeenCalledTimes(1);
+      expect(jwtService.signAsync).toHaveBeenCalledTimes(2);
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        { userId, email },
+        { expiresIn: 900 },
+      );
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        { userId, email },
+        { expiresIn: 604800 },
+      );
     });
 
-    it('should return token in OAuth2 format', async () => {
-      const userId = '123e4567-e89b-12d3-a456-426614174000';
-      const email = 'user@example.com';
-      const mockToken = 'mock.jwt.token';
+    it('should store a bcrypt hash of the refresh token in the DB', async () => {
+      const userId = '456e4567-e89b-12d3-a456-426614174001';
+      const email = 'another@example.com';
+      const mockRefreshToken = 'refresh.token.value';
 
-      jwtServiceMock.signAsync.mockResolvedValue(mockToken);
+      jwtServiceMock.signAsync
+        .mockResolvedValueOnce('access.token')
+        .mockResolvedValueOnce(mockRefreshToken);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedValue');
+      (prismaService.user.update as jest.Mock).mockResolvedValue({});
 
-      const result = await service.generateToken(userId, email);
+      await service.generateToken(userId, email);
 
-      expect(result).toHaveProperty('access_token');
-      expect(typeof result.access_token).toBe('string');
+      expect(bcrypt.hash).toHaveBeenCalledWith(mockRefreshToken, 10);
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { refreshToken: 'hashedValue' },
+      });
     });
 
-    it('should include minimal payload with userId and email only', async () => {
+    it('should use payload with userId and email only', async () => {
       const userId = '456e4567-e89b-12d3-a456-426614174001';
       const email = 'another@example.com';
 
       jwtServiceMock.signAsync.mockResolvedValue('token');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedToken');
+      (prismaService.user.update as jest.Mock).mockResolvedValue({});
 
       await service.generateToken(userId, email);
 
-      const calledPayload = jwtServiceMock.signAsync.mock.calls[0][0];
-      expect(Object.keys(calledPayload)).toHaveLength(2);
-      expect(calledPayload).toEqual({ userId, email });
+      const firstCallPayload = jwtServiceMock.signAsync.mock.calls[0][0];
+      expect(Object.keys(firstCallPayload)).toHaveLength(2);
+      expect(firstCallPayload).toEqual({ userId, email });
     });
   });
 });

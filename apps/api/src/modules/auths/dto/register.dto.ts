@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsEmail, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class RegisterDto {
   @ApiProperty({
@@ -8,6 +16,7 @@ export class RegisterDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @ApiProperty({
@@ -19,12 +28,17 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description: 'User password (minimum 6 characters)',
-    example: 'password123',
+    description:
+      'User password (minimum 6 characters, must contain uppercase, lowercase, and number)',
+    example: 'Password1',
     minLength: 6,
   })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
+  @MaxLength(128)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
+    message: i18nValidationMessage('validation.passwordComplexity'),
+  })
   password: string;
 }
