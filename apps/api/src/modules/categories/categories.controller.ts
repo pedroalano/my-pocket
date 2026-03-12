@@ -15,9 +15,12 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateCategoryBatchDto } from './dto/create-category-batch.dto';
+import { BatchResultDto } from './dto/batch-result.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryDto } from './dto/category.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
@@ -93,6 +96,36 @@ export class CategoriesController {
   ) {
     return this.categoriesService.createCategory(
       createCategoryDto,
+      req.user.userId,
+    );
+  }
+
+  @Post('batch')
+  @ApiOperation({
+    summary: 'Create multiple categories at once, skipping duplicates',
+    description:
+      'Accepts up to 50 category items. Each item is created individually; P2002 (unique constraint) errors are silently skipped. Returns the count of created and skipped items.',
+  })
+  @ApiBody({ type: CreateCategoryBatchDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Batch result with created and skipped counts',
+    type: BatchResultDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid input data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  createCategoryBatch(
+    @Body() createCategoryBatchDto: CreateCategoryBatchDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.categoriesService.createCategoryBatch(
+      createCategoryBatchDto,
       req.user.userId,
     );
   }

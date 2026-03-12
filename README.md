@@ -265,6 +265,7 @@ Once the API is running, visit:
 | `/categories`                   | GET    | List all categories                |
 | `/categories/:id`               | GET    | Get category by ID                 |
 | `/categories`                   | POST   | Create a new category              |
+| `/categories/batch`             | POST   | Create multiple categories, skipping duplicates |
 | `/categories/:id`               | PUT    | Update a category                  |
 | `/categories/:id`               | DELETE | Delete a category                  |
 | `/transactions`                 | GET    | List all transactions              |
@@ -313,6 +314,7 @@ Once the API is running, visit:
 - ✅ Locale-aware currency formatting (USD for EN, BRL for PT-BR)
 - ✅ Full CRUD for Categories, Transactions, and Budgets
 - ✅ Budget spending tracking with utilization indicators
+- ✅ Preset categories step on registration (11 common categories, fully optional)
 - ✅ Responsive design with shadcn/ui components
 - ✅ Error boundary with recovery UI
 

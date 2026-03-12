@@ -62,7 +62,8 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **NestJS modular architecture** under `src/modules/`:
 - `auths` — registration, login, logout, refresh token rotation; JWT strategy (`jwt.strategy.ts`), guard (`jwt-auth.guard.ts`)
-- `categories`, `transactions`, `budgets`, `dashboard` — domain modules, each with controller/service/dto
+- `categories` — CRUD + `POST /categories/batch` (creates multiple at once, silently skips P2002 duplicates, returns `{ created, skipped }`)
+- `transactions`, `budgets`, `dashboard` — domain modules, each with controller/service/dto
 - `health` — single `GET /health` endpoint for service availability checks
 - `shared` — exports `PrismaService` (extends `PrismaClient`) and `formatDecimal` utility; imported as `SharedModule` globally
 - `config` — env loading via `ConfigModule.forRoot`, Joi validation schema (`env.validation.ts`), typed config accessors
@@ -108,6 +109,8 @@ This is a **Turborepo + npm workspaces** monorepo:
 **Error handling:** `ErrorBoundary` (`src/components/ErrorBoundary.tsx`) wraps the app in `layout.tsx`. It is implemented as a functional component (`ErrorBoundary`) that renders an inner class component (`ErrorBoundaryInner`) — this allows the outer wrapper to call `useTranslations` while the class component handles `componentDidCatch`.
 
 **UI:** shadcn/ui components in `src/components/ui/` (auto-generated, don't hand-edit). Feature components (`CategoryForm`, `TransactionForm`, `BudgetForm`, `BudgetDetails`, `ThemeToggle`, `LanguageToggle`) live directly in `src/components/`. Charts use `recharts` (PieChart, BarChart) in the dashboard page.
+
+**Register flow (multi-step):** After successful registration the page transitions to a preset categories step (same URL). The user selects/deselects 11 common categories and clicks "Get Started" (calls `POST /categories/batch` with localized names, then redirects to `/dashboard`) or "Skip" (redirects directly). Preset keys are defined as a `PRESETS` constant in `page.tsx`; localized names come from the `presetCategories.names` namespace.
 
 **Post-login landing page:** `/dashboard` — authenticated users are redirected there from `/` and after login/registration.
 
