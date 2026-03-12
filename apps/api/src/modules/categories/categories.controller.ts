@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -100,7 +101,12 @@ export class CategoriesController {
   }
 
   @Post('batch')
-  @ApiOperation({ summary: 'Create multiple categories at once, skipping duplicates' })
+  @ApiOperation({
+    summary: 'Create multiple categories at once, skipping duplicates',
+    description:
+      'Accepts up to 50 category items. Each item is created individually; P2002 (unique constraint) errors are silently skipped. Returns the count of created and skipped items.',
+  })
+  @ApiBody({ type: CreateCategoryBatchDto })
   @ApiResponse({
     status: 201,
     description: 'Batch result with created and skipped counts',
