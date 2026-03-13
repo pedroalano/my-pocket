@@ -366,15 +366,15 @@ export const handlers = [
       categoryId: string;
       month: number;
       year: number;
-      type: string;
     };
+    const category = mockCategories.find((c) => c.id === body.categoryId);
     return HttpResponse.json({
       id: 'new-budget-id',
       amount: body.amount.toFixed(2),
       categoryId: body.categoryId,
       month: body.month,
       year: body.year,
-      type: body.type,
+      type: category?.type ?? 'EXPENSE',
       userId: 'test-user-id',
     });
   }),
@@ -399,7 +399,6 @@ export const handlers = [
       categoryId?: string;
       month?: number;
       year?: number;
-      type?: string;
     };
     return HttpResponse.json({
       ...budget,
@@ -408,7 +407,6 @@ export const handlers = [
       categoryId: body.categoryId ?? budget.categoryId,
       month: body.month ?? budget.month,
       year: body.year ?? budget.year,
-      type: body.type ?? budget.type,
     });
   }),
 

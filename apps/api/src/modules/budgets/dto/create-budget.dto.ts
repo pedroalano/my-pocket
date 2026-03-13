@@ -1,6 +1,5 @@
-import { IsEnum, IsNumber, IsUUID } from 'class-validator';
+import { IsNumber, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { BudgetType } from '@prisma/client';
 
 export class CreateBudgetDto {
   @ApiProperty({
@@ -33,12 +32,4 @@ export class CreateBudgetDto {
   })
   @IsNumber()
   year: number;
-
-  @ApiProperty({
-    description: 'Budget type',
-    enum: BudgetType,
-    example: BudgetType.EXPENSE,
-  })
-  @IsEnum(BudgetType)
-  type: BudgetType;
 }

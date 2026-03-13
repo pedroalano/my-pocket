@@ -286,7 +286,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const result = await service.createBudget(createDto, userId);
@@ -295,6 +294,7 @@ describe('BudgetService', () => {
         ...createDto,
         amount: '500.00',
         id: result.id,
+        type: BudgetType.EXPENSE,
       });
       expect(categoriesService.getCategoryById).toHaveBeenCalledWith(
         categoryId,
@@ -308,7 +308,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 0,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
@@ -325,7 +324,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 13,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
@@ -350,7 +348,6 @@ describe('BudgetService', () => {
         categoryId: otherCategoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       await expect(service.createBudget(createDto, userId)).rejects.toThrow(
@@ -367,7 +364,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       await service.createBudget(createDto, userId);
@@ -386,7 +382,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const createDto2: CreateBudgetDto = {
@@ -394,7 +389,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 2,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const result1 = await service.createBudget(createDto1, userId);
@@ -412,7 +406,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto, userId);
     });
@@ -514,7 +507,6 @@ describe('BudgetService', () => {
         categoryId: otherCategoryId,
         month: 2,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto2, userId);
 
@@ -553,7 +545,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto, userId);
 
@@ -629,7 +620,6 @@ describe('BudgetService', () => {
         categoryId: otherCategoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       const budget2 = await service.createBudget(createDto2, userId);
 
@@ -646,7 +636,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto, userId);
 
@@ -703,7 +692,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto, userId);
     });
@@ -739,7 +727,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 2,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       const budget = await service.createBudget(createDto, userId);
 
@@ -795,12 +782,15 @@ describe('BudgetService', () => {
 
     describe('INCOME budgets', () => {
       it('should return earned field instead of spent for INCOME budgets', async () => {
+        jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
+          ...buildCategory(categoryId, 'Groceries', userId),
+          type: CategoryType.INCOME,
+        });
         const createDto: CreateBudgetDto = {
           amount: 1000,
           categoryId,
           month: 3,
           year: 2026,
-          type: BudgetType.INCOME,
         };
         const budget = await service.createBudget(createDto, userId);
 
@@ -830,12 +820,15 @@ describe('BudgetService', () => {
       });
 
       it('should calculate INCOME utilization correctly with multiple transactions', async () => {
+        jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
+          ...buildCategory(categoryId, 'Groceries', userId),
+          type: CategoryType.INCOME,
+        });
         const createDto: CreateBudgetDto = {
           amount: 2000,
           categoryId,
           month: 4,
           year: 2026,
-          type: BudgetType.INCOME,
         };
         const budget = await service.createBudget(createDto, userId);
 
@@ -880,7 +873,6 @@ describe('BudgetService', () => {
           categoryId,
           month: 5,
           year: 2026,
-          type: BudgetType.EXPENSE,
         };
         const budget = await service.createBudget(createDto, userId);
 
@@ -917,7 +909,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto, userId);
     });
@@ -971,7 +962,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       await service.createBudget(createDto, userId);
 
@@ -1079,12 +1069,15 @@ describe('BudgetService', () => {
 
     describe('INCOME budgets', () => {
       it('should return earned field instead of spent for INCOME budget with transactions', async () => {
+        jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
+          ...buildCategory(categoryId, 'Groceries', userId),
+          type: CategoryType.INCOME,
+        });
         const createDto: CreateBudgetDto = {
           amount: 3000,
           categoryId,
           month: 6,
           year: 2026,
-          type: BudgetType.INCOME,
         };
         const budget = await service.createBudget(createDto, userId);
 
@@ -1134,7 +1127,6 @@ describe('BudgetService', () => {
           categoryId,
           month: 7,
           year: 2026,
-          type: BudgetType.EXPENSE,
         };
         const budget = await service.createBudget(createDto, userId);
 
@@ -1174,7 +1166,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget1 = await service.createBudget(createDto, userId);
@@ -1193,7 +1184,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       await service.createBudget(createDto, userId);
@@ -1214,7 +1204,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1230,7 +1219,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1250,7 +1238,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1266,7 +1253,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1282,7 +1268,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1298,7 +1283,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1314,7 +1298,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1356,7 +1339,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1372,7 +1354,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const budget = await service.createBudget(createDto, userId);
@@ -1412,7 +1393,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       const budget = await service.createBudget(createDto, userId);
 
@@ -1428,7 +1408,6 @@ describe('BudgetService', () => {
         categoryId,
         month: 1,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
       const budget = await service.createBudget(createDto, userId);
       const result = await service.getBudgetWithSpending(budget.id, userId);
@@ -1457,12 +1436,15 @@ describe('BudgetService', () => {
     });
 
     it('should serialize earned field as fixed-precision string for INCOME budgets', async () => {
+      jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
+        ...buildCategory(categoryId, 'Groceries', userId),
+        type: CategoryType.INCOME,
+      });
       const createDto: CreateBudgetDto = {
         amount: 1000,
         categoryId,
         month: 2,
         year: 2026,
-        type: BudgetType.INCOME,
       };
       const budget = await service.createBudget(createDto, userId);
       const result = await service.getBudgetWithSpending(budget.id, userId);

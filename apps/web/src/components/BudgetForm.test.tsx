@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { renderWithProviders, setupUser } from '@/test/test-utils';
 import { BudgetForm } from './BudgetForm';
-import { BudgetType } from '@/types';
 import { ApiException } from '@/lib/api';
 
 // Mock sonner toast
@@ -83,7 +82,6 @@ describe('BudgetForm', () => {
     expect(screen.getByLabelText('Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Month')).toBeInTheDocument();
     expect(screen.getByLabelText('Year')).toBeInTheDocument();
-    expect(screen.getByLabelText('Type')).toBeInTheDocument();
   });
 
   it('should load categories in dropdown', async () => {
@@ -124,7 +122,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -160,7 +157,6 @@ describe('BudgetForm', () => {
           categoryId: '',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -170,30 +166,6 @@ describe('BudgetForm', () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Category is required');
-    });
-    expect(mockOnSubmit).not.toHaveBeenCalled();
-  });
-
-  it('should show error toast when type is not selected', async () => {
-    renderWithProviders(
-      <BudgetForm
-        title="Create Budget"
-        submitLabel="Create"
-        initialData={{
-          amount: 500,
-          categoryId: 'cat-2',
-          month: 3,
-          year: 2026,
-          type: '' as BudgetType,
-        }}
-        onSubmit={mockOnSubmit}
-      />,
-    );
-
-    fireEvent.submit(document.querySelector('form')!);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Type is required');
     });
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
@@ -208,7 +180,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -222,7 +193,6 @@ describe('BudgetForm', () => {
         categoryId: 'cat-2',
         month: 3,
         year: 2026,
-        type: BudgetType.EXPENSE,
       });
     });
 
@@ -240,7 +210,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -267,7 +236,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -294,7 +262,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -320,7 +287,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,
@@ -363,7 +329,6 @@ describe('BudgetForm', () => {
           categoryId: 'cat-2',
           month: 3,
           year: 2026,
-          type: BudgetType.EXPENSE,
         }}
         onSubmit={mockOnSubmit}
       />,

@@ -39,7 +39,6 @@ describe('NewBudgetPage', () => {
     expect(screen.getByLabelText('Category')).toBeInTheDocument();
     expect(screen.getByLabelText('Month')).toBeInTheDocument();
     expect(screen.getByLabelText('Year')).toBeInTheDocument();
-    expect(screen.getByLabelText('Type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
   });
 

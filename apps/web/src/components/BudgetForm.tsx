@@ -20,7 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { BudgetType, CreateBudgetDto, Category } from '@/types';
+import { CreateBudgetDto, Category } from '@/types';
 import { toast } from 'sonner';
 import { ApiException } from '@/lib/api';
 import { categoriesApi } from '@/lib/categories';
@@ -31,7 +31,6 @@ interface BudgetFormProps {
     categoryId: string;
     month: number;
     year: number;
-    type: BudgetType;
   };
   onSubmit: (data: CreateBudgetDto) => Promise<unknown>;
   title: string;
@@ -54,7 +53,6 @@ export function BudgetForm({
   const [year, setYear] = useState<string>(
     initialData?.year?.toString() || new Date().getFullYear().toString(),
   );
-  const [type, setType] = useState<BudgetType | ''>(initialData?.type || '');
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -113,11 +111,6 @@ export function BudgetForm({
       return;
     }
 
-    if (!type) {
-      toast.error(t('typeRequired'));
-      return;
-    }
-
     setIsLoading(true);
     try {
       await onSubmit({
@@ -125,7 +118,6 @@ export function BudgetForm({
         categoryId,
         month: month as number,
         year: yearNum,
-        type,
       });
       toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
       router.push('/budgets');
@@ -225,26 +217,6 @@ export function BudgetForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="type">{tCommon('type')}</Label>
-            <Select
-              value={type}
-              onValueChange={(value) => setType(value as BudgetType)}
-              disabled={isLoading}
-            >
-              <SelectTrigger id="type">
-                <SelectValue placeholder={t('selectType')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={BudgetType.INCOME}>
-                  {tCommon('income')}
-                </SelectItem>
-                <SelectItem value={BudgetType.EXPENSE}>
-                  {tCommon('expense')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </CardContent>
         <CardFooter className="mt-4 flex justify-between">
           <Button
