@@ -67,9 +67,7 @@ export class UsersController {
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiDeleteAccount()
-  async deleteAccount(
-    @Req() req: { user: { userId: string } },
-  ): Promise<void> {
+  async deleteAccount(@Req() req: { user: { userId: string } }): Promise<void> {
     return this.usersService.deleteAccount(req.user.userId);
   }
 }

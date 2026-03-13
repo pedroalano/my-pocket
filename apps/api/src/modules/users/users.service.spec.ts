@@ -75,7 +75,9 @@ describe('UsersService', () => {
   // ==================== getProfile ====================
   describe('getProfile', () => {
     it('should return user profile without password', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockProfile as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockProfile as any);
 
       const result = await service.getProfile(userId);
 
@@ -89,7 +91,9 @@ describe('UsersService', () => {
     it('should throw NotFoundException when user not found', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
 
-      await expect(service.getProfile(userId)).rejects.toThrow(NotFoundException);
+      await expect(service.getProfile(userId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -100,7 +104,9 @@ describe('UsersService', () => {
       jest
         .spyOn(prismaService.user, 'findUnique')
         .mockResolvedValue({ id: userId } as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(updated as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(updated as any);
 
       const result = await service.updateProfile(userId, { name: 'New Name' });
 
@@ -124,17 +130,24 @@ describe('UsersService', () => {
   // ==================== updatePassword ====================
   describe('updatePassword', () => {
     it('should update password and nullify refreshToken', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockUser as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (bcrypt.hash as jest.Mock).mockResolvedValue('new-hashed-password');
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockUser as any);
 
       await service.updatePassword(userId, {
         currentPassword: 'OldPassword1',
         newPassword: 'NewPassword1',
       });
 
-      expect(bcrypt.compare).toHaveBeenCalledWith('OldPassword1', mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'OldPassword1',
+        mockUser.password,
+      );
       expect(bcrypt.hash).toHaveBeenCalledWith('NewPassword1', 10);
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
@@ -143,7 +156,9 @@ describe('UsersService', () => {
     });
 
     it('should throw UnauthorizedException when current password is wrong', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockUser as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
@@ -173,7 +188,9 @@ describe('UsersService', () => {
       jest
         .spyOn(prismaService.user, 'findUnique')
         .mockResolvedValue({ id: userId } as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(updated as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(updated as any);
 
       const result = await service.updateEmail(userId, {
         email: 'new@example.com',
@@ -217,7 +234,9 @@ describe('UsersService', () => {
         .mockResolvedValue({ id: userId } as any);
 
       const unexpectedError = new Error('Database connection failed');
-      jest.spyOn(prismaService.user, 'update').mockRejectedValue(unexpectedError);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockRejectedValue(unexpectedError);
 
       await expect(
         service.updateEmail(userId, { email: 'new@example.com' }),
