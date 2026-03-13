@@ -2,7 +2,7 @@
   "errors": {
     "notFound": "Budget with ID {id} not found",
     "categoryNotFound": "Category with ID {id} does not exist",
-    "alreadyExists": "Budget for category {categoryId}, type {type}, month {month}, and year {year} already exists",
+    "alreadyExists": "Budget for category {categoryName}, type {type}, month {month}, and year {year} already exists",
     "invalidType": "Invalid budget type: {type}",
     "invalidMonth": "Month must be between 1 and 12"
   }

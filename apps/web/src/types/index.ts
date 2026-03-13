@@ -66,7 +66,6 @@ export interface CreateBudgetDto {
   categoryId: string;
   month: number;
   year: number;
-  type: BudgetType;
 }
 
 export interface UpdateBudgetDto {
@@ -74,7 +73,6 @@ export interface UpdateBudgetDto {
   categoryId?: string;
   month?: number;
   year?: number;
-  type?: BudgetType;
 }
 
 interface BudgetWithSpendingBase {

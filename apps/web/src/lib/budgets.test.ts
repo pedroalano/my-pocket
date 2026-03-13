@@ -122,7 +122,6 @@ describe('budgetsApi', () => {
         categoryId: 'cat-1',
         month: 3,
         year: 2026,
-        type: BudgetType.EXPENSE,
       };
 
       const result = await budgetsApi.create(newBudget);
@@ -132,7 +131,7 @@ describe('budgetsApi', () => {
       expect(result.categoryId).toBe('cat-1');
       expect(result.month).toBe(3);
       expect(result.year).toBe(2026);
-      expect(result.type).toBe(BudgetType.EXPENSE);
+      expect(result.type).toBe(BudgetType.INCOME);
     });
   });
 

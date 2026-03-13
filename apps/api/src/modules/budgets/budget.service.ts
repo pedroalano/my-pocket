@@ -122,25 +122,6 @@ export class BudgetService {
     description: true,
   };
 
-  private normalizeBudgetType(type: string): BudgetType {
-    const normalized = type?.toUpperCase();
-
-    if (normalized === BudgetType.EXPENSE) {
-      return BudgetType.EXPENSE;
-    }
-
-    if (normalized === BudgetType.INCOME) {
-      return BudgetType.INCOME;
-    }
-
-    throw new BadRequestException(
-      this.i18n.t('budgets.errors.invalidType', {
-        args: { type },
-        lang: this.lang,
-      }),
-    );
-  }
-
   private mapBudget(budget: {
     id: string;
     amount: { toString(): string };
@@ -274,7 +255,7 @@ export class BudgetService {
           categoryId: budgetData.categoryId,
           month: budgetData.month,
           year: budgetData.year,
-          type: this.normalizeBudgetType(budgetData.type),
+          type: category.type as unknown as BudgetType,
           userId,
         },
         select: this.budgetSelect,
@@ -289,8 +270,8 @@ export class BudgetService {
         throw new ConflictException(
           this.i18n.t('budgets.errors.alreadyExists', {
             args: {
-              categoryId: budgetData.categoryId,
-              type: budgetData.type,
+              categoryName: category.name,
+              type: category.type,
               month: budgetData.month,
               year: budgetData.year,
             },
@@ -319,11 +300,13 @@ export class BudgetService {
 
     if (
       budgetData.month !== undefined ||
-      budgetData.year !== undefined ||
-      budgetData.type !== undefined
+      budgetData.year !== undefined
     ) {
       this.validateBudgetDataPartial(budgetData);
     }
+
+    let newType: BudgetType | undefined;
+    let categoryName: string | undefined;
 
     if (budgetData.categoryId !== undefined) {
       let category = null;
@@ -346,6 +329,8 @@ export class BudgetService {
           }),
         );
       }
+      newType = category.type as unknown as BudgetType;
+      categoryName = category.name;
     }
 
     try {
@@ -356,10 +341,7 @@ export class BudgetService {
           categoryId: budgetData.categoryId,
           month: budgetData.month,
           year: budgetData.year,
-          type:
-            budgetData.type !== undefined
-              ? this.normalizeBudgetType(budgetData.type)
-              : undefined,
+          type: newType,
         },
         select: this.budgetSelect,
       });
@@ -370,16 +352,29 @@ export class BudgetService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
+        const resolvedCategoryId =
+          budgetData.categoryId ?? existingBudget.categoryId;
+        if (!categoryName) {
+          try {
+            const cat = await this.categoriesService.getCategoryById(
+              resolvedCategoryId,
+              userId,
+            );
+            categoryName = cat?.name;
+          } catch {
+            categoryName = resolvedCategoryId;
+          }
+        }
         const payload = {
-          categoryId: budgetData.categoryId ?? existingBudget.categoryId,
-          type: budgetData.type ?? existingBudget.type,
+          categoryName: categoryName ?? resolvedCategoryId,
+          type: newType ?? existingBudget.type,
           month: budgetData.month ?? existingBudget.month,
           year: budgetData.year ?? existingBudget.year,
         };
         throw new ConflictException(
           this.i18n.t('budgets.errors.alreadyExists', {
             args: {
-              categoryId: payload.categoryId,
+              categoryName: payload.categoryName,
               type: payload.type,
               month: payload.month,
               year: payload.year,
