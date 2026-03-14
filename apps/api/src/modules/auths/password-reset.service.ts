@@ -10,15 +10,20 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class PasswordResetService {
-  private readonly resend: Resend;
+  private _resend: Resend | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly i18n: I18nService,
-  ) {
-    const apiKey = this.configService.get<string>('resend.apiKey', '');
-    this.resend = new Resend(apiKey);
+  ) {}
+
+  private get resend(): Resend {
+    if (!this._resend) {
+      const apiKey = this.configService.get<string>('resend.apiKey', '');
+      this._resend = new Resend(apiKey);
+    }
+    return this._resend;
   }
 
   private get lang(): string {
