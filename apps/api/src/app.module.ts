@@ -50,7 +50,9 @@ const resolveEnvFilePath = () =>
                   target: 'pino-pretty',
                   options: { colorize: true, singleLine: true },
                 },
-            customProps: (req: IncomingMessage & { user?: { userId?: string } }) => ({
+            customProps: (
+              req: IncomingMessage & { user?: { userId?: string } },
+            ) => ({
               userId: req.user?.userId ?? undefined,
             }),
             autoLogging: {
