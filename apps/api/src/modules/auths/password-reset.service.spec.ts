@@ -80,7 +80,10 @@ describe('PasswordResetService', () => {
             }),
           },
         },
-        { provide: I18nService, useValue: { t: jest.fn((key: string) => key) } },
+        {
+          provide: I18nService,
+          useValue: { t: jest.fn((key: string) => key) },
+        },
       ],
     }).compile();
 
@@ -91,7 +94,9 @@ describe('PasswordResetService', () => {
     it('returns success message and does NOT create token or send email when user not found', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
-      const result = await service.forgotPassword({ email: 'unknown@example.com' });
+      const result = await service.forgotPassword({
+        email: 'unknown@example.com',
+      });
 
       expect(result.message).toBe('auth.success.passwordResetEmailSent');
       expect(prisma.passwordResetToken.create).not.toHaveBeenCalled();
@@ -113,7 +118,8 @@ describe('PasswordResetService', () => {
         }),
       });
 
-      const { tokenHash } = prisma.passwordResetToken.create.mock.calls[0][0].data;
+      const { tokenHash } =
+        prisma.passwordResetToken.create.mock.calls[0][0].data;
       // The hash should be a 64-char hex string (SHA-256)
       expect(tokenHash).toMatch(/^[a-f0-9]{64}$/);
     });
@@ -148,7 +154,9 @@ describe('PasswordResetService', () => {
 
       expect(mockSendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          html: expect.stringContaining('http://localhost:3000/reset-password?token='),
+          html: expect.stringContaining(
+            'http://localhost:3000/reset-password?token=',
+          ),
         }),
       );
     });
@@ -159,7 +167,10 @@ describe('PasswordResetService', () => {
       prisma.passwordResetToken.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.resetPassword({ token: 'invalid-token', newPassword: 'NewPass1' }),
+        service.resetPassword({
+          token: 'invalid-token',
+          newPassword: 'NewPass1',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -181,7 +192,10 @@ describe('PasswordResetService', () => {
       });
 
       await expect(
-        service.resetPassword({ token: 'expired-token', newPassword: 'NewPass1' }),
+        service.resetPassword({
+          token: 'expired-token',
+          newPassword: 'NewPass1',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -191,7 +205,10 @@ describe('PasswordResetService', () => {
       prisma.user.update.mockReturnValue('user-update-op');
       prisma.passwordResetToken.update.mockReturnValue('token-update-op');
 
-      await service.resetPassword({ token: 'valid-token', newPassword: 'NewPass1' });
+      await service.resetPassword({
+        token: 'valid-token',
+        newPassword: 'NewPass1',
+      });
 
       expect(prisma.$transaction).toHaveBeenCalledWith([
         expect.anything(),
