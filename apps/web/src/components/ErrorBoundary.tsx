@@ -4,6 +4,7 @@ import React, { Component, ReactNode } from 'react';
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { logError } from '@/lib/errorLogger';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -41,6 +42,7 @@ class ErrorBoundaryInner extends Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logError(error, { componentStack: errorInfo.componentStack });
   }
 
   handleRetry = (): void => {

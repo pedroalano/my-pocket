@@ -113,6 +113,8 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **Error handling:** `ErrorBoundary` (`src/components/ErrorBoundary.tsx`) wraps the app in `layout.tsx`. It is implemented as a functional component (`ErrorBoundary`) that renders an inner class component (`ErrorBoundaryInner`) — this allows the outer wrapper to call `useTranslations` while the class component handles `componentDidCatch`.
 
+**Error logging:** `src/lib/errorLogger.ts` exports `logError(error, context?)`, which POSTs structured JSON to `POST /api/log-error` (Next.js API route). The route writes JSON to stdout; Promtail scrapes it into Loki automatically via Docker SD. `ErrorBoundary.componentDidCatch` calls `logError`. `src/app/global-error.tsx` handles root layout errors and also calls `logError`. In tests, mock `@/lib/errorLogger` in `setup.ts`.
+
 **UI:** shadcn/ui components in `src/components/ui/` (auto-generated, don't hand-edit). Feature components (`CategoryForm`, `TransactionForm`, `BudgetForm`, `BudgetDetails`, `ThemeToggle`, `LanguageToggle`) live directly in `src/components/`. Charts use `recharts` (PieChart, BarChart) in the dashboard page.
 
 **Register flow (multi-step):** After successful registration the page transitions to a preset categories step (same URL). The user selects/deselects 11 common categories and clicks "Get Started" (calls `POST /categories/batch` with localized names, then redirects to `/dashboard`) or "Skip" (redirects directly). Preset keys are defined as a `PRESETS` constant in `page.tsx`; localized names come from the `presetCategories.names` namespace.
