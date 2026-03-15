@@ -22,6 +22,11 @@ console.error = (...args: unknown[]) => {
   originalConsoleError(...args);
 };
 
+// Mock errorLogger to prevent fetch calls in tests
+vi.mock('@/lib/errorLogger', () => ({
+  logError: vi.fn(),
+}));
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
