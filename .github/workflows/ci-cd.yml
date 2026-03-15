@@ -182,11 +182,12 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           API_IMAGE: ghcr.io/${{ github.repository_owner }}/my-pocket-api:${{ github.sha }}
           WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/my-pocket-web:${{ github.sha }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,API_IMAGE,WEB_IMAGE
+          envs: GHCR_TOKEN,GITHUB_ACTOR,API_IMAGE,WEB_IMAGE,GRAFANA_ADMIN_PASSWORD
           script: |
             cd ${{ secrets.VPS_APP_DIR }}
             git pull origin main
