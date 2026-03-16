@@ -49,5 +49,8 @@
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
-  "packageManager": "npm@10.9.2"
+  "packageManager": "npm@10.9.2",
+  "dependencies": {
+    "@nestjs/schedule": "^6.1.1"
+  }
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { I18nModule, AcceptLanguageResolver } from 'nestjs-i18n';
 import { LoggerModule } from 'nestjs-pino';
 import { IncomingMessage } from 'http';
@@ -16,6 +17,7 @@ import { AuthsModule } from './modules/auths/auths.module';
 import { SharedModule } from './modules/shared';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
+import { RecurringTransactionsModule } from './modules/recurring-transactions/recurring-transactions.module';
 
 const envFileMap: Record<string, string> = {
   test: '.env.test',
@@ -37,6 +39,7 @@ const resolveEnvFilePath = () =>
       },
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
@@ -78,6 +81,7 @@ const resolveEnvFilePath = () =>
     AuthsModule,
     DashboardModule,
     UsersModule,
+    RecurringTransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
