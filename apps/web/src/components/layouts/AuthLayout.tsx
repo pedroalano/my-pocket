@@ -74,6 +74,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               >
                 {t('transactions')}
               </Link>
+              <Link
+                href="/recurring-transactions"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                {t('recurringTransactions')}
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-2">

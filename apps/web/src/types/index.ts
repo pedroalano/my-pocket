@@ -178,6 +178,44 @@ export interface UpdateTransactionDto {
   description?: string;
 }
 
+// Recurring Transaction types
+export type RecurringInterval = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+export interface RecurringTransaction {
+  id: string;
+  userId: string;
+  categoryId: string;
+  description: string;
+  amount: string;
+  type: 'INCOME' | 'EXPENSE';
+  interval: RecurringInterval;
+  startDate: string;
+  nextRun: string;
+  endDate?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRecurringTransactionDto {
+  amount: number;
+  categoryId: string;
+  description: string;
+  interval: RecurringInterval;
+  startDate: string;
+  endDate?: string;
+}
+
+export interface UpdateRecurringTransactionDto {
+  amount?: number;
+  categoryId?: string;
+  description?: string;
+  interval?: RecurringInterval;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+}
+
 // API Response types
 export interface ApiError {
   message: string;

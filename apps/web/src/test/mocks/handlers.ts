@@ -163,6 +163,39 @@ export const mockTopExpenses = [
   },
 ];
 
+export const mockRecurringTransactions = [
+  {
+    id: 'rt-1',
+    amount: '15.00',
+    type: 'EXPENSE',
+    categoryId: 'cat-2',
+    description: 'Netflix',
+    interval: 'MONTHLY',
+    startDate: '2026-01-01T00:00:00.000Z',
+    nextRun: '2026-04-01T00:00:00.000Z',
+    isActive: true,
+    userId: 'user-123',
+    endDate: undefined,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'rt-2',
+    amount: '3000.00',
+    type: 'INCOME',
+    categoryId: 'cat-1',
+    description: 'Salary',
+    interval: 'MONTHLY',
+    startDate: '2026-01-01T00:00:00.000Z',
+    nextRun: '2026-04-01T00:00:00.000Z',
+    isActive: true,
+    userId: 'user-123',
+    endDate: undefined,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
 // Generate a valid-looking JWT for testing
 export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNzA0MDY3MjAwfQ.fake-signature';
@@ -737,4 +770,130 @@ export const handlers = [
     }
     return new HttpResponse(null, { status: 204 });
   }),
+
+  // Recurring Transactions endpoints
+  http.get(`${API_URL}/recurring-transactions`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json(mockRecurringTransactions);
+  }),
+
+  http.get(`${API_URL}/recurring-transactions/:id`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const rt = mockRecurringTransactions.find((r) => r.id === params.id);
+    if (!rt) {
+      return HttpResponse.json(
+        { message: 'Recurring transaction not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(rt);
+  }),
+
+  http.post(`${API_URL}/recurring-transactions`, async ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const body = (await request.json()) as {
+      amount: number;
+      categoryId: string;
+      description: string;
+      interval: string;
+      startDate: string;
+      endDate?: string;
+    };
+    const category = mockCategories.find((c) => c.id === body.categoryId);
+    return HttpResponse.json({
+      id: 'new-rt-id',
+      amount: body.amount.toFixed(2),
+      type: category?.type ?? 'EXPENSE',
+      categoryId: body.categoryId,
+      description: body.description,
+      interval: body.interval,
+      startDate: body.startDate,
+      nextRun: body.startDate,
+      endDate: body.endDate,
+      isActive: true,
+      userId: 'test-user-id',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }),
+
+  http.put(
+    `${API_URL}/recurring-transactions/:id`,
+    async ({ params, request }) => {
+      const auth = request.headers.get('Authorization');
+      if (!auth?.startsWith('Bearer ')) {
+        return HttpResponse.json(
+          { message: 'Unauthorized', statusCode: 401 },
+          { status: 401 },
+        );
+      }
+      const rt = mockRecurringTransactions.find((r) => r.id === params.id);
+      if (!rt) {
+        return HttpResponse.json(
+          { message: 'Recurring transaction not found', statusCode: 404 },
+          { status: 404 },
+        );
+      }
+      const body = (await request.json()) as {
+        amount?: number;
+        categoryId?: string;
+        description?: string;
+        interval?: string;
+        startDate?: string;
+        endDate?: string;
+        isActive?: boolean;
+      };
+      return HttpResponse.json({
+        ...rt,
+        amount:
+          body.amount !== undefined ? body.amount.toFixed(2) : rt.amount,
+        categoryId: body.categoryId ?? rt.categoryId,
+        description: body.description ?? rt.description,
+        interval: body.interval ?? rt.interval,
+        startDate: body.startDate ?? rt.startDate,
+        endDate: body.endDate ?? rt.endDate,
+        isActive: body.isActive !== undefined ? body.isActive : rt.isActive,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(
+    `${API_URL}/recurring-transactions/:id`,
+    ({ params, request }) => {
+      const auth = request.headers.get('Authorization');
+      if (!auth?.startsWith('Bearer ')) {
+        return HttpResponse.json(
+          { message: 'Unauthorized', statusCode: 401 },
+          { status: 401 },
+        );
+      }
+      const rt = mockRecurringTransactions.find((r) => r.id === params.id);
+      if (!rt) {
+        return HttpResponse.json(
+          { message: 'Recurring transaction not found', statusCode: 404 },
+          { status: 404 },
+        );
+      }
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
 ];
