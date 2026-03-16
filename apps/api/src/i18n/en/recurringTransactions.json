@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "notFound": "Recurring transaction with ID {id} not found",
+    "categoryNotFound": "Category with ID {id} does not exist"
+  }
+}

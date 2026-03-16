@@ -15,6 +15,13 @@ enum CategoryType {
   EXPENSE
 }
 
+enum RecurringInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -33,10 +40,11 @@ model User {
   refreshToken        String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  categories          Category[]
-  transactions        Transaction[]
-  budgets             Budget[]
-  passwordResetTokens PasswordResetToken[]
+  categories             Category[]
+  transactions           Transaction[]
+  budgets                Budget[]
+  passwordResetTokens    PasswordResetToken[]
+  recurringTransactions  RecurringTransaction[]
 }
 
 model Category {
@@ -47,8 +55,9 @@ model Category {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  transactions Transaction[]
-  budgets      Budget[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 
   @@unique([name, type, userId])
 }
@@ -81,6 +90,27 @@ model Budget {
   updatedAt    DateTime   @updatedAt
 
   @@unique([categoryId, month, year, userId])
+}
+
+model RecurringTransaction {
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @db.Uuid
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String            @db.Uuid
+  category    Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  description String
+  amount      Decimal           @db.Decimal(10, 2)
+  type        TransactionType
+  interval    RecurringInterval
+  startDate   DateTime
+  nextRun     DateTime
+  endDate     DateTime?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([nextRun])
 }
 
 model PasswordResetToken {
