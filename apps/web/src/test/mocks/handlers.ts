@@ -407,6 +407,28 @@ export const handlers = [
     return HttpResponse.json(budget);
   }),
 
+  http.post(`${API_URL}/budgets/batch`, async ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const body = (await request.json()) as {
+      amount: number;
+      categoryId: string;
+      startMonth: number;
+      startYear: number;
+      endMonth: number;
+      endYear: number;
+    };
+    const startOrdinal = body.startYear * 12 + body.startMonth;
+    const endOrdinal = body.endYear * 12 + body.endMonth;
+    const created = Math.max(0, endOrdinal - startOrdinal + 1);
+    return HttpResponse.json({ created, skipped: 0 });
+  }),
+
   http.post(`${API_URL}/budgets`, async ({ request }) => {
     const auth = request.headers.get('Authorization');
     if (!auth?.startsWith('Bearer ')) {

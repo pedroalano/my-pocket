@@ -1,8 +1,10 @@
 import { api } from '@/lib/api';
 import {
   Budget,
+  BatchBudgetResponse,
   BudgetWithDetails,
   BudgetWithSpending,
+  CreateBatchBudgetDto,
   CreateBudgetDto,
   UpdateBudgetDto,
 } from '@/types';
@@ -19,6 +21,9 @@ export const budgetsApi = {
     api.get<BudgetWithSpending[]>(`/budgets/category/${categoryId}`),
 
   create: (data: CreateBudgetDto) => api.post<Budget>('/budgets', data),
+
+  createBatch: (data: CreateBatchBudgetDto) =>
+    api.post<BatchBudgetResponse>('/budgets/batch', data),
 
   update: (id: string, data: UpdateBudgetDto) =>
     api.put<Budget>(`/budgets/${id}`, data),

@@ -110,6 +110,31 @@ export function ApiCreateBudget() {
   );
 }
 
+export function ApiCreateBatchBudget() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Create budgets for a date range' }),
+    ApiResponse({
+      status: 201,
+      description: 'Budgets created successfully',
+      schema: {
+        type: 'object',
+        properties: {
+          created: { type: 'number' },
+          skipped: { type: 'number' },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: 'Bad request - Invalid date range or category not found',
+    }),
+    ApiResponse({
+      status: 401,
+      description: 'Unauthorized - Invalid or missing JWT token',
+    }),
+  );
+}
+
 export function ApiUpdateBudget() {
   return applyDecorators(
     ApiOperation({ summary: 'Update an existing budget' }),

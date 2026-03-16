@@ -203,7 +203,16 @@
     "yearRequired": "Year is required",
     "typeRequired": "Type is required",
     "createSuccess": "Budget created successfully",
-    "updateSuccess": "Budget updated successfully"
+    "updateSuccess": "Budget updated successfully",
+    "repeatUntil": "Repeat until",
+    "startMonth": "Start Month",
+    "startYear": "Start Year",
+    "endMonth": "End Month",
+    "endYear": "End Year",
+    "endMonthRequired": "End month is required",
+    "endYearRequired": "End year is required",
+    "endDateBeforeStart": "End date must be after or equal to start date",
+    "batchCreateSuccess": "{created} budgets created ({skipped} skipped)"
   },
   "budgetDetails": {
     "budgetAmount": "Budget Amount",

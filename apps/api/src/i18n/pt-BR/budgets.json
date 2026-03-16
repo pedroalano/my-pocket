@@ -4,6 +4,7 @@
     "categoryNotFound": "Categoria com ID {id} não existe",
     "alreadyExists": "Orçamento para categoria {categoryName}, tipo {type}, mês {month}, e ano {year} já existe",
     "invalidType": "Tipo de orçamento inválido: {type}",
-    "invalidMonth": "O mês deve estar entre 1 e 12"
+    "invalidMonth": "O mês deve estar entre 1 e 12",
+    "invalidDateRange": "A data de término deve ser igual ou posterior à data de início"
   }
 }

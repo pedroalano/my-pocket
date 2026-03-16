@@ -7,6 +7,7 @@ import {
 import { BudgetType, Prisma, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 import { CreateBudgetDto } from './dto/create-budget.dto';
+import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
@@ -281,6 +282,72 @@ export class BudgetService {
       }
       throw error;
     }
+  }
+
+  async createBatchBudgets(dto: CreateBatchBudgetDto, userId: string) {
+    const startOrdinal = dto.startYear * 12 + dto.startMonth;
+    const endOrdinal = dto.endYear * 12 + dto.endMonth;
+
+    if (endOrdinal < startOrdinal) {
+      throw new BadRequestException(
+        this.i18n.t('budgets.errors.invalidDateRange', { lang: this.lang }),
+      );
+    }
+
+    let category = null;
+
+    try {
+      category = await this.categoriesService.getCategoryById(
+        dto.categoryId,
+        userId,
+      );
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) {
+        throw error;
+      }
+    }
+    if (!category) {
+      throw new BadRequestException(
+        this.i18n.t('budgets.errors.categoryNotFound', {
+          args: { id: dto.categoryId },
+          lang: this.lang,
+        }),
+      );
+    }
+
+    let created = 0;
+    let skipped = 0;
+
+    for (let ordinal = startOrdinal; ordinal <= endOrdinal; ordinal++) {
+      const year = Math.floor((ordinal - 1) / 12);
+      const month = ((ordinal - 1) % 12) + 1;
+
+      try {
+        await this.prisma.budget.create({
+          data: {
+            amount: dto.amount,
+            categoryId: dto.categoryId,
+            month,
+            year,
+            type: category.type as unknown as BudgetType,
+            userId,
+          },
+          select: this.budgetSelect,
+        });
+        created++;
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          skipped++;
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    return { created, skipped };
   }
 
   async updateBudget(id: string, budgetData: UpdateBudgetDto, userId: string) {
