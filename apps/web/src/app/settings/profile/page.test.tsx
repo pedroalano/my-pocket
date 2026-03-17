@@ -3,10 +3,7 @@ import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mocks/server';
 import { mockUser } from '@/test/mocks/handlers';
-import {
-  renderWithAuthenticatedProviders,
-  setupUser,
-} from '@/test/test-utils';
+import { renderWithAuthenticatedProviders, setupUser } from '@/test/test-utils';
 import SettingsProfilePage from './page';
 
 const API_URL = 'http://localhost:3001';
@@ -38,14 +35,14 @@ describe('SettingsProfilePage', () => {
     renderWithAuthenticatedProviders(<SettingsProfilePage />);
 
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText('Name') as HTMLInputElement).value,
-      ).toBe(mockUser.name);
+      expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe(
+        mockUser.name,
+      );
     });
 
-    expect(
-      (screen.getByLabelText('Email') as HTMLInputElement).value,
-    ).toBe(mockUser.email);
+    expect((screen.getByLabelText('Email') as HTMLInputElement).value).toBe(
+      mockUser.email,
+    );
   });
 
   it('shows load error when API fails', async () => {
@@ -70,9 +67,9 @@ describe('SettingsProfilePage', () => {
     renderWithAuthenticatedProviders(<SettingsProfilePage />);
 
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText('Name') as HTMLInputElement).value,
-      ).toBe(mockUser.name);
+      expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe(
+        mockUser.name,
+      );
     });
 
     const nameInput = screen.getByLabelText('Name');
@@ -91,9 +88,9 @@ describe('SettingsProfilePage', () => {
     renderWithAuthenticatedProviders(<SettingsProfilePage />);
 
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText('Email') as HTMLInputElement).value,
-      ).toBe(mockUser.email);
+      expect((screen.getByLabelText('Email') as HTMLInputElement).value).toBe(
+        mockUser.email,
+      );
     });
 
     const emailInput = screen.getByLabelText('Email');
@@ -112,9 +109,9 @@ describe('SettingsProfilePage', () => {
     renderWithAuthenticatedProviders(<SettingsProfilePage />);
 
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText('Email') as HTMLInputElement).value,
-      ).toBe(mockUser.email);
+      expect((screen.getByLabelText('Email') as HTMLInputElement).value).toBe(
+        mockUser.email,
+      );
     });
 
     const emailInput = screen.getByLabelText('Email');
@@ -138,7 +135,10 @@ describe('SettingsProfilePage', () => {
 
     await user.type(screen.getByLabelText('Current Password'), 'OldPassword1');
     await user.type(screen.getByLabelText('New Password'), 'NewPassword1');
-    await user.type(screen.getByLabelText('Confirm New Password'), 'Different1');
+    await user.type(
+      screen.getByLabelText('Confirm New Password'),
+      'Different1',
+    );
 
     fireEvent.submit(
       screen.getByLabelText('Current Password').closest('form')!,
@@ -161,7 +161,10 @@ describe('SettingsProfilePage', () => {
 
     await user.type(screen.getByLabelText('Current Password'), 'OldPassword1');
     await user.type(screen.getByLabelText('New Password'), 'NewPassword1');
-    await user.type(screen.getByLabelText('Confirm New Password'), 'NewPassword1');
+    await user.type(
+      screen.getByLabelText('Confirm New Password'),
+      'NewPassword1',
+    );
 
     fireEvent.submit(
       screen.getByLabelText('Current Password').closest('form')!,
@@ -186,9 +189,15 @@ describe('SettingsProfilePage', () => {
       expect(screen.getByLabelText('Current Password')).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText('Current Password'), 'WrongPassword1');
+    await user.type(
+      screen.getByLabelText('Current Password'),
+      'WrongPassword1',
+    );
     await user.type(screen.getByLabelText('New Password'), 'NewPassword1');
-    await user.type(screen.getByLabelText('Confirm New Password'), 'NewPassword1');
+    await user.type(
+      screen.getByLabelText('Confirm New Password'),
+      'NewPassword1',
+    );
 
     fireEvent.submit(
       screen.getByLabelText('Current Password').closest('form')!,

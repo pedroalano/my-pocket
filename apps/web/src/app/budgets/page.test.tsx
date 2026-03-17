@@ -14,7 +14,11 @@ const API_URL = 'http://localhost:3001';
 
 // Mock next/navigation — return a stable router reference to avoid useCallback re-creation loops
 const mockRouterPush = vi.fn();
-const _mockBudgetsRouter = { push: mockRouterPush, replace: vi.fn(), back: vi.fn() };
+const _mockBudgetsRouter = {
+  push: mockRouterPush,
+  replace: vi.fn(),
+  back: vi.fn(),
+};
 vi.mock('next/navigation', async () => ({
   useRouter: () => _mockBudgetsRouter,
 }));

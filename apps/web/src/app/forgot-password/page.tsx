@@ -57,7 +57,10 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Link href="/login" className="text-sm text-primary hover:underline">
+            <Link
+              href="/login"
+              className="text-sm text-primary hover:underline"
+            >
               {t('backToLogin')}
             </Link>
           </CardFooter>
@@ -96,7 +99,10 @@ export default function ForgotPasswordPage() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? t('submitting') : t('submit')}
             </Button>
-            <Link href="/login" className="text-sm text-primary hover:underline">
+            <Link
+              href="/login"
+              className="text-sm text-primary hover:underline"
+            >
               {t('backToLogin')}
             </Link>
           </CardFooter>

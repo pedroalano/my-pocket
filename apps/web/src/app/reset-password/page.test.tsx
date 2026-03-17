@@ -49,7 +49,9 @@ describe('ResetPasswordPage', () => {
 
     expect(screen.getByLabelText('New Password')).toBeInTheDocument();
     expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset Password' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Reset Password' }),
+    ).toBeInTheDocument();
   });
 
   it('shows error toast when passwords do not match', async () => {
@@ -73,7 +75,9 @@ describe('ResetPasswordPage', () => {
     server.use(
       http.post(`${API_URL}/auths/reset-password`, async () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json({ message: 'Password has been reset successfully' });
+        return HttpResponse.json({
+          message: 'Password has been reset successfully',
+        });
       }),
     );
 
@@ -156,10 +160,14 @@ describe('ResetPasswordPage', () => {
     const passwordInput = screen.getByLabelText('New Password');
     expect(passwordInput).toHaveAttribute('type', 'password');
 
-    const [toggleButton] = screen.getAllByRole('button', { name: 'Show password' });
+    const [toggleButton] = screen.getAllByRole('button', {
+      name: 'Show password',
+    });
     await user.click(toggleButton);
 
     expect(passwordInput).toHaveAttribute('type', 'text');
-    expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Hide password' }),
+    ).toBeInTheDocument();
   });
 });

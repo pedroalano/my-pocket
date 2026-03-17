@@ -212,24 +212,28 @@ npm run docker:prod:down
 The production stack includes structured logging and a full log aggregation pipeline.
 
 ### Stack
-| Service   | Port  | Description                                      |
-|-----------|-------|--------------------------------------------------|
-| Grafana   | 3500  | Dashboard UI — visualize and query logs          |
-| Loki      | 3100  | Log aggregation backend                          |
-| Promtail  | —     | Log collector (scrapes Docker container stdout)  |
+
+| Service  | Port | Description                                     |
+| -------- | ---- | ----------------------------------------------- |
+| Grafana  | 3500 | Dashboard UI — visualize and query logs         |
+| Loki     | 3100 | Log aggregation backend                         |
+| Promtail | —    | Log collector (scrapes Docker container stdout) |
 
 ### How it works
+
 1. The API emits structured JSON logs to stdout via **nestjs-pino**
 2. **Promtail** scrapes Docker container logs from `/var/run/docker.sock` and forwards them to Loki, tagging each entry with `container` and `service` labels
 3. **Loki** stores and indexes the logs
 4. **Grafana** is pre-configured with Loki as the default datasource — open `http://<host>:3500` to query logs
 
 ### Accessing Grafana
+
 - URL: `http://localhost:3500` (or your VPS IP/domain)
 - Username: `admin`
 - Password: value of `GRAFANA_ADMIN_PASSWORD` env var (default: `admin`)
 
 ### Log levels
+
 Control log verbosity via the `LOG_LEVEL` environment variable (default: `info`).
 Valid values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
 
@@ -286,46 +290,47 @@ Once the API is running, visit:
 
 ### API Endpoints Summary
 
-| Endpoint                        | Method | Description                        |
-| ------------------------------- | ------ | ---------------------------------- |
-| `/auths/register`               | POST   | Register a new user                |
-| `/auths/login`                  | POST   | Login and get JWT token            |
-| `/auths/refresh`                | POST   | Exchange refresh token for new access + refresh tokens |
+| Endpoint                        | Method | Description                                             |
+| ------------------------------- | ------ | ------------------------------------------------------- |
+| `/auths/register`               | POST   | Register a new user                                     |
+| `/auths/login`                  | POST   | Login and get JWT token                                 |
+| `/auths/refresh`                | POST   | Exchange refresh token for new access + refresh tokens  |
 | `/auths/logout`                 | POST   | Invalidate current refresh token (requires Bearer auth) |
-| `/users/me`                     | GET    | Get current user profile           |
-| `/users/me`                     | PATCH  | Update user display name           |
-| `/users/me/email`               | PATCH  | Update user email (409 on duplicate) |
-| `/users/me/password`            | PATCH  | Change password (verifies current, clears tokens) |
-| `/users/me`                     | DELETE | Delete account and all associated data |
-| `/categories`                   | GET    | List all categories                |
-| `/categories/:id`               | GET    | Get category by ID                 |
-| `/categories`                   | POST   | Create a new category              |
-| `/categories/batch`             | POST   | Create multiple categories, skipping duplicates |
-| `/categories/:id`               | PUT    | Update a category                  |
-| `/categories/:id`               | DELETE | Delete a category                  |
-| `/transactions`                 | GET    | List all transactions              |
-| `/transactions/:id`             | GET    | Get transaction by ID              |
-| `/transactions`                 | POST   | Create a new transaction           |
-| `/transactions/:id`             | PUT    | Update a transaction               |
-| `/transactions/:id`             | DELETE | Delete a transaction               |
-| `/budgets`                      | GET    | List all budgets                   |
-| `/budgets/:id`                  | GET    | Get budget by ID                   |
-| `/budgets/:id/details`          | GET    | Get budget with spending details   |
-| `/budgets/category/:categoryId` | GET    | Get budgets by category            |
-| `/budgets`                      | POST   | Create a new budget                |
-| `/budgets/:id`                  | PUT    | Update a budget                    |
-| `/budgets/:id`                  | DELETE | Delete a budget                    |
-| `/dashboard/monthly-summary`    | GET    | Get monthly income/expense summary |
-| `/dashboard/budget-vs-actual`   | GET    | Compare budgets vs actual spending |
-| `/dashboard/category-breakdown` | GET    | Get spending breakdown by category |
-| `/dashboard/top-expenses`       | GET    | Get top expense transactions       |
-| `/health`                       | GET    | Health check endpoint              |
+| `/users/me`                     | GET    | Get current user profile                                |
+| `/users/me`                     | PATCH  | Update user display name                                |
+| `/users/me/email`               | PATCH  | Update user email (409 on duplicate)                    |
+| `/users/me/password`            | PATCH  | Change password (verifies current, clears tokens)       |
+| `/users/me`                     | DELETE | Delete account and all associated data                  |
+| `/categories`                   | GET    | List all categories                                     |
+| `/categories/:id`               | GET    | Get category by ID                                      |
+| `/categories`                   | POST   | Create a new category                                   |
+| `/categories/batch`             | POST   | Create multiple categories, skipping duplicates         |
+| `/categories/:id`               | PUT    | Update a category                                       |
+| `/categories/:id`               | DELETE | Delete a category                                       |
+| `/transactions`                 | GET    | List all transactions                                   |
+| `/transactions/:id`             | GET    | Get transaction by ID                                   |
+| `/transactions`                 | POST   | Create a new transaction                                |
+| `/transactions/:id`             | PUT    | Update a transaction                                    |
+| `/transactions/:id`             | DELETE | Delete a transaction                                    |
+| `/budgets`                      | GET    | List all budgets                                        |
+| `/budgets/:id`                  | GET    | Get budget by ID                                        |
+| `/budgets/:id/details`          | GET    | Get budget with spending details                        |
+| `/budgets/category/:categoryId` | GET    | Get budgets by category                                 |
+| `/budgets`                      | POST   | Create a new budget                                     |
+| `/budgets/:id`                  | PUT    | Update a budget                                         |
+| `/budgets/:id`                  | DELETE | Delete a budget                                         |
+| `/dashboard/monthly-summary`    | GET    | Get monthly income/expense summary                      |
+| `/dashboard/budget-vs-actual`   | GET    | Compare budgets vs actual spending                      |
+| `/dashboard/category-breakdown` | GET    | Get spending breakdown by category                      |
+| `/dashboard/top-expenses`       | GET    | Get top expense transactions                            |
+| `/health`                       | GET    | Health check endpoint                                   |
 
 ---
 
 ## 📋 Features
 
 ### API
+
 - ✅ User registration and authentication with JWT
 - ✅ Protected routes with authentication guards
 - ✅ Categories, Transactions, and Budgets management
@@ -343,6 +348,7 @@ Once the API is running, visit:
 - ✅ Short-lived access tokens (15 min) + revocable refresh tokens (7 days)
 
 ### Frontend
+
 - ✅ Dashboard as post-login landing page with charts and monthly summary
 - ✅ Dark / Light / System theme toggle (persisted via `localStorage`)
 - ✅ EN / PT-BR language toggle in header (persisted via `NEXT_LOCALE` cookie)

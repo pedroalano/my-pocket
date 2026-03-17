@@ -132,8 +132,12 @@ export default function CategoriesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">{tCommon('allTypes')}</SelectItem>
-            <SelectItem value={CategoryType.INCOME}>{tCommon('income')}</SelectItem>
-            <SelectItem value={CategoryType.EXPENSE}>{tCommon('expense')}</SelectItem>
+            <SelectItem value={CategoryType.INCOME}>
+              {tCommon('income')}
+            </SelectItem>
+            <SelectItem value={CategoryType.EXPENSE}>
+              {tCommon('expense')}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -156,7 +160,9 @@ export default function CategoriesPage() {
                 <TableHead>{tCommon('name')}</TableHead>
                 <TableHead>{tCommon('type')}</TableHead>
                 <TableHead>{t('created')}</TableHead>
-                <TableHead className="text-right">{tCommon('actions')}</TableHead>
+                <TableHead className="text-right">
+                  {tCommon('actions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -171,7 +177,9 @@ export default function CategoriesPage() {
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}
                     >
-                      {category.type === 'INCOME' ? tCommon('income') : tCommon('expense')}
+                      {category.type === 'INCOME'
+                        ? tCommon('income')
+                        : tCommon('expense')}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

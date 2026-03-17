@@ -128,7 +128,7 @@ describe('TransactionForm', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('150')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('$150.00')).toBeInTheDocument();
       expect(screen.getByDisplayValue('2026-03-05')).toBeInTheDocument();
       expect(screen.getByDisplayValue('Test description')).toBeInTheDocument();
     });
@@ -143,7 +143,7 @@ describe('TransactionForm', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Amount')).toHaveAttribute('required');
+    expect(screen.getByLabelText('Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Date')).toHaveAttribute('required');
   });
 

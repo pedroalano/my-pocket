@@ -47,7 +47,10 @@ function ResetPasswordForm() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-primary hover:underline"
+            >
               {t('backToLogin')}
             </Link>
           </CardFooter>
@@ -112,7 +115,9 @@ function ResetPasswordForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={isLoading}
-                  aria-label={showPassword ? tAuth('hidePassword') : tAuth('showPassword')}
+                  aria-label={
+                    showPassword ? tAuth('hidePassword') : tAuth('showPassword')
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -140,7 +145,11 @@ function ResetPasswordForm() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={isLoading}
-                  aria-label={showConfirmPassword ? tAuth('hidePassword') : tAuth('showPassword')}
+                  aria-label={
+                    showConfirmPassword
+                      ? tAuth('hidePassword')
+                      : tAuth('showPassword')
+                  }
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -155,7 +164,10 @@ function ResetPasswordForm() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? t('submitting') : t('submit')}
             </Button>
-            <Link href="/login" className="text-sm text-primary hover:underline">
+            <Link
+              href="/login"
+              className="text-sm text-primary hover:underline"
+            >
               {t('backToLogin')}
             </Link>
           </CardFooter>

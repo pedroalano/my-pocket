@@ -262,7 +262,9 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={isLoading}
-                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                  aria-label={
+                    showPassword ? t('hidePassword') : t('showPassword')
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />

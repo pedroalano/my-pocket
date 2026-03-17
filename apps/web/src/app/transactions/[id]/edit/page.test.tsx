@@ -49,7 +49,7 @@ describe('EditTransactionPage', () => {
 
     // Check form is pre-filled with transaction data (from mock transaction-1)
     const amountInput = screen.getByLabelText('Amount');
-    expect(amountInput).toHaveValue(150);
+    expect(amountInput).toHaveValue('$150.00');
 
     // Check submit button shows correct label
     expect(
@@ -66,7 +66,9 @@ describe('EditTransactionPage', () => {
 
     // Check that AuthLayout navigation is present
     expect(screen.getByRole('link', { name: 'My Pocket' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'User menu' }),
+    ).toBeInTheDocument();
   });
 
   it('handles 404 error and redirects to transactions list', async () => {

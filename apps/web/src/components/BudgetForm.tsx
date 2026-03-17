@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,7 +46,10 @@ export function BudgetForm({
   submitLabel,
 }: BudgetFormProps) {
   const [amount, setAmount] = useState<string>(
-    initialData?.amount?.toString() || '',
+    initialData?.amount != null ? initialData.amount.toFixed(2) : '',
+  );
+  const [amountFloat, setAmountFloat] = useState<number | null>(
+    initialData?.amount ?? null,
   );
   const [categoryId, setCategoryId] = useState<string>(
     initialData?.categoryId || '',
@@ -66,6 +70,11 @@ export function BudgetForm({
   const t = useTranslations('budgetForm');
   const tCommon = useTranslations('common');
   const tMonths = useTranslations('months');
+  const locale = useLocale();
+  const intlConfig =
+    locale === 'pt-BR'
+      ? { locale: 'pt-BR', currency: 'BRL' }
+      : { locale: 'en-US', currency: 'USD' };
 
   const MONTHS = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
@@ -89,15 +98,14 @@ export function BudgetForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const amountNum = parseFloat(amount);
     const yearNum = parseInt(year, 10);
 
-    if (!amount || isNaN(amountNum)) {
+    if (amountFloat === null || amountFloat === undefined) {
       toast.error(t('amountRequired'));
       return;
     }
 
-    if (amountNum <= 0) {
+    if (amountFloat <= 0) {
       toast.error(t('amountPositive'));
       return;
     }
@@ -136,7 +144,7 @@ export function BudgetForm({
       setIsLoading(true);
       try {
         const result = await budgetsApi.createBatch({
-          amount: amountNum,
+          amount: amountFloat,
           categoryId,
           startMonth: month as number,
           startYear: yearNum,
@@ -165,7 +173,7 @@ export function BudgetForm({
     setIsLoading(true);
     try {
       await onSubmit({
-        amount: amountNum,
+        amount: amountFloat,
         categoryId,
         month: month as number,
         year: yearNum,
@@ -192,15 +200,17 @@ export function BudgetForm({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="amount">{tCommon('amount')}</Label>
-            <Input
+            <CurrencyInput
               id="amount"
-              type="number"
-              step="0.01"
-              min="0.01"
+              className="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               placeholder={t('amountPlaceholder')}
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
+              onValueChange={(value, _name, values) => {
+                setAmount(value ?? '');
+                setAmountFloat(values?.float ?? null);
+              }}
+              intlConfig={intlConfig}
+              allowNegativeValue={false}
               disabled={isLoading}
             />
           </div>
@@ -234,7 +244,9 @@ export function BudgetForm({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="month">
-                {repeatUntil && !initialData ? t('startMonth') : tCommon('month')}
+                {repeatUntil && !initialData
+                  ? t('startMonth')
+                  : tCommon('month')}
               </Label>
               <Select
                 value={month.toString()}
@@ -323,7 +335,6 @@ export function BudgetForm({
               </div>
             </div>
           )}
-
         </CardContent>
         <CardFooter className="mt-4 flex justify-between">
           <Button

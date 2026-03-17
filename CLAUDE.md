@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
+
 ```bash
 npm install                  # Install all workspace dependencies
 npm run dev                  # Start all apps (API on :3001, web on :3000)
@@ -15,6 +16,7 @@ npm run format               # Prettier format
 ```
 
 ### Testing
+
 ```bash
 npm run test                          # Run all tests via Turborepo
 npm run test:cov                      # With coverage
@@ -34,6 +36,7 @@ cd apps/web && npm run test:coverage  # With coverage
 ```
 
 ### Database
+
 ```bash
 npm run db:generate          # Regenerate Prisma client after schema changes
 npm run db:migrate:dev       # Run migrations (dev DB)
@@ -43,6 +46,7 @@ npm run db:seed              # Seed database
 ```
 
 ### Docker
+
 ```bash
 npm run docker:dev           # Start all services with hot-reload
 npm run docker:dev:build     # Rebuild and start
@@ -52,7 +56,9 @@ npm run docker:dev:down      # Stop
 ## Architecture
 
 ### Monorepo Structure
+
 This is a **Turborepo + npm workspaces** monorepo:
+
 - `apps/api` — NestJS backend (`@my-pocket/api`)
 - `apps/web` — Next.js 15 frontend (`@my-pocket/web`)
 - `packages/shared` — shared TypeScript types/interfaces (`@my-pocket/shared`)
@@ -61,6 +67,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 ### Backend (`apps/api`)
 
 **NestJS modular architecture** under `src/modules/`:
+
 - `auths` — registration, login, logout, refresh token rotation; JWT strategy (`jwt.strategy.ts`), guard (`jwt-auth.guard.ts`)
 - `users` — user profile management; `GET /users/me` (profile), `PATCH /users/me` (update name), `PATCH /users/me/email` (update email, 409 on duplicate), `PATCH /users/me/password` (verify current password, enforces complexity, clears refreshToken), `DELETE /users/me` (deletes account + all associated data via cascade); all endpoints are JWT-guarded
 - `categories` — CRUD + `POST /categories/batch` (creates multiple at once, silently skips P2002 duplicates, returns `{ created, skipped }`)
@@ -77,6 +84,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 **Auth response:** `{ access_token: string; refresh_token: string }`. Access token expires in 15 min; refresh token expires in 7 days and is stored as a bcrypt hash in `User.refreshToken`. Use `POST /auths/refresh` with the refresh token to rotate both tokens. Use `POST /auths/logout` (JWT-guarded) to revoke.
 
 **Env file resolution** (in `app.module.ts`):
+
 - `NODE_ENV=test` → `.env.test`
 - `NODE_ENV=docker` → `.env.docker`
 - default → `.env`
@@ -98,6 +106,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 **Auth:** `AuthContext` (`src/contexts/AuthContext.tsx`) stores the JWT in `localStorage`. User info is decoded client-side from the JWT payload.
 
 **API layer:**
+
 - `src/lib/api.ts` — `apiRequest` base function (fetch + Bearer token injection + `Accept-Language` header + error handling), exported as `api.get/post/put/delete`
 - `src/lib/categories.ts`, `transactions.ts`, `budgets.ts`, `dashboard.ts` — domain-specific API helpers built on `api`
 - `src/lib/formatters.ts` — locale-aware `formatCurrency` / `formatCurrencyFromString` / `formatDate` / `formatMonthYear`; pass the locale from `useLocale()` (next-intl)
@@ -122,10 +131,13 @@ This is a **Turborepo + npm workspaces** monorepo:
 **Post-login landing page:** `/dashboard` — authenticated users are redirected there from `/` and after login/registration.
 
 ### Shared Package (`packages/shared`)
+
 Contains TypeScript interfaces (`ApiResponse`, `PaginatedResponse`, base entity types) and enums (`TransactionType`, `BudgetType`) used by both apps. Import as `@my-pocket/shared`.
 
 ### Database Schema
+
 Four models in `prisma/schema.prisma`:
+
 - `User` — owns all other entities; `refreshToken String?` stores the bcrypt hash of the active refresh token (null after logout)
 - `Category` — `(name, type, userId)` unique; type is `INCOME | EXPENSE`
 - `Transaction` — linked to a category; amount stored as `Decimal(10,2)`

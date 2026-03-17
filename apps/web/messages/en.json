@@ -319,6 +319,7 @@
     "editTitle": "Edit Recurring Transaction"
   },
   "recurringTransactionForm": {
+    "amountPlaceholder": "0.00",
     "amountRequired": "Amount must be greater than 0",
     "categoryRequired": "Please select a category",
     "descriptionRequired": "Description is required",
