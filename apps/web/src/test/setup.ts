@@ -81,7 +81,9 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock ResizeObserver for Radix UI components
 // Must use a regular function (not arrow) because vi.fn() calls it with `new`
-global.ResizeObserver = vi.fn().mockImplementation(function (this: ResizeObserver) {
+global.ResizeObserver = vi.fn().mockImplementation(function (
+  this: ResizeObserver,
+) {
   this.observe = vi.fn();
   this.unobserve = vi.fn();
   this.disconnect = vi.fn();

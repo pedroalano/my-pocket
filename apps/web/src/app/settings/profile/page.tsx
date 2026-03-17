@@ -5,7 +5,13 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -148,9 +154,7 @@ export default function SettingsProfilePage() {
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold text-foreground">{t('title')}</h1>
 
-        {loadError && (
-          <p className="text-destructive text-sm">{loadError}</p>
-        )}
+        {loadError && <p className="text-destructive text-sm">{loadError}</p>}
 
         {/* Profile Card */}
         <Card>
@@ -239,7 +243,9 @@ export default function SettingsProfilePage() {
                 <p className="text-destructive text-sm">{passwordError}</p>
               )}
               <Button type="submit" disabled={isChangingPassword}>
-                {isChangingPassword ? t('changingPassword') : t('changePassword')}
+                {isChangingPassword
+                  ? t('changingPassword')
+                  : t('changePassword')}
               </Button>
             </form>
           </CardContent>
@@ -248,7 +254,9 @@ export default function SettingsProfilePage() {
         {/* Danger Zone Card */}
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle className="text-destructive">{t('dangerCard')}</CardTitle>
+            <CardTitle className="text-destructive">
+              {t('dangerCard')}
+            </CardTitle>
             <CardDescription>{t('dangerDescription')}</CardDescription>
           </CardHeader>
           <CardContent>

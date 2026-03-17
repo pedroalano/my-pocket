@@ -3,7 +3,10 @@ interface ErrorContext {
   type?: 'error-boundary' | 'unhandled-rejection' | 'global-error';
 }
 
-export async function logError(error: Error, context?: ErrorContext): Promise<void> {
+export async function logError(
+  error: Error,
+  context?: ErrorContext,
+): Promise<void> {
   try {
     await fetch('/api/log-error', {
       method: 'POST',
@@ -14,7 +17,8 @@ export async function logError(error: Error, context?: ErrorContext): Promise<vo
         componentStack: context?.componentStack ?? undefined,
         type: context?.type ?? 'error-boundary',
         url: typeof window !== 'undefined' ? window.location.href : undefined,
-        userAgent: typeof window !== 'undefined' ? navigator.userAgent : undefined,
+        userAgent:
+          typeof window !== 'undefined' ? navigator.userAgent : undefined,
       }),
     });
   } catch {

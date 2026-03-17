@@ -174,11 +174,17 @@ describe('DashboardPage', () => {
     renderWithAuthenticatedProviders(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('No expenses for this period.')).toBeInTheDocument();
+      expect(
+        screen.getByText('No expenses for this period.'),
+      ).toBeInTheDocument();
     });
 
-    expect(screen.getByText('No category data for this period.')).toBeInTheDocument();
-    expect(screen.getByText('No budget data for this period.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No category data for this period.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('No budget data for this period.'),
+    ).toBeInTheDocument();
   });
 
   it('renders balance in red when negative', async () => {

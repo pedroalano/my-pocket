@@ -23,9 +23,7 @@ describe('LanguageToggle', () => {
 
   it('renders the toggle button', () => {
     renderWithProviders(<LanguageToggle />);
-    expect(
-      screen.getByTestId('language-toggle'),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('language-toggle')).toBeInTheDocument();
   });
 
   it('shows English and Portuguese options when opened', async () => {
@@ -45,7 +43,9 @@ describe('LanguageToggle', () => {
     renderWithProviders(<LanguageToggle />);
 
     await user.click(screen.getByTestId('language-toggle'));
-    await waitFor(() => expect(screen.getByText('English')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('English')).toBeInTheDocument(),
+    );
     await user.click(screen.getByText('English'));
 
     expect(document.cookie).toContain('NEXT_LOCALE=en');

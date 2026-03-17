@@ -223,11 +223,15 @@ export default function RecurringTransactionsPage() {
                 <TableHead>{tCommon('description')}</TableHead>
                 <TableHead>{tCommon('category')}</TableHead>
                 <TableHead>{tCommon('type')}</TableHead>
-                <TableHead className="text-right">{tCommon('amount')}</TableHead>
+                <TableHead className="text-right">
+                  {tCommon('amount')}
+                </TableHead>
                 <TableHead>{t('interval')}</TableHead>
                 <TableHead>{t('nextRun')}</TableHead>
                 <TableHead>{t('status')}</TableHead>
-                <TableHead className="text-right">{tCommon('actions')}</TableHead>
+                <TableHead className="text-right">
+                  {tCommon('actions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -257,7 +261,13 @@ export default function RecurringTransactionsPage() {
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                      {t(rt.interval.toLowerCase() as 'daily' | 'weekly' | 'monthly' | 'yearly')}
+                      {t(
+                        rt.interval.toLowerCase() as
+                          | 'daily'
+                          | 'weekly'
+                          | 'monthly'
+                          | 'yearly',
+                      )}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

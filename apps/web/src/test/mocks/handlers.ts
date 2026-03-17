@@ -263,7 +263,9 @@ export const handlers = [
       newPassword: string;
     };
     if (body.token === 'valid-reset-token') {
-      return HttpResponse.json({ message: 'Password has been reset successfully' });
+      return HttpResponse.json({
+        message: 'Password has been reset successfully',
+      });
     }
     return HttpResponse.json(
       { message: 'Invalid or expired password reset token', statusCode: 400 },
@@ -885,8 +887,7 @@ export const handlers = [
       };
       return HttpResponse.json({
         ...rt,
-        amount:
-          body.amount !== undefined ? body.amount.toFixed(2) : rt.amount,
+        amount: body.amount !== undefined ? body.amount.toFixed(2) : rt.amount,
         categoryId: body.categoryId ?? rt.categoryId,
         description: body.description ?? rt.description,
         interval: body.interval ?? rt.interval,

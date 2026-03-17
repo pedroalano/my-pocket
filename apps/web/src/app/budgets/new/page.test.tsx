@@ -56,7 +56,9 @@ describe('NewBudgetPage', () => {
 
     // Check that AuthLayout navigation is present
     expect(screen.getByRole('link', { name: 'My Pocket' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'User menu' }),
+    ).toBeInTheDocument();
   });
 
   it('"Repeat until" checkbox is present in create mode', async () => {

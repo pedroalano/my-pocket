@@ -83,9 +83,7 @@ describe('RegisterPage', () => {
       );
     });
 
-    expect(
-      screen.getByText('Set up your categories'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Set up your categories')).toBeInTheDocument();
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
@@ -320,7 +318,9 @@ describe('RegisterPage', () => {
 
       // Click again to reselect
       await user.click(screen.getByRole('button', { name: 'Salary' }));
-      expect(screen.getByRole('button', { name: /Salary/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Salary/ }),
+      ).toBeInTheDocument();
     });
 
     it('"Get Started" calls batch endpoint and redirects to /dashboard', async () => {
@@ -405,7 +405,9 @@ describe('RegisterPage', () => {
       ];
 
       for (const name of presetNames) {
-        await user.click(screen.getByRole('button', { name: new RegExp(name) }));
+        await user.click(
+          screen.getByRole('button', { name: new RegExp(name) }),
+        );
       }
 
       await user.click(screen.getByRole('button', { name: 'Get Started' }));

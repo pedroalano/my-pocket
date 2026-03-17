@@ -335,7 +335,9 @@ export default function BudgetsPage() {
                 )}
                 <TableHead>{t('period')}</TableHead>
                 <TableHead>{tCommon('type')}</TableHead>
-                <TableHead className="text-right">{tCommon('actions')}</TableHead>
+                <TableHead className="text-right">
+                  {tCommon('actions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -365,7 +367,10 @@ export default function BudgetsPage() {
                               : ''
                           }
                         >
-                          {formatCurrencyFromString(budget.remaining || '0', locale)}
+                          {formatCurrencyFromString(
+                            budget.remaining || '0',
+                            locale,
+                          )}
                         </TableCell>
                         <TableCell
                           className={`font-medium ${getUtilizationColor(budget.utilizationPercentage, budget.type)}`}

@@ -251,8 +251,12 @@ export default function TransactionsPage() {
                 <TableHead>{tCommon('description')}</TableHead>
                 <TableHead>{tCommon('category')}</TableHead>
                 <TableHead>{tCommon('type')}</TableHead>
-                <TableHead className="text-right">{tCommon('amount')}</TableHead>
-                <TableHead className="text-right">{tCommon('actions')}</TableHead>
+                <TableHead className="text-right">
+                  {tCommon('amount')}
+                </TableHead>
+                <TableHead className="text-right">
+                  {tCommon('actions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -275,7 +279,9 @@ export default function TransactionsPage() {
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}
                     >
-                      {transaction.type === 'INCOME' ? tCommon('income') : tCommon('expense')}
+                      {transaction.type === 'INCOME'
+                        ? tCommon('income')
+                        : tCommon('expense')}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">

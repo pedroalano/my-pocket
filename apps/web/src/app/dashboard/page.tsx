@@ -174,13 +174,17 @@ export default function DashboardPage() {
       ) : summary ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">{t('totalIncome')}</p>
+            <p className="text-sm text-muted-foreground mb-1">
+              {t('totalIncome')}
+            </p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {formatCurrency(summary.totalIncome, locale)}
             </p>
           </div>
           <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">{t('totalExpenses')}</p>
+            <p className="text-sm text-muted-foreground mb-1">
+              {t('totalExpenses')}
+            </p>
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
               {formatCurrency(summary.totalExpense, locale)}
             </p>
@@ -235,10 +239,7 @@ export default function DashboardPage() {
                     }
                   >
                     {categoryBreakdown.map((_, index) => (
-                      <Cell
-                        key={index}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Legend
@@ -250,7 +251,9 @@ export default function DashboardPage() {
                     }}
                   />
                   <Tooltip
-                    formatter={(value) => formatCurrency(Number(value ?? 0), locale)}
+                    formatter={(value) =>
+                      formatCurrency(Number(value ?? 0), locale)
+                    }
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -278,7 +281,11 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), locale)} />
+                  <Tooltip
+                    formatter={(value) =>
+                      formatCurrency(Number(value ?? 0), locale)
+                    }
+                  />
                   <Legend />
                   <Bar dataKey={t('budget')} fill="#3b82f6" />
                   <Bar dataKey={t('actual')} fill="#ef4444" />

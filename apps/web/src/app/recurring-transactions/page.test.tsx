@@ -130,11 +130,7 @@ describe('RecurringTransactionsPage', () => {
       expect(screen.getByText('Daily coffee')).toBeInTheDocument();
     });
 
-    await selectOption(
-      user,
-      screen.getByTestId('interval-filter'),
-      'Monthly',
-    );
+    await selectOption(user, screen.getByTestId('interval-filter'), 'Monthly');
 
     expect(screen.getByText('Netflix')).toBeInTheDocument();
     expect(screen.getAllByText('Salary').length).toBeGreaterThanOrEqual(1);

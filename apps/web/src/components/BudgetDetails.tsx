@@ -19,10 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import {
-  formatCurrencyFromString,
-  formatDateUTC,
-} from '@/lib/formatters';
+import { formatCurrencyFromString, formatDateUTC } from '@/lib/formatters';
 
 interface BudgetDetailsProps {
   budget: BudgetWithDetails;
@@ -204,7 +201,9 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
                 <TableRow>
                   <TableHead>{tCommon('date')}</TableHead>
                   <TableHead>{tCommon('description')}</TableHead>
-                  <TableHead className="text-right">{tCommon('amount')}</TableHead>
+                  <TableHead className="text-right">
+                    {tCommon('amount')}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody data-testid="transactions-table">

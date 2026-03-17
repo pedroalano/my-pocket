@@ -7,10 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { recurringTransactionsApi } from '@/lib/recurring-transactions';
 import { RecurringTransactionForm } from '@/components/RecurringTransactionForm';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
-import {
-  RecurringTransaction,
-  UpdateRecurringTransactionDto,
-} from '@/types';
+import { RecurringTransaction, UpdateRecurringTransactionDto } from '@/types';
 import { toast } from 'sonner';
 import { ApiException } from '@/lib/api';
 

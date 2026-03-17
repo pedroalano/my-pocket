@@ -32,7 +32,9 @@ describe('ForgotPasswordPage', () => {
     renderWithProviders(<ForgotPasswordPage />);
 
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Send Reset Link' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Send Reset Link' }),
+    ).toBeInTheDocument();
   });
 
   it('renders "Back to login" link pointing to /login', () => {

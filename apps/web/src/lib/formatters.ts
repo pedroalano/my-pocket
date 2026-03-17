@@ -5,7 +5,10 @@ export function formatCurrency(amount: number, locale: string): string {
   }).format(amount);
 }
 
-export function formatCurrencyFromString(amount: string, locale: string): string {
+export function formatCurrencyFromString(
+  amount: string,
+  locale: string,
+): string {
   return formatCurrency(parseFloat(amount), locale);
 }
 

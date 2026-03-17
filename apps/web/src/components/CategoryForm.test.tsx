@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { renderWithProviders, setupUser, selectOption } from '@/test/test-utils';
+import {
+  renderWithProviders,
+  setupUser,
+  selectOption,
+} from '@/test/test-utils';
 import { CategoryForm } from './CategoryForm';
 import { CategoryType } from '@/types';
 import { ApiException } from '@/lib/api';
