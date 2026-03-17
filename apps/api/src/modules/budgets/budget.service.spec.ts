@@ -1472,4 +1472,149 @@ describe('BudgetService', () => {
       expect(typeof result.utilizationPercentage).toBe('number');
     });
   });
+
+  describe('createBatchBudgets', () => {
+    it('should create one budget per month in the range and return correct created count', async () => {
+      const result = await service.createBatchBudgets(
+        {
+          amount: 500,
+          categoryId,
+          startMonth: 1,
+          startYear: 2026,
+          endMonth: 3,
+          endYear: 2026,
+        },
+        userId,
+      );
+
+      expect(result).toEqual({ created: 3, skipped: 0 });
+    });
+
+    it('should skip months that already have a budget (P2002) and increment skipped', async () => {
+      // Pre-create budget for month 2
+      await service.createBatchBudgets(
+        {
+          amount: 500,
+          categoryId,
+          startMonth: 2,
+          startYear: 2026,
+          endMonth: 2,
+          endYear: 2026,
+        },
+        userId,
+      );
+
+      // Now create range 1–3; month 2 already exists
+      const result = await service.createBatchBudgets(
+        {
+          amount: 500,
+          categoryId,
+          startMonth: 1,
+          startYear: 2026,
+          endMonth: 3,
+          endYear: 2026,
+        },
+        userId,
+      );
+
+      expect(result.created).toBe(2);
+      expect(result.skipped).toBe(1);
+    });
+
+    it('should throw BadRequestException when endDate < startDate', async () => {
+      await expect(
+        service.createBatchBudgets(
+          {
+            amount: 500,
+            categoryId,
+            startMonth: 6,
+            startYear: 2026,
+            endMonth: 1,
+            endYear: 2026,
+          },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        service.createBatchBudgets(
+          {
+            amount: 500,
+            categoryId,
+            startMonth: 6,
+            startYear: 2026,
+            endMonth: 1,
+            endYear: 2026,
+          },
+          userId,
+        ),
+      ).rejects.toThrow('budgets.errors.invalidDateRange');
+    });
+
+    it('should throw BadRequestException when category not found', async () => {
+      jest
+        .spyOn(categoriesService, 'getCategoryById')
+        .mockRejectedValue(new NotFoundException('Category not found'));
+
+      await expect(
+        service.createBatchBudgets(
+          {
+            amount: 500,
+            categoryId: otherCategoryId,
+            startMonth: 1,
+            startYear: 2026,
+            endMonth: 3,
+            endYear: 2026,
+          },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        service.createBatchBudgets(
+          {
+            amount: 500,
+            categoryId: otherCategoryId,
+            startMonth: 1,
+            startYear: 2026,
+            endMonth: 3,
+            endYear: 2026,
+          },
+          userId,
+        ),
+      ).rejects.toThrow('budgets.errors.categoryNotFound');
+    });
+
+    it('should handle cross-year range (Nov 2025 → Feb 2026) creating 4 budgets', async () => {
+      const result = await service.createBatchBudgets(
+        {
+          amount: 200,
+          categoryId,
+          startMonth: 11,
+          startYear: 2025,
+          endMonth: 2,
+          endYear: 2026,
+        },
+        userId,
+      );
+
+      expect(result).toEqual({ created: 4, skipped: 0 });
+    });
+
+    it('should create exactly 1 budget when start equals end', async () => {
+      const result = await service.createBatchBudgets(
+        {
+          amount: 100,
+          categoryId,
+          startMonth: 5,
+          startYear: 2026,
+          endMonth: 5,
+          endYear: 2026,
+        },
+        userId,
+      );
+
+      expect(result).toEqual({ created: 1, skipped: 0 });
+    });
+  });
 });

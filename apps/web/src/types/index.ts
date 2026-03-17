@@ -101,6 +101,20 @@ export interface CreateBudgetDto {
   year: number;
 }
 
+export interface CreateBatchBudgetDto {
+  amount: number;
+  categoryId: string;
+  startMonth: number;
+  startYear: number;
+  endMonth: number;
+  endYear: number;
+}
+
+export interface BatchBudgetResponse {
+  created: number;
+  skipped: number;
+}
+
 export interface UpdateBudgetDto {
   amount?: number;
   categoryId?: string;

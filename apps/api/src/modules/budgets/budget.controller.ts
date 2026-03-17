@@ -18,10 +18,12 @@ import {
   ApiGetBudgetDetails,
   ApiGetBudgetsByCategory,
   ApiCreateBudget,
+  ApiCreateBatchBudget,
   ApiUpdateBudget,
   ApiDeleteBudget,
 } from './budget.swagger';
 import { CreateBudgetDto } from './dto/create-budget.dto';
+import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
@@ -64,6 +66,15 @@ export class BudgetController {
     @Request() req: AuthenticatedRequest,
   ): ReturnType<BudgetService['getBudgetsByCategory']> {
     return this.budgetService.getBudgetsByCategory(categoryId, req.user.userId);
+  }
+
+  @Post('batch')
+  @ApiCreateBatchBudget()
+  async createBatchBudget(
+    @Body() dto: CreateBatchBudgetDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.budgetService.createBatchBudgets(dto, req.user.userId);
   }
 
   @Post()

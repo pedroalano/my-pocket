@@ -24,6 +24,7 @@ import { CreateBudgetDto, Category } from '@/types';
 import { toast } from 'sonner';
 import { ApiException } from '@/lib/api';
 import { categoriesApi } from '@/lib/categories';
+import { budgetsApi } from '@/lib/budgets';
 
 interface BudgetFormProps {
   initialData?: {
@@ -52,6 +53,11 @@ export function BudgetForm({
   const [month, setMonth] = useState<number | ''>(initialData?.month || '');
   const [year, setYear] = useState<string>(
     initialData?.year?.toString() || new Date().getFullYear().toString(),
+  );
+  const [repeatUntil, setRepeatUntil] = useState(false);
+  const [endMonth, setEndMonth] = useState<number | ''>('');
+  const [endYear, setEndYear] = useState<string>(
+    new Date().getFullYear().toString(),
   );
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -108,6 +114,51 @@ export function BudgetForm({
 
     if (!year || isNaN(yearNum)) {
       toast.error(t('yearRequired'));
+      return;
+    }
+
+    if (repeatUntil && !initialData) {
+      if (!endMonth) {
+        toast.error(t('endMonthRequired'));
+        return;
+      }
+      const endYearNum = parseInt(endYear, 10);
+      if (!endYear || isNaN(endYearNum)) {
+        toast.error(t('endYearRequired'));
+        return;
+      }
+      const startOrdinal = yearNum * 12 + (month as number);
+      const endOrdinal = endYearNum * 12 + (endMonth as number);
+      if (endOrdinal < startOrdinal) {
+        toast.error(t('endDateBeforeStart'));
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const result = await budgetsApi.createBatch({
+          amount: amountNum,
+          categoryId,
+          startMonth: month as number,
+          startYear: yearNum,
+          endMonth: endMonth as number,
+          endYear: endYearNum,
+        });
+        toast.success(
+          t('batchCreateSuccess', {
+            created: result.created,
+            skipped: result.skipped,
+          }),
+        );
+        router.push('/budgets');
+      } catch (error) {
+        if (error instanceof ApiException) {
+          toast.error(error.message);
+        } else {
+          toast.error(tCommon('unexpectedError'));
+        }
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -182,7 +233,9 @@ export function BudgetForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="month">{tCommon('month')}</Label>
+              <Label htmlFor="month">
+                {repeatUntil && !initialData ? t('startMonth') : tCommon('month')}
+              </Label>
               <Select
                 value={month.toString()}
                 onValueChange={(value) => setMonth(parseInt(value, 10))}
@@ -202,7 +255,9 @@ export function BudgetForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="year">{tCommon('year')}</Label>
+              <Label htmlFor="year">
+                {repeatUntil && !initialData ? t('startYear') : tCommon('year')}
+              </Label>
               <Input
                 id="year"
                 type="number"
@@ -216,6 +271,58 @@ export function BudgetForm({
               />
             </div>
           </div>
+
+          {!initialData && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="repeat-until"
+                checked={repeatUntil}
+                onChange={(e) => setRepeatUntil(e.target.checked)}
+                disabled={isLoading}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="repeat-until">{t('repeatUntil')}</Label>
+            </div>
+          )}
+
+          {repeatUntil && !initialData && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="end-month">{t('endMonth')}</Label>
+                <Select
+                  value={endMonth.toString()}
+                  onValueChange={(value) => setEndMonth(parseInt(value, 10))}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="end-month">
+                    <SelectValue placeholder={t('selectMonth')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m) => (
+                      <SelectItem key={m.value} value={m.value.toString()}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end-year">{t('endYear')}</Label>
+                <Input
+                  id="end-year"
+                  type="number"
+                  min="2000"
+                  max="2100"
+                  placeholder={t('yearPlaceholder')}
+                  value={endYear}
+                  onChange={(e) => setEndYear(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          )}
 
         </CardContent>
         <CardFooter className="mt-4 flex justify-between">

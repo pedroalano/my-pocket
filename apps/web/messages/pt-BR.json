@@ -203,7 +203,16 @@
     "yearRequired": "Ano é obrigatório",
     "typeRequired": "Tipo é obrigatório",
     "createSuccess": "Orçamento criado com sucesso",
-    "updateSuccess": "Orçamento atualizado com sucesso"
+    "updateSuccess": "Orçamento atualizado com sucesso",
+    "repeatUntil": "Repetir até",
+    "startMonth": "Mês de início",
+    "startYear": "Ano de início",
+    "endMonth": "Mês de término",
+    "endYear": "Ano de término",
+    "endMonthRequired": "Mês de término é obrigatório",
+    "endYearRequired": "Ano de término é obrigatório",
+    "endDateBeforeStart": "A data de término deve ser igual ou posterior à data de início",
+    "batchCreateSuccess": "{created} orçamentos criados ({skipped} ignorados)"
   },
   "budgetDetails": {
     "budgetAmount": "Valor do Orçamento",
