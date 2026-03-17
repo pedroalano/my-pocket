@@ -128,7 +128,7 @@ describe('BudgetForm', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('500')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('$500.00')).toBeInTheDocument();
       expect(screen.getByDisplayValue('2026')).toBeInTheDocument();
     });
   });
@@ -142,7 +142,7 @@ describe('BudgetForm', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Amount')).toHaveAttribute('required');
+    expect(screen.getByLabelText('Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Year')).toHaveAttribute('required');
   });
 

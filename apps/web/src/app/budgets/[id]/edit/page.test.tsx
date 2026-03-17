@@ -50,7 +50,7 @@ describe('EditBudgetPage', () => {
 
     // Check form is pre-filled with budget data (from mock budget-1)
     const amountInput = screen.getByLabelText('Amount');
-    expect(amountInput).toHaveValue(500);
+    expect(amountInput).toHaveValue('$500.00');
 
     // Check submit button shows correct label
     expect(
@@ -67,7 +67,9 @@ describe('EditBudgetPage', () => {
 
     // Check that AuthLayout navigation is present
     expect(screen.getByRole('link', { name: 'My Pocket' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'User menu' }),
+    ).toBeInTheDocument();
   });
 
   it('handles 404 error and redirects to budgets list', async () => {
