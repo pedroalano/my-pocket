@@ -1,0 +1,12 @@
+# shadcn/ui auto-generated components (never hand-edit)
+apps/web/src/components/ui/
+
+# Build / generated output
+**/dist/
+**/.next/
+**/coverage/
+**/node_modules/
+**/*.tsbuildinfo
+
+# Lock files (managed by npm, not hand-edited)
+package-lock.json
