@@ -2,11 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { PrismaClient } from '@prisma/client';
 import { AppModule } from './../src/app.module';
 import { HttpExceptionFilter } from './../src/common/filters/http-exception.filter';
 
 describe('Personal Finance API E2E', () => {
   let app: INestApplication<App>;
+  let prisma: PrismaClient;
   let user1Token: string;
   let user2Token: string;
   let _user1Id: string;
@@ -44,21 +46,28 @@ describe('Personal Finance API E2E', () => {
     email: string;
     password: string;
   }) => {
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/auths/register')
       .send(user)
       .expect(201);
 
-    const token = response.body.access_token as string | undefined;
+    await prisma.user.update({
+      where: { email: user.email },
+      data: { emailVerified: true },
+    });
 
-    if (!token) {
-      throw new Error('Access token missing from auth register response');
-    }
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auths/login')
+      .send({ email: user.email, password: user.password })
+      .expect(201);
 
-    return token;
+    return loginResponse.body.access_token as string;
   };
 
   beforeAll(async () => {
+    prisma = new PrismaClient();
+    await prisma.$connect();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -80,6 +89,7 @@ describe('Personal Finance API E2E', () => {
 
   afterAll(async () => {
     await app.close();
+    await prisma.$disconnect();
   });
 
   // ==================== HEALTH CHECK ====================
@@ -104,19 +114,20 @@ describe('Personal Finance API E2E', () => {
 
   // ==================== AUTHENTICATION FLOWS ====================
   describe('Authentication Flows', () => {
-    let _authUser1Token: string;
-    let _authUser2Token: string;
-
     describe('POST /auths/register', () => {
-      it('should register new user and return access token', async () => {
+      it('should register new user and return verification message', async () => {
         const response = await request(app.getHttpServer())
           .post('/auths/register')
           .send(authUser1)
           .expect(201);
 
-        expect(response.body).toHaveProperty('access_token');
-        expect(typeof response.body.access_token).toBe('string');
-        _authUser1Token = response.body.access_token;
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+        // Verify email so subsequent login tests work
+        await prisma.user.update({
+          where: { email: authUser1.email },
+          data: { emailVerified: true },
+        });
       });
 
       it('should register second user with different email', async () => {
@@ -125,9 +136,13 @@ describe('Personal Finance API E2E', () => {
           .send(authUser2)
           .expect(201);
 
-        expect(response.body).toHaveProperty('access_token');
-        expect(typeof response.body.access_token).toBe('string');
-        _authUser2Token = response.body.access_token;
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+        // Verify email so subsequent login tests work
+        await prisma.user.update({
+          where: { email: authUser2.email },
+          data: { emailVerified: true },
+        });
       });
 
       it('should reject duplicate email registration', async () => {
@@ -208,6 +223,26 @@ describe('Personal Finance API E2E', () => {
           .post('/auths/login')
           .send({})
           .expect(400);
+      });
+
+      it('should reject login for unverified email with 403', async () => {
+        const unverifiedUser = {
+          name: 'Unverified User',
+          email: `unverified-${Date.now()}@test.com`,
+          password: 'Password123!',
+        };
+        await request(app.getHttpServer())
+          .post('/auths/register')
+          .send(unverifiedUser)
+          .expect(201);
+
+        await request(app.getHttpServer())
+          .post('/auths/login')
+          .send({
+            email: unverifiedUser.email,
+            password: unverifiedUser.password,
+          })
+          .expect(403);
       });
     });
   });
@@ -316,15 +351,11 @@ describe('Personal Finance API E2E', () => {
       });
 
       it('should return empty array for user with no categories', async () => {
-        const newUserResponse = await request(app.getHttpServer())
-          .post('/auths/register')
-          .send({
-            name: 'New User',
-            email: `newuser-${Date.now()}@test.com`,
-            password: 'Password123!',
-          });
-
-        const newUserToken = newUserResponse.body.access_token;
+        const newUserToken = await registerAndGetToken({
+          name: 'New User',
+          email: `newuser-${Date.now()}@test.com`,
+          password: 'Password123!',
+        });
 
         const response = await request(app.getHttpServer())
           .get('/categories')
