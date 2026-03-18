@@ -119,7 +119,7 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('user')).toHaveTextContent(mockUser.email);
   });
 
-  it('should register successfully and set refresh token cookie', async () => {
+  it('should register successfully without establishing a session (email verification required)', async () => {
     const user = userEvent.setup();
 
     render(
@@ -134,11 +134,12 @@ describe('AuthContext', () => {
 
     await user.click(screen.getByText('Register'));
 
+    // Registration no longer sets a session — user must verify email first
     await waitFor(() => {
-      expect(screen.getByTestId('authenticated')).toHaveTextContent('yes');
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('no');
     });
 
-    expect(document.cookie).toContain('refresh_token=');
+    expect(document.cookie).not.toContain('refresh_token=');
   });
 
   it('should logout successfully and clear cookie', async () => {

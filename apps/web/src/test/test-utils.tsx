@@ -28,6 +28,7 @@ const mockAuthContextValue = {
   isLoading: false,
   login: vi.fn(),
   register: vi.fn(),
+  loginWithTokens: vi.fn(),
   logout: vi.fn(),
   updateUser: vi.fn(),
 };

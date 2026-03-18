@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
+import { authsApi } from '@/lib/auths';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,19 +26,41 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
   const t = useTranslations('auth');
+  const tVerify = useTranslations('verifyEmail');
   const tCommon = useTranslations('common');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setEmailNotVerified(false);
 
     try {
       await login({ email, password });
       toast.success(t('loginSuccess'));
       router.push('/dashboard');
+    } catch (error) {
+      if (error instanceof ApiException && error.statusCode === 403) {
+        setEmailNotVerified(true);
+      } else if (error instanceof ApiException) {
+        toast.error(error.message);
+      } else {
+        toast.error(tCommon('unexpectedError'));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    try {
+      await authsApi.resendVerification({ email });
+      toast.success(tVerify('resendSuccess'));
     } catch (error) {
       if (error instanceof ApiException) {
         toast.error(error.message);
@@ -45,7 +68,7 @@ export default function LoginPage() {
         toast.error(tCommon('unexpectedError'));
       }
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -113,6 +136,26 @@ export default function LoginPage() {
               </div>
             </div>
           </CardContent>
+          {emailNotVerified && (
+            <div className="px-6 pb-2">
+              <div className="rounded-md border border-yellow-400 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-700 p-3 space-y-2">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                  {tVerify('loginBlockedMessage')}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResend}
+                  disabled={isResending}
+                >
+                  {isResending
+                    ? tVerify('resending')
+                    : tVerify('resendVerification')}
+                </Button>
+              </div>
+            </div>
+          )}
           <CardFooter className="mt-4 flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? t('signingIn') : t('signIn')}

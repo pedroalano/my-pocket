@@ -206,6 +206,15 @@ export const handlers = [
   // Auth endpoints
   http.post(`${API_URL}/auths/login`, async ({ request }) => {
     const body = (await request.json()) as { email: string; password: string };
+    if (body.email === 'unverified@example.com') {
+      return HttpResponse.json(
+        {
+          message: 'Please verify your email address before logging in',
+          statusCode: 403,
+        },
+        { status: 403 },
+      );
+    }
     if (body.email === 'test@example.com' && body.password === 'password123') {
       return HttpResponse.json({
         access_token: mockToken,
@@ -227,8 +236,7 @@ export const handlers = [
       );
     }
     return HttpResponse.json({
-      access_token: mockToken,
-      refresh_token: mockRefreshToken,
+      message: 'Verification email sent. Please check your inbox.',
     });
   }),
 
@@ -271,6 +279,26 @@ export const handlers = [
       { message: 'Invalid or expired password reset token', statusCode: 400 },
       { status: 400 },
     );
+  }),
+
+  http.post(`${API_URL}/auths/verify-email`, async ({ request }) => {
+    const body = (await request.json()) as { token: string };
+    if (body.token === 'valid-verification-token') {
+      return HttpResponse.json({
+        access_token: mockToken,
+        refresh_token: mockRefreshToken,
+      });
+    }
+    return HttpResponse.json(
+      { message: 'Invalid or expired verification token', statusCode: 400 },
+      { status: 400 },
+    );
+  }),
+
+  http.post(`${API_URL}/auths/resend-verification`, async () => {
+    return HttpResponse.json({
+      message: 'Verification email sent. Please check your inbox.',
+    });
   }),
 
   // Categories endpoints

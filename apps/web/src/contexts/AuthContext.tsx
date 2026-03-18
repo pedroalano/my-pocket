@@ -18,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
+  loginWithTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 }
@@ -118,18 +119,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (data: RegisterRequest) => {
-    const response = await api.post<AuthResponse>('/auths/register', data);
-    const decodedUser = decodeToken(response.access_token);
-    if (!decodedUser) {
-      throw new ApiException(401, 'Invalid token received');
-    }
-    if (response.refresh_token) {
-      setRefreshTokenCookie(response.refresh_token);
-    }
-    setAccessToken(response.access_token);
-    setToken(response.access_token);
-    setUser(decodedUser);
+    await api.post('/auths/register', data);
   }, []);
+
+  const loginWithTokens = useCallback(
+    (accessToken: string, refreshToken: string) => {
+      setRefreshTokenCookie(refreshToken);
+      applySession(accessToken);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const logout = useCallback(() => {
     api.post('/auths/logout').catch(() => {}); // best-effort server-side revocation
@@ -150,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        loginWithTokens,
         logout,
         updateUser,
       }}

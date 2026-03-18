@@ -1,4 +1,11 @@
-import { ForgotPasswordDto, MessageResponse, ResetPasswordDto } from '@/types';
+import {
+  AuthResponse,
+  ForgotPasswordDto,
+  MessageResponse,
+  ResendVerificationDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+} from '@/types';
 import { api } from './api';
 
 export const authsApi = {
@@ -7,4 +14,10 @@ export const authsApi = {
 
   resetPassword: (data: ResetPasswordDto) =>
     api.post<MessageResponse>('/auths/reset-password', data),
+
+  verifyEmail: (data: VerifyEmailDto) =>
+    api.post<AuthResponse>('/auths/verify-email', data),
+
+  resendVerification: (data: ResendVerificationDto) =>
+    api.post<MessageResponse>('/auths/resend-verification', data),
 };

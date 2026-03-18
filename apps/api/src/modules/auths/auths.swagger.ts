@@ -6,6 +6,8 @@ import { RefreshDto } from './dto/refresh.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 export function ApiRegister() {
   return applyDecorators(
@@ -13,12 +15,16 @@ export function ApiRegister() {
     ApiBody({ type: RegisterDto }),
     ApiResponse({
       status: 201,
-      description: 'User successfully registered',
-      type: AuthResponseDto,
+      description: 'User successfully registered — verification email sent',
+      schema: { properties: { message: { type: 'string' } } },
     }),
     ApiResponse({
       status: 400,
-      description: 'Bad request - validation error or email already exists',
+      description: 'Bad request - validation error',
+    }),
+    ApiResponse({
+      status: 409,
+      description: 'Email already exists',
     }),
   );
 }
@@ -84,5 +90,35 @@ export function ApiResetPassword() {
       status: 400,
       description: 'Invalid or expired reset token',
     }),
+  );
+}
+
+export function ApiVerifyEmail() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Verify email address with a verification token' }),
+    ApiBody({ type: VerifyEmailDto }),
+    ApiResponse({
+      status: 200,
+      description: 'Email verified — returns JWT tokens',
+      type: AuthResponseDto,
+    }),
+    ApiResponse({
+      status: 400,
+      description: 'Invalid or expired verification token',
+    }),
+  );
+}
+
+export function ApiResendVerification() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Resend email verification link' }),
+    ApiBody({ type: ResendVerificationDto }),
+    ApiResponse({
+      status: 200,
+      description:
+        'Verification email sent (enumeration-safe: always returns success)',
+      schema: { properties: { message: { type: 'string' } } },
+    }),
+    ApiResponse({ status: 400, description: 'Validation error' }),
   );
 }

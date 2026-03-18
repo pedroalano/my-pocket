@@ -85,6 +85,11 @@ JWT_REFRESH_EXPIRATION=604800  # Refresh token TTL in seconds (7 days)
 
 # CORS
 CORS_ORIGINS=http://localhost:3000
+
+# Email (Resend) — required for email verification and password reset
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+FRONTEND_URL=http://localhost:3000
 ```
 
 For the frontend, create `apps/web/.env.local`:
@@ -290,40 +295,42 @@ Once the API is running, visit:
 
 ### API Endpoints Summary
 
-| Endpoint                        | Method | Description                                             |
-| ------------------------------- | ------ | ------------------------------------------------------- |
-| `/auths/register`               | POST   | Register a new user                                     |
-| `/auths/login`                  | POST   | Login and get JWT token                                 |
-| `/auths/refresh`                | POST   | Exchange refresh token for new access + refresh tokens  |
-| `/auths/logout`                 | POST   | Invalidate current refresh token (requires Bearer auth) |
-| `/users/me`                     | GET    | Get current user profile                                |
-| `/users/me`                     | PATCH  | Update user display name                                |
-| `/users/me/email`               | PATCH  | Update user email (409 on duplicate)                    |
-| `/users/me/password`            | PATCH  | Change password (verifies current, clears tokens)       |
-| `/users/me`                     | DELETE | Delete account and all associated data                  |
-| `/categories`                   | GET    | List all categories                                     |
-| `/categories/:id`               | GET    | Get category by ID                                      |
-| `/categories`                   | POST   | Create a new category                                   |
-| `/categories/batch`             | POST   | Create multiple categories, skipping duplicates         |
-| `/categories/:id`               | PUT    | Update a category                                       |
-| `/categories/:id`               | DELETE | Delete a category                                       |
-| `/transactions`                 | GET    | List all transactions                                   |
-| `/transactions/:id`             | GET    | Get transaction by ID                                   |
-| `/transactions`                 | POST   | Create a new transaction                                |
-| `/transactions/:id`             | PUT    | Update a transaction                                    |
-| `/transactions/:id`             | DELETE | Delete a transaction                                    |
-| `/budgets`                      | GET    | List all budgets                                        |
-| `/budgets/:id`                  | GET    | Get budget by ID                                        |
-| `/budgets/:id/details`          | GET    | Get budget with spending details                        |
-| `/budgets/category/:categoryId` | GET    | Get budgets by category                                 |
-| `/budgets`                      | POST   | Create a new budget                                     |
-| `/budgets/:id`                  | PUT    | Update a budget                                         |
-| `/budgets/:id`                  | DELETE | Delete a budget                                         |
-| `/dashboard/monthly-summary`    | GET    | Get monthly income/expense summary                      |
-| `/dashboard/budget-vs-actual`   | GET    | Compare budgets vs actual spending                      |
-| `/dashboard/category-breakdown` | GET    | Get spending breakdown by category                      |
-| `/dashboard/top-expenses`       | GET    | Get top expense transactions                            |
-| `/health`                       | GET    | Health check endpoint                                   |
+| Endpoint                        | Method | Description                                                           |
+| ------------------------------- | ------ | --------------------------------------------------------------------- |
+| `/auths/register`               | POST   | Register a new user (returns `{ message }`, sends verification email) |
+| `/auths/login`                  | POST   | Login and get JWT tokens (403 if email not verified)                  |
+| `/auths/verify-email`           | POST   | Verify email with token, returns JWT tokens                           |
+| `/auths/resend-verification`    | POST   | Resend verification email (enumeration-safe)                          |
+| `/auths/refresh`                | POST   | Exchange refresh token for new access + refresh tokens                |
+| `/auths/logout`                 | POST   | Invalidate current refresh token (requires Bearer auth)               |
+| `/users/me`                     | GET    | Get current user profile                                              |
+| `/users/me`                     | PATCH  | Update user display name                                              |
+| `/users/me/email`               | PATCH  | Update user email (409 on duplicate)                                  |
+| `/users/me/password`            | PATCH  | Change password (verifies current, clears tokens)                     |
+| `/users/me`                     | DELETE | Delete account and all associated data                                |
+| `/categories`                   | GET    | List all categories                                                   |
+| `/categories/:id`               | GET    | Get category by ID                                                    |
+| `/categories`                   | POST   | Create a new category                                                 |
+| `/categories/batch`             | POST   | Create multiple categories, skipping duplicates                       |
+| `/categories/:id`               | PUT    | Update a category                                                     |
+| `/categories/:id`               | DELETE | Delete a category                                                     |
+| `/transactions`                 | GET    | List all transactions                                                 |
+| `/transactions/:id`             | GET    | Get transaction by ID                                                 |
+| `/transactions`                 | POST   | Create a new transaction                                              |
+| `/transactions/:id`             | PUT    | Update a transaction                                                  |
+| `/transactions/:id`             | DELETE | Delete a transaction                                                  |
+| `/budgets`                      | GET    | List all budgets                                                      |
+| `/budgets/:id`                  | GET    | Get budget by ID                                                      |
+| `/budgets/:id/details`          | GET    | Get budget with spending details                                      |
+| `/budgets/category/:categoryId` | GET    | Get budgets by category                                               |
+| `/budgets`                      | POST   | Create a new budget                                                   |
+| `/budgets/:id`                  | PUT    | Update a budget                                                       |
+| `/budgets/:id`                  | DELETE | Delete a budget                                                       |
+| `/dashboard/monthly-summary`    | GET    | Get monthly income/expense summary                                    |
+| `/dashboard/budget-vs-actual`   | GET    | Compare budgets vs actual spending                                    |
+| `/dashboard/category-breakdown` | GET    | Get spending breakdown by category                                    |
+| `/dashboard/top-expenses`       | GET    | Get top expense transactions                                          |
+| `/health`                       | GET    | Health check endpoint                                                 |
 
 ---
 
@@ -331,7 +338,8 @@ Once the API is running, visit:
 
 ### API
 
-- ✅ User registration and authentication with JWT
+- ✅ User registration with mandatory email verification (Resend)
+- ✅ Authentication with JWT; login blocked until email is verified
 - ✅ Protected routes with authentication guards
 - ✅ Categories, Transactions, and Budgets management
 - ✅ Budget analytics and spending tracking
@@ -355,7 +363,7 @@ Once the API is running, visit:
 - ✅ Locale-aware currency formatting (USD for EN, BRL for PT-BR)
 - ✅ Full CRUD for Categories, Transactions, and Budgets
 - ✅ Budget spending tracking with utilization indicators
-- ✅ Preset categories step on registration (11 common categories, fully optional)
+- ✅ Email verification flow: check-inbox page, token validation, inline resend on login
 - ✅ User profile management: update name, email, password, and delete account (`/settings/profile`)
 - ✅ Responsive design with shadcn/ui components
 - ✅ Error boundary with recovery UI

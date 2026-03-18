@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { PrismaService } from '../shared/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { EmailVerificationService } from './email-verification.service';
 
 @Injectable()
 export class AuthsService {
@@ -19,15 +21,14 @@ export class AuthsService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly i18n: I18nService,
+    private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
   private get lang(): string {
     return I18nContext.current()?.lang ?? 'en';
   }
 
-  async register(
-    registerDto: RegisterDto,
-  ): Promise<{ access_token: string; refresh_token: string }> {
+  async register(registerDto: RegisterDto): Promise<{ message: string }> {
     const { name, email, password } = registerDto;
 
     // Hash password with bcrypt (10 salt rounds)
@@ -43,8 +44,18 @@ export class AuthsService {
         },
       });
 
-      // Generate and return JWT tokens
-      return this.generateToken(user.id, user.email);
+      // Send verification email instead of returning tokens
+      await this.emailVerificationService.sendVerificationEmail(
+        user.id,
+        user.email,
+        this.lang,
+      );
+
+      return {
+        message: this.i18n.t('auth.success.verificationEmailSent', {
+          lang: this.lang,
+        }),
+      };
     } catch (error) {
       // Handle Prisma unique constraint violation (P2002)
       const isPrismaError =
@@ -80,6 +91,12 @@ export class AuthsService {
     if (!user || !isPasswordValid) {
       throw new UnauthorizedException(
         this.i18n.t('auth.errors.invalidCredentials', { lang: this.lang }),
+      );
+    }
+
+    if (!user.emailVerified) {
+      throw new ForbiddenException(
+        this.i18n.t('auth.errors.emailNotVerified', { lang: this.lang }),
       );
     }
 
