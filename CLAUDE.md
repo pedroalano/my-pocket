@@ -68,7 +68,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **NestJS modular architecture** under `src/modules/`:
 
-- `auths` — registration, login, logout, refresh token rotation; JWT strategy (`jwt.strategy.ts`), guard (`jwt-auth.guard.ts`)
+- `auths` — registration, login, logout, refresh token rotation, email verification; JWT strategy (`jwt.strategy.ts`), guard (`jwt-auth.guard.ts`); `EmailVerificationService` handles token creation/validation via `email_verification_tokens` table
 - `users` — user profile management; `GET /users/me` (profile), `PATCH /users/me` (update name), `PATCH /users/me/email` (update email, 409 on duplicate), `PATCH /users/me/password` (verify current password, enforces complexity, clears refreshToken), `DELETE /users/me` (deletes account + all associated data via cascade); all endpoints are JWT-guarded
 - `categories` — CRUD + `POST /categories/batch` (creates multiple at once, silently skips P2002 duplicates, returns `{ created, skipped }`)
 - `transactions`, `budgets`, `dashboard` — domain modules, each with controller/service/dto
@@ -82,6 +82,8 @@ This is a **Turborepo + npm workspaces** monorepo:
 **JWT payload:** `{ userId, email }` — controllers extract `userId` from the request user object to enforce per-user data isolation in every query.
 
 **Auth response:** `{ access_token: string; refresh_token: string }`. Access token expires in 15 min; refresh token expires in 7 days and is stored as a bcrypt hash in `User.refreshToken`. Use `POST /auths/refresh` with the refresh token to rotate both tokens. Use `POST /auths/logout` (JWT-guarded) to revoke.
+
+**Email verification flow:** `POST /auths/register` returns `{ message: string }` — no tokens. A verification email is sent via Resend with a 24h token. `POST /auths/login` returns 403 if `User.emailVerified` is false. `POST /auths/verify-email` accepts `{ token }`, marks the user verified, and returns JWT tokens. `POST /auths/resend-verification` accepts `{ email }` and is enumeration-safe (always returns success). Tokens are SHA256-hashed before storage in `email_verification_tokens`.
 
 **Env file resolution** (in `app.module.ts`):
 
@@ -103,11 +105,12 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **Next.js 15 App Router** with colocated page tests (`page.test.tsx`).
 
-**Auth:** `AuthContext` (`src/contexts/AuthContext.tsx`) stores the JWT in `localStorage`. User info is decoded client-side from the JWT payload.
+**Auth:** `AuthContext` (`src/contexts/AuthContext.tsx`) manages the session. `login()` calls the API and sets tokens. `register()` calls the API and returns — no session is established (email must be verified first). `loginWithTokens(accessToken, refreshToken)` establishes a session from already-obtained tokens (used by the verify-email page). User info is decoded client-side from the JWT payload.
 
 **API layer:**
 
 - `src/lib/api.ts` — `apiRequest` base function (fetch + Bearer token injection + `Accept-Language` header + error handling), exported as `api.get/post/put/delete`
+- `src/lib/auths.ts` — `authsApi` with `forgotPassword`, `resetPassword`, `verifyEmail`, `resendVerification`
 - `src/lib/categories.ts`, `transactions.ts`, `budgets.ts`, `dashboard.ts` — domain-specific API helpers built on `api`
 - `src/lib/formatters.ts` — locale-aware `formatCurrency` / `formatCurrencyFromString` / `formatDate` / `formatMonthYear`; pass the locale from `useLocale()` (next-intl)
 - `ApiException` is thrown for non-2xx responses, carrying `statusCode` and message
@@ -126,9 +129,13 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **UI:** shadcn/ui components in `src/components/ui/` (auto-generated, don't hand-edit). Feature components (`CategoryForm`, `TransactionForm`, `BudgetForm`, `BudgetDetails`, `ThemeToggle`, `LanguageToggle`) live directly in `src/components/`. Charts use `recharts` (PieChart, BarChart) in the dashboard page.
 
-**Register flow (multi-step):** After successful registration the page transitions to a preset categories step (same URL). The user selects/deselects 11 common categories and clicks "Get Started" (calls `POST /categories/batch` with localized names, then redirects to `/dashboard`) or "Skip" (redirects directly). Preset keys are defined as a `PRESETS` constant in `page.tsx`; localized names come from the `presetCategories.names` namespace.
+**Register flow:** After successful registration the page redirects to `/verify-email` (no token), which shows a "check your inbox" message. No session is established until the user clicks the email link.
 
-**Post-login landing page:** `/dashboard` — authenticated users are redirected there from `/` and after login/registration.
+**Email verification page** (`/verify-email`): Two states — no `?token` param shows the check-inbox card; with `?token` the page calls `POST /auths/verify-email` on mount, then calls `loginWithTokens()` and redirects to `/dashboard` on success, or shows an error card with a resend form on failure.
+
+**Login page:** A 403 response (email not verified) shows an inline notice with a "Resend verification email" button that calls `POST /auths/resend-verification` using the email already in the form.
+
+**Post-login landing page:** `/dashboard` — authenticated users are redirected there from `/` and after login/email verification.
 
 ### Shared Package (`packages/shared`)
 
@@ -136,12 +143,13 @@ Contains TypeScript interfaces (`ApiResponse`, `PaginatedResponse`, base entity 
 
 ### Database Schema
 
-Four models in `prisma/schema.prisma`:
+Five models in `prisma/schema.prisma`:
 
-- `User` — owns all other entities; `refreshToken String?` stores the bcrypt hash of the active refresh token (null after logout)
+- `User` — owns all other entities; `refreshToken String?` stores the bcrypt hash of the active refresh token (null after logout); `emailVerified Boolean @default(false)`
 - `Category` — `(name, type, userId)` unique; type is `INCOME | EXPENSE`
 - `Transaction` — linked to a category; amount stored as `Decimal(10,2)`
 - `Budget` — `(categoryId, month, year, userId)` unique; tracks budget per category per month
+- `EmailVerificationToken` — `tokenHash` (SHA256), `expiresAt` (24h); one per user (old tokens deleted on resend); mapped to `email_verification_tokens`
 
 All data access is scoped by `userId`. Cascade deletes are set on all foreign keys.
 
