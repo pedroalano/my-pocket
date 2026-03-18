@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { PrismaClient } from '@prisma/client';
 import { AppModule } from './../src/app.module';
 import { HttpExceptionFilter } from './../src/common/filters/http-exception.filter';
+import { EmailVerificationService } from './../src/modules/auths/email-verification.service';
 
 describe('Personal Finance API E2E', () => {
   let app: INestApplication<App>;
@@ -70,7 +71,14 @@ describe('Personal Finance API E2E', () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(EmailVerificationService)
+      .useValue({
+        sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+        verifyEmail: jest.fn().mockResolvedValue(undefined),
+        resendVerification: jest.fn().mockResolvedValue(undefined),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
