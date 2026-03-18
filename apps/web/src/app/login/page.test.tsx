@@ -223,4 +223,100 @@ describe('LoginPage', () => {
       expect(toast.error).toHaveBeenCalledWith('Invalid email format');
     });
   });
+
+  describe('unverified email (403)', () => {
+    it('shows email-not-verified notice instead of a toast error', async () => {
+      const user = userEvent.setup();
+      const { toast } = await import('sonner');
+
+      renderWithProviders(<LoginPage />);
+
+      await user.type(screen.getByLabelText('Email'), 'unverified@example.com');
+      await user.type(screen.getByLabelText('Password'), 'password123');
+      await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Please verify your email before signing in.'),
+        ).toBeInTheDocument();
+      });
+
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it('shows resend verification button in the notice', async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<LoginPage />);
+
+      await user.type(screen.getByLabelText('Email'), 'unverified@example.com');
+      await user.type(screen.getByLabelText('Password'), 'password123');
+      await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Resend verification email' }),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('clicking resend calls resend-verification and shows success toast', async () => {
+      const user = userEvent.setup();
+      const { toast } = await import('sonner');
+
+      renderWithProviders(<LoginPage />);
+
+      await user.type(screen.getByLabelText('Email'), 'unverified@example.com');
+      await user.type(screen.getByLabelText('Password'), 'password123');
+      await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Resend verification email' }),
+        ).toBeInTheDocument();
+      });
+
+      await user.click(
+        screen.getByRole('button', { name: 'Resend verification email' }),
+      );
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          'Verification email sent! Please check your inbox.',
+        );
+      });
+    });
+
+    it('shows resending state while resend is in flight', async () => {
+      const user = userEvent.setup();
+
+      server.use(
+        http.post(`${API_URL}/auths/resend-verification`, async () => {
+          await new Promise((r) => setTimeout(r, 100));
+          return HttpResponse.json({ message: 'sent' });
+        }),
+      );
+
+      renderWithProviders(<LoginPage />);
+
+      await user.type(screen.getByLabelText('Email'), 'unverified@example.com');
+      await user.type(screen.getByLabelText('Password'), 'password123');
+      await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Resend verification email' }),
+        ).toBeInTheDocument();
+      });
+
+      await user.click(
+        screen.getByRole('button', { name: 'Resend verification email' }),
+      );
+
+      expect(
+        screen.getByRole('button', { name: 'Resending...' }),
+      ).toBeInTheDocument();
+    });
+  });
 });

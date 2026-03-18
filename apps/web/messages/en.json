@@ -90,6 +90,21 @@
     "missingToken": "Invalid or missing reset token. Please request a new password reset.",
     "backToLogin": "Back to login"
   },
+  "verifyEmail": {
+    "title": "Verify your email",
+    "checkInboxTitle": "Check your inbox",
+    "checkInboxMessage": "We sent a verification link to your email address. Please check your inbox and click the link to activate your account.",
+    "verifying": "Verifying...",
+    "successMessage": "Email verified! Redirecting...",
+    "errorTitle": "Verification failed",
+    "invalidToken": "The verification link is invalid or has expired.",
+    "resendButton": "Resend verification email",
+    "resending": "Resending...",
+    "resendSuccess": "Verification email sent! Please check your inbox.",
+    "backToLogin": "Back to login",
+    "loginBlockedMessage": "Please verify your email before signing in.",
+    "resendVerification": "Resend verification email"
+  },
   "dashboard": {
     "title": "Dashboard",
     "previousMonth": "Previous month",

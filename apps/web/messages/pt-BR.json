@@ -90,6 +90,21 @@
     "missingToken": "Token inválido ou ausente. Solicite uma nova redefinição de senha.",
     "backToLogin": "Voltar para o login"
   },
+  "verifyEmail": {
+    "title": "Verifique seu e-mail",
+    "checkInboxTitle": "Verifique sua caixa de entrada",
+    "checkInboxMessage": "Enviamos um link de verificação para o seu e-mail. Verifique sua caixa de entrada e clique no link para ativar sua conta.",
+    "verifying": "Verificando...",
+    "successMessage": "E-mail verificado! Redirecionando...",
+    "errorTitle": "Falha na verificação",
+    "invalidToken": "O link de verificação é inválido ou expirou.",
+    "resendButton": "Reenviar e-mail de verificação",
+    "resending": "Reenviando...",
+    "resendSuccess": "E-mail de verificação enviado! Verifique sua caixa de entrada.",
+    "backToLogin": "Voltar para o login",
+    "loginBlockedMessage": "Por favor, verifique seu e-mail antes de entrar.",
+    "resendVerification": "Reenviar e-mail de verificação"
+  },
   "dashboard": {
     "title": "Painel",
     "previousMonth": "Mês anterior",

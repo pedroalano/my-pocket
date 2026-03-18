@@ -70,7 +70,7 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('Password')).toHaveAttribute('minLength', '6');
   });
 
-  it('successful registration shows success toast and transitions to preset categories step', async () => {
+  it('successful registration shows success toast and redirects to /verify-email', async () => {
     const { toast } = await import('sonner');
 
     renderWithProviders(<RegisterPage />);
@@ -81,10 +81,8 @@ describe('RegisterPage', () => {
       expect(toast.success).toHaveBeenCalledWith(
         'Account created successfully!',
       );
+      expect(mockRouterPush).toHaveBeenCalledWith('/verify-email');
     });
-
-    expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
   it('shows error toast when email already exists', async () => {
@@ -210,14 +208,16 @@ describe('RegisterPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('stores refresh token in cookie on successful registration', async () => {
+  it('does not set a session cookie on successful registration', async () => {
     renderWithProviders(<RegisterPage />);
 
     await registerUser();
 
     await waitFor(() => {
-      expect(document.cookie).toContain('refresh_token=');
+      expect(mockRouterPush).toHaveBeenCalledWith('/verify-email');
     });
+
+    expect(document.cookie).not.toContain('refresh_token=');
   });
 
   it('handles validation error from server', async () => {
@@ -249,226 +249,5 @@ describe('RegisterPage', () => {
     renderWithProviders(<RegisterPage />);
 
     expect(screen.getByLabelText('Name')).toHaveAttribute('type', 'text');
-  });
-
-  // Step 2: Preset Categories
-  describe('preset categories step', () => {
-    it('shows step 2 heading after successful registration', async () => {
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-      expect(
-        screen.getByText(
-          'Select the categories you want to start with. You can always add more later.',
-        ),
-      ).toBeInTheDocument();
-    });
-
-    it('shows all 11 presets selected by default', async () => {
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      const presetNames = [
-        'Salary',
-        'Freelance',
-        'Investments',
-        'Food',
-        'Transport',
-        'Housing',
-        'Entertainment',
-        'Healthcare',
-        'Utilities',
-        'Shopping',
-        'Education',
-      ];
-
-      for (const name of presetNames) {
-        expect(screen.getByText(name)).toBeInTheDocument();
-      }
-
-      // All preset buttons should be visually selected (contain check icon)
-      // We check that "Get Started" button is present
-      expect(
-        screen.getByRole('button', { name: 'Get Started' }),
-      ).toBeInTheDocument();
-    });
-
-    it('clicking a preset toggles its selected state', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      const salaryButton = screen.getByRole('button', { name: /Salary/ });
-      // Initially selected — clicking deselects
-      await user.click(salaryButton);
-
-      // Click again to reselect
-      await user.click(screen.getByRole('button', { name: 'Salary' }));
-      expect(
-        screen.getByRole('button', { name: /Salary/ }),
-      ).toBeInTheDocument();
-    });
-
-    it('"Get Started" calls batch endpoint and redirects to /dashboard', async () => {
-      const user = userEvent.setup();
-      const { toast } = await import('sonner');
-
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: 'Get Started' }));
-
-      await waitFor(() => {
-        expect(toast.success).toHaveBeenCalledWith(
-          'Categories created successfully!',
-        );
-        expect(mockRouterPush).toHaveBeenCalledWith('/dashboard');
-      });
-    });
-
-    it('"Skip" redirects to /dashboard without calling batch', async () => {
-      const user = userEvent.setup();
-      let batchCalled = false;
-
-      server.use(
-        http.post(`${API_URL}/categories/batch`, () => {
-          batchCalled = true;
-          return HttpResponse.json({ created: 0, skipped: 0 });
-        }),
-      );
-
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: 'Skip' }));
-
-      expect(mockRouterPush).toHaveBeenCalledWith('/dashboard');
-      expect(batchCalled).toBe(false);
-    });
-
-    it('deselecting all then clicking "Get Started" redirects without batch call', async () => {
-      const user = userEvent.setup();
-      let batchCalled = false;
-
-      server.use(
-        http.post(`${API_URL}/categories/batch`, () => {
-          batchCalled = true;
-          return HttpResponse.json({ created: 0, skipped: 0 });
-        }),
-      );
-
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      // Deselect all presets
-      const presetNames = [
-        'Salary',
-        'Freelance',
-        'Investments',
-        'Food',
-        'Transport',
-        'Housing',
-        'Entertainment',
-        'Healthcare',
-        'Utilities',
-        'Shopping',
-        'Education',
-      ];
-
-      for (const name of presetNames) {
-        await user.click(
-          screen.getByRole('button', { name: new RegExp(name) }),
-        );
-      }
-
-      await user.click(screen.getByRole('button', { name: 'Get Started' }));
-
-      expect(mockRouterPush).toHaveBeenCalledWith('/dashboard');
-      expect(batchCalled).toBe(false);
-    });
-
-    it('shows error toast when batch endpoint fails', async () => {
-      const user = userEvent.setup();
-      const { toast } = await import('sonner');
-
-      server.use(
-        http.post(`${API_URL}/categories/batch`, () => {
-          return HttpResponse.json(
-            { message: 'Internal server error', statusCode: 500 },
-            { status: 500 },
-          );
-        }),
-      );
-
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: 'Get Started' }));
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Internal server error');
-      });
-
-      expect(mockRouterPush).not.toHaveBeenCalled();
-    });
-
-    it('"Get Started" shows loading state while pending', async () => {
-      const user = userEvent.setup();
-
-      server.use(
-        http.post(`${API_URL}/categories/batch`, async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          return HttpResponse.json({ created: 11, skipped: 0 });
-        }),
-      );
-
-      renderWithProviders(<RegisterPage />);
-
-      await registerUser();
-
-      await waitFor(() => {
-        expect(screen.getByText('Set up your categories')).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: 'Get Started' }));
-
-      expect(
-        screen.getByRole('button', { name: 'Creating...' }),
-      ).toBeInTheDocument();
-    });
   });
 });
