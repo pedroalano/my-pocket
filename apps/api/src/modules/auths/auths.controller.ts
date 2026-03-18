@@ -9,8 +9,10 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
+import { I18nContext } from 'nestjs-i18n';
 import { AuthsService } from './auths.service';
 import { PasswordResetService } from './password-reset.service';
+import { EmailVerificationService } from './email-verification.service';
 import {
   ApiRegister,
   ApiLogin,
@@ -18,12 +20,16 @@ import {
   ApiLogout,
   ApiForgotPassword,
   ApiResetPassword,
+  ApiVerifyEmail,
+  ApiResendVerification,
 } from './auths.swagger';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -33,12 +39,15 @@ export class AuthsController {
   constructor(
     private readonly authsService: AuthsService,
     private readonly passwordResetService: PasswordResetService,
+    private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiRegister()
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(
+    @Body() registerDto: RegisterDto,
+  ): Promise<{ message: string }> {
     return this.authsService.register(registerDto);
   }
 
@@ -86,5 +95,24 @@ export class AuthsController {
     @Body() dto: ResetPasswordDto,
   ): Promise<{ message: string }> {
     return this.passwordResetService.resetPassword(dto);
+  }
+
+  @Post('verify-email')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiVerifyEmail()
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<AuthResponseDto> {
+    return this.emailVerificationService.verifyEmail(dto.token);
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiResendVerification()
+  async resendVerification(
+    @Body() dto: ResendVerificationDto,
+  ): Promise<{ message: string }> {
+    const lang = I18nContext.current()?.lang ?? 'en';
+    return this.emailVerificationService.resendVerification(dto.email, lang);
   }
 }

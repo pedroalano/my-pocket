@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AuthsService } from './auths.service';
 import { PasswordResetService } from './password-reset.service';
+import { EmailVerificationService } from './email-verification.service';
 import { AuthsController } from './auths.controller';
 import { SharedModule } from '../shared/shared.module';
 import { JwtStrategy } from './jwt.strategy';
@@ -33,7 +34,13 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     }),
   ],
   controllers: [AuthsController],
-  providers: [AuthsService, PasswordResetService, JwtStrategy, JwtAuthGuard],
+  providers: [
+    AuthsService,
+    PasswordResetService,
+    EmailVerificationService,
+    JwtStrategy,
+    JwtAuthGuard,
+  ],
   exports: [AuthsService, JwtAuthGuard],
 })
 export class AuthsModule {}
