@@ -4,8 +4,8 @@ services:
     image: postgres:16-alpine
     container_name: my-pocket-postgres-dev
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: bd_my_pocket
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
@@ -25,8 +25,8 @@ services:
     image: postgres:16-alpine
     container_name: my-pocket-postgres-test
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: bd_my_pocket_test
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
@@ -47,7 +47,7 @@ services:
       target: development
     container_name: my-pocket-api-dev
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bd_my_pocket
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/bd_my_pocket}
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev-secret-key-not-for-production}
       JWT_EXPIRATION: 3600

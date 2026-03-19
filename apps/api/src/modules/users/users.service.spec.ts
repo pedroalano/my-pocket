@@ -148,7 +148,7 @@ describe('UsersService', () => {
         'OldPassword1',
         mockUser.password,
       );
-      expect(bcrypt.hash).toHaveBeenCalledWith('NewPassword1', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('NewPassword1', 12);
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: { password: 'new-hashed-password', refreshToken: null },

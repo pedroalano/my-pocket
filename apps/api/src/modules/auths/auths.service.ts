@@ -31,8 +31,8 @@ export class AuthsService {
   async register(registerDto: RegisterDto): Promise<{ message: string }> {
     const { name, email, password } = registerDto;
 
-    // Hash password with bcrypt (10 salt rounds)
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password with bcrypt (12 salt rounds)
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     try {
       // Create user in database
@@ -175,7 +175,7 @@ export class AuthsService {
       expiresIn: refreshExpiresIn,
     });
 
-    const hashedRefreshToken = await bcrypt.hash(refresh_token, 10);
+    const hashedRefreshToken = await bcrypt.hash(refresh_token, 12);
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: hashedRefreshToken },

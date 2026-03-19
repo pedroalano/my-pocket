@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import { PrismaService } from '../shared/prisma.service';
 
 export interface JwtPayload {
@@ -14,6 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
     private prismaService: PrismaService,
+    private i18n: I18nService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -24,6 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     const { userId } = payload;
+    const lang = I18nContext.current()?.lang ?? 'en';
 
     // Load user from database to ensure user still exists
     const user = await this.prismaService.user.findUnique({
@@ -31,11 +34,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException(
+        this.i18n.t('auth.errors.userNotFound', { lang }),
+      );
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw new UnauthorizedException(
+        this.i18n.t('auth.errors.accountDeactivated', { lang }),
+      );
     }
 
     // Return user object that will be attached to request
