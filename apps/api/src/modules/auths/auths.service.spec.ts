@@ -114,7 +114,7 @@ describe('AuthsService', () => {
 
       await service.register(registerDto);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('Password1', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('Password1', 12);
       expect(prismaService.user.create).toHaveBeenCalledWith({
         data: {
           name: 'John Doe',
@@ -369,7 +369,7 @@ describe('AuthsService', () => {
 
       await service.generateToken(userId, email);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith(mockRefreshToken, 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith(mockRefreshToken, 12);
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: { refreshToken: 'hashedValue' },

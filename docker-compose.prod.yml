@@ -3,8 +3,8 @@ services:
     image: postgres:16-alpine
     container_name: my-pocket-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: bd_my_pocket
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
@@ -23,7 +23,7 @@ services:
     image: ${API_IMAGE}
     container_name: my-pocket-api
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bd_my_pocket
+      DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: 3600
@@ -92,7 +92,7 @@ services:
     ports:
       - '3500:3000'
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/datasources:/etc/grafana/provisioning/datasources

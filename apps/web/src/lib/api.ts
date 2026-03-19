@@ -59,14 +59,18 @@ async function tryRefreshToken(): Promise<string | null> {
 
     if (!response.ok) {
       // Revoke the stale refresh token cookie
-      document.cookie = 'refresh_token=; path=/; max-age=0; SameSite=Strict';
+      const secureFlag =
+        window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `refresh_token=; path=/; max-age=0; SameSite=Strict${secureFlag}`;
       return null;
     }
 
     const data = await response.json();
     if (data.refresh_token) {
       const maxAge = 60 * 60 * 24 * 7;
-      document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=${maxAge}; SameSite=Strict`;
+      const secureFlag =
+        window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=${maxAge}; SameSite=Strict${secureFlag}`;
     }
     return data.access_token ?? null;
   } catch {
