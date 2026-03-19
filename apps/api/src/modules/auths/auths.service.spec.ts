@@ -166,6 +166,8 @@ describe('AuthsService', () => {
       password: 'hashedPassword',
       refreshToken: null,
       emailVerified: true,
+      isActive: true,
+      isAdmin: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -185,6 +187,19 @@ describe('AuthsService', () => {
         access_token: 'access.token',
         refresh_token: 'refresh.token',
       });
+    });
+
+    it('should throw ForbiddenException when account is inactive', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        isActive: false,
+      });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await expect(service.login(loginDto)).rejects.toThrow(ForbiddenException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'auth.errors.accountInactive',
+      );
     });
 
     it('should throw ForbiddenException when email is not verified', async () => {
@@ -332,11 +347,11 @@ describe('AuthsService', () => {
       });
       expect(jwtService.signAsync).toHaveBeenCalledTimes(2);
       expect(jwtService.signAsync).toHaveBeenCalledWith(
-        { userId, email },
+        { userId, email, isAdmin: false },
         { expiresIn: 900 },
       );
       expect(jwtService.signAsync).toHaveBeenCalledWith(
-        { userId, email },
+        { userId, email, isAdmin: false },
         { expiresIn: 604800 },
       );
     });
@@ -361,7 +376,7 @@ describe('AuthsService', () => {
       });
     });
 
-    it('should use payload with userId and email only', async () => {
+    it('should use payload with userId, email, and isAdmin', async () => {
       const userId = '456e4567-e89b-12d3-a456-426614174001';
       const email = 'another@example.com';
 
@@ -369,11 +384,11 @@ describe('AuthsService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedToken');
       (prismaService.user.update as jest.Mock).mockResolvedValue({});
 
-      await service.generateToken(userId, email);
+      await service.generateToken(userId, email, true);
 
       const firstCallPayload = jwtServiceMock.signAsync.mock.calls[0][0];
-      expect(Object.keys(firstCallPayload)).toHaveLength(2);
-      expect(firstCallPayload).toEqual({ userId, email });
+      expect(Object.keys(firstCallPayload)).toHaveLength(3);
+      expect(firstCallPayload).toEqual({ userId, email, isAdmin: true });
     });
   });
 });

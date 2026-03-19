@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "cannotDeactivateSelf": "You cannot deactivate your own account",
+    "userNotFound": "User not found"
+  }
+}

@@ -22,7 +22,7 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
-  const { isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout, user } = useAuth();
   const router = useRouter();
   const t = useTranslations('navigation');
   const tCommon = useTranslations('common');
@@ -80,6 +80,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               >
                 {t('recurringTransactions')}
               </Link>
+              {user?.isAdmin && (
+                <Link
+                  href="/admin"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {t('admin')}
+                </Link>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-2">

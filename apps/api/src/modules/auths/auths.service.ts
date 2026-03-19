@@ -94,13 +94,19 @@ export class AuthsService {
       );
     }
 
+    if (!user.isActive) {
+      throw new ForbiddenException(
+        this.i18n.t('auth.errors.accountInactive', { lang: this.lang }),
+      );
+    }
+
     if (!user.emailVerified) {
       throw new ForbiddenException(
         this.i18n.t('auth.errors.emailNotVerified', { lang: this.lang }),
       );
     }
 
-    return this.generateToken(user.id, user.email);
+    return this.generateToken(user.id, user.email, user.isAdmin);
   }
 
   async refresh(
@@ -136,7 +142,7 @@ export class AuthsService {
       );
     }
 
-    return this.generateToken(user.id, user.email);
+    return this.generateToken(user.id, user.email, user.isAdmin);
   }
 
   async logout(userId: string): Promise<void> {
@@ -149,8 +155,9 @@ export class AuthsService {
   async generateToken(
     userId: string,
     email: string,
+    isAdmin: boolean = false,
   ): Promise<{ access_token: string; refresh_token: string }> {
-    const payload = { userId, email };
+    const payload = { userId, email, isAdmin };
 
     const accessExpiresIn = this.configService.get<number>(
       'jwt.expiresInSeconds',

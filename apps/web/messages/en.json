@@ -39,7 +39,8 @@
     "transactions": "Transactions",
     "recurringTransactions": "Recurring",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "admin": "Admin"
   },
   "home": {
     "tagline": "Personal Finance Management",
@@ -347,6 +348,34 @@
     "loadingCategories": "Loading categories...",
     "failedToLoadCategories": "Failed to load categories",
     "endDateOptional": "End Date (optional)"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "backToAdmin": "Back to Admin",
+    "stats": {
+      "title": "User Statistics",
+      "totalUsers": "Total Users",
+      "activeUsers": "Active Users",
+      "inactiveUsers": "Inactive Users"
+    },
+    "userList": {
+      "title": "User Management",
+      "name": "Name",
+      "email": "Email",
+      "status": "Status",
+      "emailVerified": "Email Verified",
+      "joined": "Joined",
+      "actions": "Actions"
+    },
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "deactivateSuccess": "User deactivated successfully",
+    "activateSuccess": "User activated successfully",
+    "accessDenied": "Access denied. Admin privileges required.",
+    "manageUsers": "Manage Users",
+    "failedToLoad": "Failed to load admin data"
   },
   "months": {
     "1": "January",

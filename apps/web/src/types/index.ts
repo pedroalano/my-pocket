@@ -27,6 +27,23 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  isAdmin: boolean;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  isAdmin: boolean;
+  createdAt: string;
 }
 
 export interface UserProfile {
