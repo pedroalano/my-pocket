@@ -39,7 +39,8 @@
     "transactions": "Transações",
     "recurringTransactions": "Recorrentes",
     "settings": "Configurações",
-    "logout": "Sair"
+    "logout": "Sair",
+    "admin": "Admin"
   },
   "home": {
     "tagline": "Gestão de Finanças Pessoais",
@@ -347,6 +348,34 @@
     "loadingCategories": "Carregando categorias...",
     "failedToLoadCategories": "Falha ao carregar categorias",
     "endDateOptional": "Data de Término (opcional)"
+  },
+  "admin": {
+    "title": "Painel Administrativo",
+    "backToAdmin": "Voltar ao Admin",
+    "stats": {
+      "title": "Estatísticas de Usuários",
+      "totalUsers": "Total de Usuários",
+      "activeUsers": "Usuários Ativos",
+      "inactiveUsers": "Usuários Inativos"
+    },
+    "userList": {
+      "title": "Gerenciamento de Usuários",
+      "name": "Nome",
+      "email": "E-mail",
+      "status": "Status",
+      "emailVerified": "E-mail Verificado",
+      "joined": "Cadastrado em",
+      "actions": "Ações"
+    },
+    "activate": "Ativar",
+    "deactivate": "Desativar",
+    "statusActive": "Ativo",
+    "statusInactive": "Inativo",
+    "deactivateSuccess": "Usuário desativado com sucesso",
+    "activateSuccess": "Usuário ativado com sucesso",
+    "accessDenied": "Acesso negado. Privilégios de administrador necessários.",
+    "manageUsers": "Gerenciar Usuários",
+    "failedToLoad": "Falha ao carregar dados administrativos"
   },
   "months": {
     "1": "Janeiro",

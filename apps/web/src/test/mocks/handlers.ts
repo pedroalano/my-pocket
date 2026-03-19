@@ -7,6 +7,14 @@ export const mockUser = {
   id: 'test-user-id',
   email: 'test@example.com',
   name: 'Test User',
+  isAdmin: false,
+};
+
+export const mockAdminUser = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  name: 'Test User',
+  isAdmin: true,
 };
 
 export const mockCategories = [
@@ -193,6 +201,36 @@ export const mockRecurringTransactions = [
     endDate: undefined,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
+export const mockAdminUsers = [
+  {
+    id: 'test-user-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    isActive: true,
+    emailVerified: true,
+    isAdmin: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'user-2',
+    name: 'Alice',
+    email: 'alice@example.com',
+    isActive: true,
+    emailVerified: true,
+    isAdmin: false,
+    createdAt: '2024-01-02T00:00:00.000Z',
+  },
+  {
+    id: 'user-3',
+    name: 'Bob',
+    email: 'bob@example.com',
+    isActive: false,
+    emailVerified: true,
+    isAdmin: false,
+    createdAt: '2024-01-03T00:00:00.000Z',
   },
 ];
 
@@ -945,6 +983,55 @@ export const handlers = [
         );
       }
       return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // Admin endpoints
+  http.get(`${API_URL}/admin/stats`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json({
+      totalUsers: 10,
+      activeUsers: 8,
+      inactiveUsers: 2,
+    });
+  }),
+
+  http.get(`${API_URL}/admin/users`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json(mockAdminUsers);
+  }),
+
+  http.patch(
+    `${API_URL}/admin/users/:id/status`,
+    async ({ params, request }) => {
+      const auth = request.headers.get('Authorization');
+      if (!auth?.startsWith('Bearer ')) {
+        return HttpResponse.json(
+          { message: 'Unauthorized', statusCode: 401 },
+          { status: 401 },
+        );
+      }
+      const body = (await request.json()) as { isActive: boolean };
+      const user = mockAdminUsers.find((u) => u.id === params.id);
+      if (!user) {
+        return HttpResponse.json(
+          { message: 'User not found', statusCode: 404 },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json({ ...user, isActive: body.isActive });
     },
   ),
 ];

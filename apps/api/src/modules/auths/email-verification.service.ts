@@ -107,7 +107,7 @@ export class EmailVerificationService {
       }),
     ]);
 
-    return this.generateToken(user.id, user.email);
+    return this.generateToken(user.id, user.email, user.isAdmin);
   }
 
   async resendVerification(
@@ -132,8 +132,9 @@ export class EmailVerificationService {
   async generateToken(
     userId: string,
     email: string,
+    isAdmin: boolean = false,
   ): Promise<{ access_token: string; refresh_token: string }> {
-    const payload = { userId, email };
+    const payload = { userId, email, isAdmin };
 
     const accessExpiresIn = this.configService.get<number>(
       'jwt.expiresInSeconds',

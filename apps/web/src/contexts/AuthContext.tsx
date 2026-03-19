@@ -35,6 +35,7 @@ function decodeToken(token: string): User | null {
       id: decoded.userId,
       email: decoded.email,
       name: decoded.name || decoded.email.split('@')[0],
+      isAdmin: decoded.isAdmin ?? false,
     };
   } catch {
     return null;
