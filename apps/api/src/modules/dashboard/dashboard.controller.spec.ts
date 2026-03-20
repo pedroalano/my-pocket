@@ -61,6 +61,9 @@ describe('DashboardController', () => {
         totalIncome: 5000,
         totalExpense: 2000,
         balance: 3000,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       };
 
       jest
@@ -98,6 +101,9 @@ describe('DashboardController', () => {
         totalIncome: 1000,
         totalExpense: 500,
         balance: 500,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       };
 
       jest
@@ -123,6 +129,9 @@ describe('DashboardController', () => {
         totalIncome: 2000,
         totalExpense: 1000,
         balance: 1000,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       };
 
       jest
@@ -148,6 +157,9 @@ describe('DashboardController', () => {
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       };
 
       jest
@@ -168,6 +180,9 @@ describe('DashboardController', () => {
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       });
 
       await controller.getMonthlySummary(mockAuthenticatedRequest, 6, 2026);

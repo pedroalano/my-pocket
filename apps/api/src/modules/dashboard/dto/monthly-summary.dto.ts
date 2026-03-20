@@ -18,4 +18,22 @@ export class MonthlySummaryDto {
     example: 1500.0,
   })
   balance: number;
+
+  @ApiProperty({
+    description: 'Total budgeted income for the month',
+    example: 5000.0,
+  })
+  totalBudgetIncome: number;
+
+  @ApiProperty({
+    description: 'Total budgeted expenses for the month',
+    example: 3500.0,
+  })
+  totalBudgetExpense: number;
+
+  @ApiProperty({
+    description: 'Budget balance (budgetIncome - budgetExpense)',
+    example: 1500.0,
+  })
+  budgetBalance: number;
 }
