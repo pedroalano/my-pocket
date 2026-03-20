@@ -180,6 +180,13 @@ export default function DashboardPage() {
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {formatCurrency(summary.totalIncome, locale)}
             </p>
+            {(summary.totalBudgetIncome > 0 ||
+              summary.totalBudgetExpense > 0) && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('budgeted')}:{' '}
+                {formatCurrency(summary.totalBudgetIncome, locale)}
+              </p>
+            )}
           </div>
           <div className="bg-card rounded-lg shadow p-6">
             <p className="text-sm text-muted-foreground mb-1">
@@ -188,6 +195,13 @@ export default function DashboardPage() {
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
               {formatCurrency(summary.totalExpense, locale)}
             </p>
+            {(summary.totalBudgetIncome > 0 ||
+              summary.totalBudgetExpense > 0) && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('budgeted')}:{' '}
+                {formatCurrency(summary.totalBudgetExpense, locale)}
+              </p>
+            )}
           </div>
           <div className="bg-card rounded-lg shadow p-6">
             <p className="text-sm text-muted-foreground mb-1">{t('balance')}</p>
@@ -196,6 +210,12 @@ export default function DashboardPage() {
             >
               {formatCurrency(summary.balance, locale)}
             </p>
+            {(summary.totalBudgetIncome > 0 ||
+              summary.totalBudgetExpense > 0) && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('budgeted')}: {formatCurrency(summary.budgetBalance, locale)}
+              </p>
+            )}
           </div>
         </div>
       ) : null}

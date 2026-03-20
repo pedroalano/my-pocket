@@ -122,7 +122,8 @@
     "noExpenses": "No expenses for this period.",
     "date": "Date",
     "budget": "Budget",
-    "actual": "Actual"
+    "actual": "Actual",
+    "budgeted": "Budgeted"
   },
   "categories": {
     "title": "Categories",

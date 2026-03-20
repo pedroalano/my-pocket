@@ -266,6 +266,9 @@ export interface MonthlySummary {
   totalIncome: number;
   totalExpense: number;
   balance: number;
+  totalBudgetIncome: number;
+  totalBudgetExpense: number;
+  budgetBalance: number;
 }
 
 export interface BudgetVsActual {

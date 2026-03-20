@@ -122,7 +122,8 @@
     "noExpenses": "Sem despesas para este período.",
     "date": "Data",
     "budget": "Orçamento",
-    "actual": "Real"
+    "actual": "Real",
+    "budgeted": "Orçado"
   },
   "categories": {
     "title": "Categorias",

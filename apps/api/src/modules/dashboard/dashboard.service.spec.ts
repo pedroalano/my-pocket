@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CategoryType, TransactionType } from '@prisma/client';
+import { BudgetType, CategoryType, TransactionType } from '@prisma/client';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../shared/prisma.service';
 
@@ -67,6 +67,7 @@ describe('DashboardService', () => {
       jest
         .spyOn(prismaService.transaction, 'findMany')
         .mockResolvedValue(formattedTransactions as any);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       const result = await service.getMonthlySummary(mockUserId, 2, 2026);
 
@@ -74,6 +75,9 @@ describe('DashboardService', () => {
         totalIncome: 1500,
         totalExpense: 500,
         balance: 1000,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       });
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: {
@@ -92,6 +96,7 @@ describe('DashboardService', () => {
 
     it('should return zero values when no transactions exist', async () => {
       jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       const result = await service.getMonthlySummary(mockUserId, 1, 2026);
 
@@ -99,6 +104,9 @@ describe('DashboardService', () => {
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       });
     });
 
@@ -111,6 +119,7 @@ describe('DashboardService', () => {
       jest
         .spyOn(prismaService.transaction, 'findMany')
         .mockResolvedValue(transactions as any);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       const result = await service.getMonthlySummary(mockUserId, 3, 2026);
 
@@ -118,6 +127,9 @@ describe('DashboardService', () => {
         totalIncome: 1500,
         totalExpense: 0,
         balance: 1500,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       });
     });
 
@@ -130,6 +142,7 @@ describe('DashboardService', () => {
       jest
         .spyOn(prismaService.transaction, 'findMany')
         .mockResolvedValue(transactions as any);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       const result = await service.getMonthlySummary(mockUserId, 6, 2026);
 
@@ -137,11 +150,15 @@ describe('DashboardService', () => {
         totalIncome: 0,
         totalExpense: 400,
         balance: -400,
+        totalBudgetIncome: 0,
+        totalBudgetExpense: 0,
+        budgetBalance: 0,
       });
     });
 
     it('should filter transactions by userId', async () => {
       jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       await service.getMonthlySummary(mockUserId, 12, 2026);
 
@@ -152,6 +169,7 @@ describe('DashboardService', () => {
 
     it('should calculate correct date range for February', async () => {
       jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       await service.getMonthlySummary(mockUserId, 2, 2026);
 
@@ -174,11 +192,52 @@ describe('DashboardService', () => {
       jest
         .spyOn(prismaService.transaction, 'findMany')
         .mockResolvedValue(transactions as any);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
 
       const result = await service.getMonthlySummary(mockUserId, 5, 2026);
 
       expect(result.balance).toBe(result.totalIncome - result.totalExpense);
       expect(result.balance).toBe(3000);
+    });
+
+    it('should return correct budget totals from budget table', async () => {
+      jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
+      jest
+        .spyOn(prismaService.budget, 'findMany')
+        .mockResolvedValue([
+          { amount: 3000, type: BudgetType.INCOME } as any,
+          { amount: 500, type: BudgetType.INCOME } as any,
+          { amount: 1200, type: BudgetType.EXPENSE } as any,
+        ]);
+
+      const result = await service.getMonthlySummary(mockUserId, 4, 2026);
+
+      expect(result.totalBudgetIncome).toBe(3500);
+      expect(result.totalBudgetExpense).toBe(1200);
+      expect(result.budgetBalance).toBe(2300);
+    });
+
+    it('should return zero budget totals when no budgets exist', async () => {
+      jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
+
+      const result = await service.getMonthlySummary(mockUserId, 4, 2026);
+
+      expect(result.totalBudgetIncome).toBe(0);
+      expect(result.totalBudgetExpense).toBe(0);
+      expect(result.budgetBalance).toBe(0);
+    });
+
+    it('should query budgets scoped to userId, month and year', async () => {
+      jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prismaService.budget, 'findMany').mockResolvedValue([]);
+
+      await service.getMonthlySummary(mockUserId, 3, 2026);
+
+      expect(prismaService.budget.findMany).toHaveBeenCalledWith({
+        where: { userId: mockUserId, month: 3, year: 2026 },
+        select: { amount: true, type: true },
+      });
     });
   });
 

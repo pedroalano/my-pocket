@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CategoryType, TransactionType } from '@prisma/client';
+import { BudgetType, CategoryType, TransactionType } from '@prisma/client';
 import { PrismaService } from '../shared/prisma.service';
 import { BudgetVsActualDto } from './dto/budget-vs-actual.dto';
 import { MonthlySummaryDto } from './dto/monthly-summary.dto';
@@ -53,10 +53,27 @@ export class DashboardService {
 
     const balance = totalIncome - totalExpense;
 
+    const budgets = await this.prisma.budget.findMany({
+      where: { userId, month, year },
+      select: { amount: true, type: true },
+    });
+
+    let totalBudgetIncome = 0;
+    let totalBudgetExpense = 0;
+    budgets.forEach((b) => {
+      const amount = Number(b.amount);
+      if (b.type === BudgetType.INCOME) totalBudgetIncome += amount;
+      else totalBudgetExpense += amount;
+    });
+    const budgetBalance = totalBudgetIncome - totalBudgetExpense;
+
     return {
       totalIncome,
       totalExpense,
       balance,
+      totalBudgetIncome,
+      totalBudgetExpense,
+      budgetBalance,
     };
   }
 
