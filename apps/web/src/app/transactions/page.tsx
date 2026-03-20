@@ -244,67 +244,70 @@ export default function TransactionsPage() {
             {t('noMatch')}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{tCommon('date')}</TableHead>
-                <TableHead>{tCommon('description')}</TableHead>
-                <TableHead>{tCommon('category')}</TableHead>
-                <TableHead>{tCommon('type')}</TableHead>
-                <TableHead className="text-right">
-                  {tCommon('amount')}
-                </TableHead>
-                <TableHead className="text-right">
-                  {tCommon('actions')}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="text-muted-foreground">
-                    {formatDateUTC(transaction.date, locale)}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {transaction.description || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {categoryMap[transaction.categoryId] || tCommon('unknown')}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        transaction.type === 'INCOME'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                      }`}
-                    >
-                      {transaction.type === 'INCOME'
-                        ? tCommon('income')
-                        : tCommon('expense')}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrencyFromString(transaction.amount, locale)}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Link href={`/transactions/${transaction.id}/edit`}>
-                      <Button variant="outline" size="sm">
-                        {tCommon('edit')}
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setDeleteTransaction(transaction)}
-                    >
-                      {tCommon('delete')}
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{tCommon('date')}</TableHead>
+                  <TableHead>{tCommon('description')}</TableHead>
+                  <TableHead>{tCommon('category')}</TableHead>
+                  <TableHead>{tCommon('type')}</TableHead>
+                  <TableHead className="text-right">
+                    {tCommon('amount')}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {tCommon('actions')}
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="text-muted-foreground">
+                      {formatDateUTC(transaction.date, locale)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {transaction.description || '-'}
+                    </TableCell>
+                    <TableCell>
+                      {categoryMap[transaction.categoryId] ||
+                        tCommon('unknown')}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          transaction.type === 'INCOME'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
+                        {transaction.type === 'INCOME'
+                          ? tCommon('income')
+                          : tCommon('expense')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrencyFromString(transaction.amount, locale)}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Link href={`/transactions/${transaction.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          {tCommon('edit')}
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteTransaction(transaction)}
+                      >
+                        {tCommon('delete')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
 

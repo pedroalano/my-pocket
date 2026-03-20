@@ -116,7 +116,7 @@ export default function CategoriesPage() {
         </Link>
       </div>
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-wrap gap-4 mb-4">
         <Input
           placeholder={t('searchPlaceholder')}
           value={searchQuery}
@@ -154,55 +154,59 @@ export default function CategoriesPage() {
             {t('noMatch')}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{tCommon('name')}</TableHead>
-                <TableHead>{tCommon('type')}</TableHead>
-                <TableHead>{t('created')}</TableHead>
-                <TableHead className="text-right">
-                  {tCommon('actions')}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCategories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        category.type === 'INCOME'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                      }`}
-                    >
-                      {category.type === 'INCOME'
-                        ? tCommon('income')
-                        : tCommon('expense')}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(category.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Link href={`/categories/${category.id}/edit`}>
-                      <Button variant="outline" size="sm">
-                        {tCommon('edit')}
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setDeleteCategory(category)}
-                    >
-                      {tCommon('delete')}
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{tCommon('name')}</TableHead>
+                  <TableHead>{tCommon('type')}</TableHead>
+                  <TableHead>{t('created')}</TableHead>
+                  <TableHead className="text-right">
+                    {tCommon('actions')}
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCategories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">
+                      {category.name}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          category.type === 'INCOME'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
+                        {category.type === 'INCOME'
+                          ? tCommon('income')
+                          : tCommon('expense')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(category.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Link href={`/categories/${category.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          {tCommon('edit')}
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteCategory(category)}
+                      >
+                        {tCommon('delete')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
 
