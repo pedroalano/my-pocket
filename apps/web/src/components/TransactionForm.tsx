@@ -201,7 +201,7 @@ export function TransactionForm({
             />
           </div>
         </CardContent>
-        <CardFooter className="mt-4 flex justify-between">
+        <CardFooter className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-between gap-3 sm:gap-0">
           <Button
             type="button"
             variant="outline"

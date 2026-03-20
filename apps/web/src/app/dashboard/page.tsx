@@ -156,7 +156,7 @@ export default function DashboardPage() {
 
       {/* Summary Cards */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -172,7 +172,7 @@ export default function DashboardPage() {
           {t('failedToLoad')}
         </div>
       ) : summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="bg-card rounded-lg shadow p-6">
             <p className="text-sm text-muted-foreground mb-1">
               {t('totalIncome')}
@@ -339,42 +339,44 @@ export default function DashboardPage() {
             {t('noExpenses')}
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                  {t('date')}
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                  {tCommon('category')}
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                  {tCommon('description')}
-                </th>
-                <th className="px-6 py-3 text-right font-medium text-muted-foreground">
-                  {tCommon('amount')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {topExpenses.map((expense) => (
-                <tr key={expense.id} className="border-b last:border-0">
-                  <td className="px-6 py-4 text-muted-foreground">
-                    {formatDate(expense.date, locale)}
-                  </td>
-                  <td className="px-6 py-4 font-medium">
-                    {expense.category.name}
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    {expense.description ?? '—'}
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium text-red-600 dark:text-red-400">
-                    {formatCurrency(expense.amount, locale)}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">
+                    {t('date')}
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">
+                    {tCommon('category')}
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">
+                    {tCommon('description')}
+                  </th>
+                  <th className="px-6 py-3 text-right font-medium text-muted-foreground">
+                    {tCommon('amount')}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {topExpenses.map((expense) => (
+                  <tr key={expense.id} className="border-b last:border-0">
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {formatDate(expense.date, locale)}
+                    </td>
+                    <td className="px-6 py-4 font-medium">
+                      {expense.category.name}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {expense.description ?? '—'}
+                    </td>
+                    <td className="px-6 py-4 text-right font-medium text-red-600 dark:text-red-400">
+                      {formatCurrency(expense.amount, locale)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </AuthLayout>

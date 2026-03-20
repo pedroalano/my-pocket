@@ -241,7 +241,7 @@ export function BudgetForm({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="month">
                 {repeatUntil && !initialData
@@ -299,7 +299,7 @@ export function BudgetForm({
           )}
 
           {repeatUntil && !initialData && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="end-month">{t('endMonth')}</Label>
                 <Select
@@ -336,7 +336,7 @@ export function BudgetForm({
             </div>
           )}
         </CardContent>
-        <CardFooter className="mt-4 flex justify-between">
+        <CardFooter className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-between gap-3 sm:gap-0">
           <Button
             type="button"
             variant="outline"

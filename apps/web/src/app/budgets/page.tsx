@@ -232,14 +232,17 @@ export default function BudgetsPage() {
         </Link>
       </div>
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-wrap gap-4 mb-4">
         <Select
           value={filterMonth === 'ALL' ? 'ALL' : String(filterMonth)}
           onValueChange={(value) =>
             setFilterMonth(value === 'ALL' ? 'ALL' : parseInt(value))
           }
         >
-          <SelectTrigger className="w-[150px]" data-testid="month-filter">
+          <SelectTrigger
+            className="w-full sm:w-[150px]"
+            data-testid="month-filter"
+          >
             <SelectValue placeholder={tCommon('filterByMonth')} />
           </SelectTrigger>
           <SelectContent>
@@ -258,7 +261,10 @@ export default function BudgetsPage() {
             setFilterYear(value === 'ALL' ? 'ALL' : parseInt(value))
           }
         >
-          <SelectTrigger className="w-[120px]" data-testid="year-filter">
+          <SelectTrigger
+            className="w-full sm:w-[120px]"
+            data-testid="year-filter"
+          >
             <SelectValue placeholder={tCommon('filterByYear')} />
           </SelectTrigger>
           <SelectContent>
@@ -275,7 +281,10 @@ export default function BudgetsPage() {
           value={filterType}
           onValueChange={(value) => setFilterType(value as FilterType)}
         >
-          <SelectTrigger className="w-[150px]" data-testid="type-filter">
+          <SelectTrigger
+            className="w-full sm:w-[150px]"
+            data-testid="type-filter"
+          >
             <SelectValue placeholder={tCommon('filterByType')} />
           </SelectTrigger>
           <SelectContent>
@@ -289,7 +298,10 @@ export default function BudgetsPage() {
           value={filterCategory}
           onValueChange={(value) => setFilterCategory(value as FilterCategory)}
         >
-          <SelectTrigger className="w-[180px]" data-testid="category-filter">
+          <SelectTrigger
+            className="w-full sm:w-[180px]"
+            data-testid="category-filter"
+          >
             <SelectValue placeholder={tCommon('filterByCategory')} />
           </SelectTrigger>
           <SelectContent>
@@ -321,105 +333,107 @@ export default function BudgetsPage() {
             {t('noMatch')}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{tCommon('category')}</TableHead>
-                <TableHead>{tCommon('amount')}</TableHead>
-                {hasSpendingInfo && (
-                  <>
-                    <TableHead>{t('spentEarned')}</TableHead>
-                    <TableHead>{t('remaining')}</TableHead>
-                    <TableHead>{t('usage')}</TableHead>
-                  </>
-                )}
-                <TableHead>{t('period')}</TableHead>
-                <TableHead>{tCommon('type')}</TableHead>
-                <TableHead className="text-right">
-                  {tCommon('actions')}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBudgets.map((budget) => {
-                const progressValue = getProgressValue(budget);
-                return (
-                  <TableRow
-                    key={budget.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/budgets/${budget.id}`)}
-                  >
-                    <TableCell className="font-medium">
-                      {categoryMap[budget.categoryId] || tCommon('unknown')}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrencyFromString(budget.amount, locale)}
-                    </TableCell>
-                    {hasSpendingInfo && progressValue !== undefined && (
-                      <>
-                        <TableCell>
-                          {formatCurrencyFromString(progressValue, locale)}
-                        </TableCell>
-                        <TableCell
-                          className={
-                            parseFloat(budget.remaining || '0') < 0
-                              ? 'text-red-600 dark:text-red-400'
-                              : ''
-                          }
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{tCommon('category')}</TableHead>
+                  <TableHead>{tCommon('amount')}</TableHead>
+                  {hasSpendingInfo && (
+                    <>
+                      <TableHead>{t('spentEarned')}</TableHead>
+                      <TableHead>{t('remaining')}</TableHead>
+                      <TableHead>{t('usage')}</TableHead>
+                    </>
+                  )}
+                  <TableHead>{t('period')}</TableHead>
+                  <TableHead>{tCommon('type')}</TableHead>
+                  <TableHead className="text-right">
+                    {tCommon('actions')}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredBudgets.map((budget) => {
+                  const progressValue = getProgressValue(budget);
+                  return (
+                    <TableRow
+                      key={budget.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/budgets/${budget.id}`)}
+                    >
+                      <TableCell className="font-medium">
+                        {categoryMap[budget.categoryId] || tCommon('unknown')}
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrencyFromString(budget.amount, locale)}
+                      </TableCell>
+                      {hasSpendingInfo && progressValue !== undefined && (
+                        <>
+                          <TableCell>
+                            {formatCurrencyFromString(progressValue, locale)}
+                          </TableCell>
+                          <TableCell
+                            className={
+                              parseFloat(budget.remaining || '0') < 0
+                                ? 'text-red-600 dark:text-red-400'
+                                : ''
+                            }
+                          >
+                            {formatCurrencyFromString(
+                              budget.remaining || '0',
+                              locale,
+                            )}
+                          </TableCell>
+                          <TableCell
+                            className={`font-medium ${getUtilizationColor(budget.utilizationPercentage, budget.type)}`}
+                          >
+                            {budget.utilizationPercentage?.toFixed(1)}%
+                          </TableCell>
+                        </>
+                      )}
+                      <TableCell className="text-muted-foreground">
+                        {tMonths(String(budget.month))} {budget.year}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            budget.type === 'INCOME'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}
                         >
-                          {formatCurrencyFromString(
-                            budget.remaining || '0',
-                            locale,
-                          )}
-                        </TableCell>
-                        <TableCell
-                          className={`font-medium ${getUtilizationColor(budget.utilizationPercentage, budget.type)}`}
+                          {budget.type === 'INCOME'
+                            ? tCommon('income')
+                            : tCommon('expense')}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Link
+                          href={`/budgets/${budget.id}/edit`}
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {budget.utilizationPercentage?.toFixed(1)}%
-                        </TableCell>
-                      </>
-                    )}
-                    <TableCell className="text-muted-foreground">
-                      {tMonths(String(budget.month))} {budget.year}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          budget.type === 'INCOME'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}
-                      >
-                        {budget.type === 'INCOME'
-                          ? tCommon('income')
-                          : tCommon('expense')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Link
-                        href={`/budgets/${budget.id}/edit`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Button variant="outline" size="sm">
-                          {tCommon('edit')}
+                          <Button variant="outline" size="sm">
+                            {tCommon('edit')}
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteBudget(budget);
+                          }}
+                        >
+                          {tCommon('delete')}
                         </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteBudget(budget);
-                        }}
-                      >
-                        {tCommon('delete')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
 
