@@ -4,12 +4,14 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+import { PaginatedResponse } from '@my-pocket/shared';
 import { useAuth } from '@/contexts/AuthContext';
-import { transactionsApi } from '@/lib/transactions';
+import { transactionsApi, GetTransactionsParams } from '@/lib/transactions';
 import { categoriesApi } from '@/lib/categories';
 import { Transaction, Category, TransactionType } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { TransactionsTableSkeleton } from '@/components/TransactionsTableSkeleton';
+import { Pagination } from '@/components/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,14 +45,9 @@ import { formatCurrencyFromString, formatDateUTC } from '@/lib/formatters';
 type FilterType = 'ALL' | TransactionType;
 type FilterCategory = 'ALL' | string;
 
-function parseFilterDate(dateString: string): Date | null {
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? null : date;
-}
-
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] =
+    useState<PaginatedResponse<Transaction> | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTransaction, setDeleteTransaction] =
@@ -60,41 +57,12 @@ export default function TransactionsPage() {
   const [filterEndDate, setFilterEndDate] = useState<string>('');
   const [filterType, setFilterType] = useState<FilterType>('ALL');
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const t = useTranslations('transactions');
   const tCommon = useTranslations('common');
   const locale = useLocale();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated]);
-
-  const loadData = async () => {
-    try {
-      const [transactionsData, categoriesData] = await Promise.all([
-        transactionsApi.getAll(),
-        categoriesApi.getAll(),
-      ]);
-      setTransactions(transactionsData);
-      setCategories(categoriesData);
-    } catch (error) {
-      if (error instanceof ApiException) {
-        if (error.statusCode === 401) {
-          logout();
-          router.push('/login');
-          return;
-        }
-        toast.error(error.message);
-      } else {
-        toast.error(t('failedToLoad'));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const categoryMap = useMemo(() => {
     return categories.reduce(
@@ -106,40 +74,84 @@ export default function TransactionsPage() {
     );
   }, [categories]);
 
-  const filteredTransactions = useMemo(() => {
-    const startDate = parseFilterDate(filterStartDate);
-    const endDate = parseFilterDate(filterEndDate);
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-    return transactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.date);
+    let cancelled = false;
 
-      const matchesStartDate = !startDate || transactionDate >= startDate;
-      const matchesEndDate =
-        !endDate ||
-        transactionDate <=
-          new Date(endDate.getTime() + 24 * 60 * 60 * 1000 - 1);
-      const matchesType =
-        filterType === 'ALL' || transaction.type === filterType;
-      const matchesCategory =
-        filterCategory === 'ALL' || transaction.categoryId === filterCategory;
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const params: GetTransactionsParams = { page: currentPage, limit: 20 };
+        if (filterType !== 'ALL') params.type = filterType;
+        if (filterCategory !== 'ALL') params.categoryId = filterCategory;
+        if (filterStartDate) params.startDate = filterStartDate;
+        if (filterEndDate) params.endDate = filterEndDate;
 
-      return (
-        matchesStartDate && matchesEndDate && matchesType && matchesCategory
-      );
-    });
+        const [transactionsData, categoriesData] = await Promise.all([
+          transactionsApi.getAll(params),
+          categoriesApi.getAll(),
+        ]);
+        if (!cancelled) {
+          setTransactions(transactionsData);
+          setCategories(categoriesData);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        if (error instanceof ApiException) {
+          if (error.statusCode === 401) {
+            logout();
+            router.push('/login');
+            return;
+          }
+          toast.error(error.message);
+        } else {
+          toast.error(t('failedToLoad'));
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    loadData();
+    return () => {
+      cancelled = true;
+    };
   }, [
-    transactions,
-    filterStartDate,
-    filterEndDate,
+    isAuthenticated,
+    currentPage,
     filterType,
     filterCategory,
-  ]);
+    filterStartDate,
+    filterEndDate,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFilterTypeChange = (value: FilterType) => {
+    setFilterType(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterCategoryChange = (value: FilterCategory) => {
+    setFilterCategory(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterStartDateChange = (value: string) => {
+    setFilterStartDate(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterEndDateChange = (value: string) => {
+    setFilterEndDate(value);
+    setCurrentPage(1);
+  };
 
   const clearFilters = () => {
     setFilterStartDate('');
     setFilterEndDate('');
     setFilterType('ALL');
     setFilterCategory('ALL');
+    setCurrentPage(1);
   };
 
   const handleDelete = async () => {
@@ -148,9 +160,23 @@ export default function TransactionsPage() {
     setIsDeleting(true);
     try {
       await transactionsApi.delete(deleteTransaction.id);
-      setTransactions((prev) =>
-        prev.filter((t) => t.id !== deleteTransaction.id),
-      );
+      setTransactions((prev) => {
+        if (!prev) return prev;
+        const newData = prev.data.filter((t) => t.id !== deleteTransaction.id);
+        const newTotal = prev.total - 1;
+        const newTotalPages = Math.ceil(newTotal / prev.limit);
+        // If current page becomes empty and we're not on page 1, go back
+        if (newData.length === 0 && currentPage > 1) {
+          setCurrentPage((p) => p - 1);
+          return prev;
+        }
+        return {
+          ...prev,
+          data: newData,
+          total: newTotal,
+          totalPages: newTotalPages,
+        };
+      });
       toast.success(t('deleteSuccess'));
       setDeleteTransaction(null);
     } catch (error) {
@@ -180,7 +206,7 @@ export default function TransactionsPage() {
             id="start-date"
             type="date"
             value={filterStartDate}
-            onChange={(e) => setFilterStartDate(e.target.value)}
+            onChange={(e) => handleFilterStartDateChange(e.target.value)}
             className="w-[150px]"
           />
         </div>
@@ -191,14 +217,14 @@ export default function TransactionsPage() {
             id="end-date"
             type="date"
             value={filterEndDate}
-            onChange={(e) => setFilterEndDate(e.target.value)}
+            onChange={(e) => handleFilterEndDateChange(e.target.value)}
             className="w-[150px]"
           />
         </div>
 
         <Select
           value={filterType}
-          onValueChange={(value) => setFilterType(value as FilterType)}
+          onValueChange={(value) => handleFilterTypeChange(value as FilterType)}
         >
           <SelectTrigger className="w-[150px]" data-testid="type-filter">
             <SelectValue placeholder={tCommon('filterByType')} />
@@ -212,7 +238,9 @@ export default function TransactionsPage() {
 
         <Select
           value={filterCategory}
-          onValueChange={(value) => setFilterCategory(value as FilterCategory)}
+          onValueChange={(value) =>
+            handleFilterCategoryChange(value as FilterCategory)
+          }
         >
           <SelectTrigger className="w-[180px]" data-testid="category-filter">
             <SelectValue placeholder={tCommon('filterByCategory')} />
@@ -235,11 +263,11 @@ export default function TransactionsPage() {
       <div className="bg-card rounded-lg shadow">
         {isLoading ? (
           <TransactionsTableSkeleton />
-        ) : transactions.length === 0 ? (
+        ) : transactions?.data.length === 0 && transactions?.total === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             {t('noTransactions')}
           </div>
-        ) : filteredTransactions.length === 0 ? (
+        ) : transactions?.data.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             {t('noMatch')}
           </div>
@@ -261,7 +289,7 @@ export default function TransactionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.map((transaction) => (
+                {transactions?.data.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell className="text-muted-foreground">
                       {formatDateUTC(transaction.date, locale)}
@@ -310,6 +338,15 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {transactions && (
+        <Pagination
+          page={transactions.page}
+          totalPages={transactions.totalPages}
+          onPageChange={setCurrentPage}
+          disabled={isLoading}
+        />
+      )}
 
       <Dialog
         open={!!deleteTransaction}

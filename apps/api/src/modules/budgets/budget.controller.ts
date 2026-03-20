@@ -7,6 +7,7 @@ import {
   Delete,
   Put,
   ParseUUIDPipe,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import {
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
+import { GetBudgetsQueryDto } from './dto/get-budgets-query.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
 
@@ -37,8 +39,11 @@ export class BudgetController {
 
   @Get()
   @ApiGetAllBudgets()
-  async getAllBudgets(@Request() req: AuthenticatedRequest) {
-    return this.budgetService.getAllBudgets(req.user.userId);
+  async getAllBudgets(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: GetBudgetsQueryDto,
+  ) {
+    return this.budgetService.getAllBudgets(req.user.userId, query);
   }
 
   @Get(':id')

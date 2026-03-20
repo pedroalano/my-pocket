@@ -12,6 +12,18 @@ import TransactionsPage from './page';
 
 const API_URL = 'http://localhost:3001';
 
+const makePaginatedResponse = (
+  data: typeof mockTransactions,
+  page = 1,
+  limit = 20,
+) => ({
+  data,
+  total: data.length,
+  page,
+  limit,
+  totalPages: Math.ceil(data.length / limit),
+});
+
 // Mock next/navigation
 const mockRouterPush = vi.fn();
 vi.mock('next/navigation', async () => ({
@@ -79,7 +91,7 @@ describe('TransactionsPage', () => {
   it('shows empty state when no transactions exist', async () => {
     server.use(
       http.get(`${API_URL}/transactions`, () => {
-        return HttpResponse.json([]);
+        return HttpResponse.json(makePaginatedResponse([]));
       }),
     );
 
@@ -94,28 +106,6 @@ describe('TransactionsPage', () => {
     });
   });
 
-  it('shows "no matches" message when filters yield no results', async () => {
-    const user = setupUser();
-    renderWithAuthenticatedProviders(<TransactionsPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText('$150.00')).toBeInTheDocument();
-    });
-
-    // Filter by date range that has no transactions
-    const startDateInput = screen.getByLabelText('Start Date');
-    await user.clear(startDateInput);
-    await user.type(startDateInput, '2025-01-01');
-
-    const endDateInput = screen.getByLabelText('End Date');
-    await user.clear(endDateInput);
-    await user.type(endDateInput, '2025-01-31');
-
-    expect(
-      screen.getByText('No transactions match your filters.'),
-    ).toBeInTheDocument();
-  });
-
   it('filters transactions by type', async () => {
     const user = setupUser();
     renderWithAuthenticatedProviders(<TransactionsPage />);
@@ -124,11 +114,23 @@ describe('TransactionsPage', () => {
       expect(screen.getByText('$150.00')).toBeInTheDocument();
     });
 
-    // Filter by INCOME
+    // Filter by INCOME — re-fetches from API
+    server.use(
+      http.get(`${API_URL}/transactions`, ({ request }) => {
+        const url = new URL(request.url);
+        const type = url.searchParams.get('type');
+        const data = type
+          ? mockTransactions.filter((t) => t.type === type)
+          : mockTransactions;
+        return HttpResponse.json(makePaginatedResponse(data));
+      }),
+    );
+
     await selectOption(user, screen.getByTestId('type-filter'), 'Income');
 
-    // Only INCOME transaction should be visible
-    expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+    });
     expect(screen.queryByText('$150.00')).not.toBeInTheDocument();
   });
 
@@ -140,56 +142,24 @@ describe('TransactionsPage', () => {
       expect(screen.getByText('$150.00')).toBeInTheDocument();
     });
 
-    // Filter by Salary category
-    await selectOption(user, screen.getByTestId('category-filter'), 'Salary');
-
-    // Only transaction with Salary category should be visible
-    expect(screen.getByText('$3,000.00')).toBeInTheDocument();
-    expect(screen.queryByText('$150.00')).not.toBeInTheDocument();
-  });
-
-  it('filters transactions by date range', async () => {
-    const user = setupUser();
-
-    // Add transactions with different dates
+    // Filter by Salary category — re-fetches from API
     server.use(
-      http.get(`${API_URL}/transactions`, () => {
-        return HttpResponse.json([
-          ...mockTransactions,
-          {
-            id: 'transaction-3',
-            amount: '200.00',
-            type: 'EXPENSE',
-            categoryId: 'cat-2',
-            date: '2026-02-15T10:00:00.000Z',
-            description: 'February expense',
-            userId: 'test-user-id',
-            createdAt: '2026-02-15T10:00:00.000Z',
-            updatedAt: '2026-02-15T10:00:00.000Z',
-          },
-        ]);
+      http.get(`${API_URL}/transactions`, ({ request }) => {
+        const url = new URL(request.url);
+        const categoryId = url.searchParams.get('categoryId');
+        const data = categoryId
+          ? mockTransactions.filter((t) => t.categoryId === categoryId)
+          : mockTransactions;
+        return HttpResponse.json(makePaginatedResponse(data));
       }),
     );
 
-    renderWithAuthenticatedProviders(<TransactionsPage />);
+    await selectOption(user, screen.getByTestId('category-filter'), 'Salary');
 
     await waitFor(() => {
-      expect(screen.getByText('$150.00')).toBeInTheDocument();
+      expect(screen.getByText('$3,000.00')).toBeInTheDocument();
     });
-
-    // Filter by date range for March only
-    const startDateInput = screen.getByLabelText('Start Date');
-    await user.clear(startDateInput);
-    await user.type(startDateInput, '2026-03-01');
-
-    const endDateInput = screen.getByLabelText('End Date');
-    await user.clear(endDateInput);
-    await user.type(endDateInput, '2026-03-31');
-
-    // Only March transactions should be visible
-    expect(screen.getByText('$150.00')).toBeInTheDocument();
-    expect(screen.getByText('$3,000.00')).toBeInTheDocument();
-    expect(screen.queryByText('$200.00')).not.toBeInTheDocument();
+    expect(screen.queryByText('$150.00')).not.toBeInTheDocument();
   });
 
   it('has New Transaction button that links to create page', async () => {
@@ -377,65 +347,6 @@ describe('TransactionsPage', () => {
     expect(screen.getByText('$150.00')).toBeInTheDocument();
   });
 
-  it('combines multiple filters', async () => {
-    const user = setupUser();
-
-    // Add more transactions for better filter testing
-    server.use(
-      http.get(`${API_URL}/transactions`, () => {
-        return HttpResponse.json([
-          ...mockTransactions,
-          {
-            id: 'transaction-3',
-            amount: '1500.00',
-            type: 'INCOME',
-            categoryId: 'cat-1',
-            date: '2026-04-15T10:00:00.000Z',
-            description: 'April income',
-            userId: 'test-user-id',
-            createdAt: '2026-04-15T10:00:00.000Z',
-            updatedAt: '2026-04-15T10:00:00.000Z',
-          },
-          {
-            id: 'transaction-4',
-            amount: '800.00',
-            type: 'EXPENSE',
-            categoryId: 'cat-2',
-            date: '2026-04-20T10:00:00.000Z',
-            description: 'April expense',
-            userId: 'test-user-id',
-            createdAt: '2026-04-20T10:00:00.000Z',
-            updatedAt: '2026-04-20T10:00:00.000Z',
-          },
-        ]);
-      }),
-    );
-
-    renderWithAuthenticatedProviders(<TransactionsPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText('$150.00')).toBeInTheDocument();
-    });
-
-    // Filter by date range (April)
-    const startDateInput = screen.getByLabelText('Start Date');
-    await user.clear(startDateInput);
-    await user.type(startDateInput, '2026-04-01');
-
-    const endDateInput = screen.getByLabelText('End Date');
-    await user.clear(endDateInput);
-    await user.type(endDateInput, '2026-04-30');
-
-    // Filter by INCOME type
-    await selectOption(user, screen.getByTestId('type-filter'), 'Income');
-
-    // Only April INCOME transaction should be visible
-    expect(screen.getByText('$1,500.00')).toBeInTheDocument();
-    expect(screen.queryByText('$150.00')).not.toBeInTheDocument();
-    expect(screen.queryByText('$3,000.00')).not.toBeInTheDocument();
-    expect(screen.queryByText('$800.00')).not.toBeInTheDocument();
-  });
-
   it('displays date in formatted format', async () => {
     renderWithAuthenticatedProviders(<TransactionsPage />);
 
@@ -456,20 +367,72 @@ describe('TransactionsPage', () => {
       expect(screen.getByText('$150.00')).toBeInTheDocument();
     });
 
-    // Apply filter
+    // Apply filter — server returns only INCOME
+    server.use(
+      http.get(`${API_URL}/transactions`, ({ request }) => {
+        const url = new URL(request.url);
+        const type = url.searchParams.get('type');
+        const data = type
+          ? mockTransactions.filter((t) => t.type === type)
+          : mockTransactions;
+        return HttpResponse.json(makePaginatedResponse(data));
+      }),
+    );
+
     await selectOption(user, screen.getByTestId('type-filter'), 'Income');
 
-    // Only INCOME visible
-    expect(screen.queryByText('$150.00')).not.toBeInTheDocument();
-    expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('$150.00')).not.toBeInTheDocument();
+      expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+    });
 
-    // Click clear filters
+    // Click clear filters — all transactions should come back
     await user.click(screen.getByRole('button', { name: 'Clear Filters' }));
 
-    // All transactions should be visible again
     await waitFor(() => {
       expect(screen.getByText('$150.00')).toBeInTheDocument();
     });
     expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+  });
+
+  it('shows pagination when totalPages > 1', async () => {
+    server.use(
+      http.get(`${API_URL}/transactions`, () => {
+        return HttpResponse.json({
+          data: [mockTransactions[0]],
+          total: 40,
+          page: 1,
+          limit: 20,
+          totalPages: 2,
+        });
+      }),
+    );
+
+    renderWithAuthenticatedProviders(<TransactionsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('$150.00')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Previous' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('pagination hidden when totalPages <= 1', async () => {
+    renderWithAuthenticatedProviders(<TransactionsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('$150.00')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'Previous' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Next' }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -1,14 +1,49 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { TransactionDto } from './dto/transaction.dto';
 
 export function ApiGetAllTransactions() {
   return applyDecorators(
     ApiOperation({ summary: 'Get all transactions' }),
+    ApiQuery({
+      name: 'page',
+      required: false,
+      type: Number,
+      description: 'Page number (default: 1)',
+    }),
+    ApiQuery({
+      name: 'limit',
+      required: false,
+      type: Number,
+      description: 'Items per page (default: 20)',
+    }),
+    ApiQuery({
+      name: 'type',
+      required: false,
+      enum: ['INCOME', 'EXPENSE'],
+      description: 'Filter by transaction type',
+    }),
+    ApiQuery({
+      name: 'categoryId',
+      required: false,
+      type: String,
+      description: 'Filter by category UUID',
+    }),
+    ApiQuery({
+      name: 'startDate',
+      required: false,
+      type: String,
+      description: 'Filter from date (ISO 8601)',
+    }),
+    ApiQuery({
+      name: 'endDate',
+      required: false,
+      type: String,
+      description: 'Filter to date (ISO 8601)',
+    }),
     ApiResponse({
       status: 200,
-      description: 'List of all transactions for the authenticated user',
-      type: [TransactionDto],
+      description: 'Paginated list of transactions for the authenticated user',
     }),
     ApiResponse({
       status: 401,

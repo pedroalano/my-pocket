@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { BudgetType, Prisma, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
+import { PaginatedResponse } from '@my-pocket/shared';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
+import { GetBudgetsQueryDto } from './dto/get-budgets-query.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
@@ -195,15 +197,49 @@ export class BudgetService {
     return Number(spent._sum.amount ?? 0);
   }
 
-  async getAllBudgets(userId: string) {
-    const budgets = await this.prisma.budget.findMany({
-      where: { userId },
-      select: this.budgetSelect,
-    });
-    return budgets.map((budget) => {
-      const { userId: _userId, ...budgetWithoutUserId } = budget;
-      return this.mapBudget(budgetWithoutUserId);
-    });
+  async getAllBudgets(
+    userId: string,
+    query: GetBudgetsQueryDto = {},
+  ): Promise<PaginatedResponse<ReturnType<typeof this.mapBudget>>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = { userId };
+
+    if (query.month !== undefined) {
+      where['month'] = query.month;
+    }
+
+    if (query.year !== undefined) {
+      where['year'] = query.year;
+    }
+
+    if (query.type) {
+      where['type'] = query.type as BudgetType;
+    }
+
+    const [budgets, total] = await Promise.all([
+      this.prisma.budget.findMany({
+        where,
+        select: this.budgetSelect,
+        skip,
+        take: limit,
+        orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      }),
+      this.prisma.budget.count({ where }),
+    ]);
+
+    return {
+      data: budgets.map((budget) => {
+        const { userId: _userId, ...budgetWithoutUserId } = budget;
+        return this.mapBudget(budgetWithoutUserId);
+      }),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getBudgetById(id: string, userId: string) {

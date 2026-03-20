@@ -34,10 +34,18 @@ const createPrismaMock = () => {
 
   return {
     transaction: {
-      findMany: jest.fn(
+      findMany: jest.fn(({ where, skip, take }) => {
+        const filtered = store.filter(
+          (t) => !where?.userId || t.userId === where.userId,
+        );
+        const sliced =
+          typeof skip === 'number' ? filtered.slice(skip) : filtered;
+        return typeof take === 'number' ? sliced.slice(0, take) : sliced;
+      }),
+      count: jest.fn(
         ({ where }) =>
-          store.filter((t) => !where?.userId || t.userId === where.userId) ??
-          [],
+          store.filter((t) => !where?.userId || t.userId === where.userId)
+            .length,
       ),
       findUnique: jest.fn(
         ({ where: { id, userId } }) =>
@@ -145,9 +153,13 @@ describe('TransactionsService', () => {
   });
 
   describe('getAllTransactions', () => {
-    it('should return an empty array initially', async () => {
-      const transactions = await service.getAllTransactions(userId);
-      expect(transactions).toEqual([]);
+    it('should return an empty paginated result initially', async () => {
+      const result = await service.getAllTransactions(userId);
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(result.totalPages).toBe(0);
     });
 
     it('should return only user transactions filtered by userId', async () => {
@@ -166,12 +178,39 @@ describe('TransactionsService', () => {
       await service.createTransaction(createDto, userId);
       await service.createTransaction(createDto, otherUserId);
 
-      const userTransactions = await service.getAllTransactions(userId);
-      expect(userTransactions.length).toBe(2);
+      const userResult = await service.getAllTransactions(userId);
+      expect(userResult.data.length).toBe(2);
+      expect(userResult.total).toBe(2);
 
-      const otherUserTransactions =
-        await service.getAllTransactions(otherUserId);
-      expect(otherUserTransactions.length).toBe(1);
+      const otherUserResult = await service.getAllTransactions(otherUserId);
+      expect(otherUserResult.data.length).toBe(1);
+      expect(otherUserResult.total).toBe(1);
+    });
+
+    it('should return paginated response with pagination metadata', async () => {
+      jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
+        ...buildCategory(categoryId, 'Salary'),
+      });
+
+      const createDto: CreateTransactionDto = {
+        amount: 1000,
+        categoryId,
+        date: '2025-01-01',
+        description: 'Monthly salary',
+      };
+
+      await service.createTransaction(createDto, userId);
+      await service.createTransaction(createDto, userId);
+
+      const result = await service.getAllTransactions(userId, {
+        page: 1,
+        limit: 1,
+      });
+      expect(result.data.length).toBe(1);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(1);
+      expect(result.totalPages).toBe(2);
     });
   });
 
@@ -304,10 +343,10 @@ describe('TransactionsService', () => {
       };
 
       await service.createTransaction(createDto, userId);
-      const allTransactions = await service.getAllTransactions(userId);
+      const result = await service.getAllTransactions(userId);
 
-      expect(allTransactions.length).toBe(1);
-      expect(allTransactions[0].amount).toBe('1000.00');
+      expect(result.data.length).toBe(1);
+      expect(result.data[0].amount).toBe('1000.00');
     });
 
     it('should derive INCOME type from INCOME category', async () => {
@@ -374,7 +413,7 @@ describe('TransactionsService', () => {
         amount: 2000,
       };
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       const updated = await service.updateTransaction(
         existing.id,
         updateDto,
@@ -396,7 +435,7 @@ describe('TransactionsService', () => {
         description: 'Bonus payment',
       };
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       const updated = await service.updateTransaction(
         existing.id,
         updateDto,
@@ -434,7 +473,7 @@ describe('TransactionsService', () => {
         categoryId: otherCategoryId,
       };
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
 
       await expect(
         service.updateTransaction(existing.id, updateDto, userId),
@@ -449,7 +488,7 @@ describe('TransactionsService', () => {
         amount: 2000,
       };
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       const updated = await service.updateTransaction(
         existing.id,
         updateDto,
@@ -489,7 +528,7 @@ describe('TransactionsService', () => {
         categoryId: otherCategoryId,
       };
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       const updated = await service.updateTransaction(
         existing.id,
         updateDto,
@@ -522,7 +561,7 @@ describe('TransactionsService', () => {
 
       await service.createTransaction(createDto, userId);
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       expect(existing.type).toBe(TransactionType.INCOME);
 
       const updated = await service.updateTransaction(
@@ -538,7 +577,7 @@ describe('TransactionsService', () => {
     });
 
     it('should not change type when categoryId is not updated', async () => {
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       expect(existing.type).toBe(TransactionType.INCOME);
 
       const updated = await service.updateTransaction(
@@ -558,7 +597,7 @@ describe('TransactionsService', () => {
         amount: 5000,
       };
 
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       await expect(
         service.updateTransaction(existing.id, updateDto, otherUserId),
       ).rejects.toThrow(NotFoundException);
@@ -595,7 +634,7 @@ describe('TransactionsService', () => {
     });
 
     it('should delete a transaction and return it', async () => {
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       const deleted = await service.deleteTransaction(existing.id, userId);
 
       expect(deleted).toBeDefined();
@@ -607,11 +646,11 @@ describe('TransactionsService', () => {
     });
 
     it('should remove transaction from array', async () => {
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       await service.deleteTransaction(existing.id, userId);
       const remaining = await service.getAllTransactions(userId);
 
-      expect(remaining.length).toBe(0);
+      expect(remaining.data.length).toBe(0);
     });
 
     it('should remove only the specified transaction', async () => {
@@ -628,16 +667,16 @@ describe('TransactionsService', () => {
 
       await service.createTransaction(createDto, userId);
 
-      const [first] = await service.getAllTransactions(userId);
+      const [first] = (await service.getAllTransactions(userId)).data;
       await service.deleteTransaction(first.id, userId);
       const remaining = await service.getAllTransactions(userId);
 
-      expect(remaining.length).toBe(1);
-      expect(remaining[0].id).not.toBe(first.id);
+      expect(remaining.data.length).toBe(1);
+      expect(remaining.data[0].id).not.toBe(first.id);
     });
 
     it('should return null when user tries to delete another users transaction', async () => {
-      const [existing] = await service.getAllTransactions(userId);
+      const [existing] = (await service.getAllTransactions(userId)).data;
       await expect(
         service.deleteTransaction(existing.id, otherUserId),
       ).rejects.toThrow(NotFoundException);

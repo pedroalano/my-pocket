@@ -391,5 +391,10 @@
     "10": "October",
     "11": "November",
     "12": "December"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {totalPages}"
   }
 }
