@@ -45,7 +45,26 @@
   "home": {
     "tagline": "Gestão de Finanças Pessoais",
     "signIn": "Entrar",
-    "getStarted": "Começar"
+    "getStarted": "Começar",
+    "headline": "Quando você não sabe para onde seu dinheiro vai, como pode esperar ganhar mais?",
+    "subheadline": "O primeiro passo para grandes conquistas é ter plena consciência da sua situação financeira atual.",
+    "features": {
+      "track": {
+        "title": "Registre Cada Transação",
+        "description": "Saiba exatamente para onde vai cada centavo. Registre receitas e despesas em segundos."
+      },
+      "budgets": {
+        "title": "Defina Orçamentos Inteligentes",
+        "description": "Planeje por categoria. Estabeleça metas mensais e mantenha o controle dos seus gastos."
+      },
+      "insights": {
+        "title": "Visualize Seu Progresso",
+        "description": "Gráficos e relatórios claros te dão uma visão completa da sua saúde financeira."
+      }
+    },
+    "ctaTitle": "Comece a tomar o controle hoje",
+    "ctaSubtitle": "A consciência é a base de toda grande decisão financeira.",
+    "ctaButton": "Começar Gratuitamente"
   },
   "auth": {
     "welcomeBack": "Bem-vindo de volta",
