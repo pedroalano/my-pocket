@@ -27,6 +27,7 @@ export class RecurringTransactionsService {
     id: string;
     userId: string;
     categoryId: string;
+    accountId: string;
     description: string;
     amount: { toString(): string };
     type: TransactionType;
@@ -53,6 +54,7 @@ export class RecurringTransactionsService {
     id: true,
     userId: true,
     categoryId: true,
+    accountId: true,
     description: true,
     amount: true,
     type: true,
@@ -111,11 +113,25 @@ export class RecurringTransactionsService {
       );
     }
 
+    const account = await this.prisma.account.findUnique({
+      where: { id: dto.accountId },
+      select: { userId: true },
+    });
+    if (!account || account.userId !== userId) {
+      throw new BadRequestException(
+        this.i18n.t('recurringTransactions.errors.accountNotFound', {
+          args: { id: dto.accountId },
+          lang: this.lang,
+        }),
+      );
+    }
+
     const startDate = new Date(dto.startDate);
     const record = await this.prisma.recurringTransaction.create({
       data: {
         userId,
         categoryId: dto.categoryId,
+        accountId: dto.accountId,
         description: dto.description,
         amount: dto.amount,
         type: category.type as unknown as TransactionType,
@@ -170,10 +186,27 @@ export class RecurringTransactionsService {
       newType = category.type as unknown as TransactionType;
     }
 
+    const newAccountId = dto.accountId;
+    if (newAccountId !== undefined) {
+      const account = await this.prisma.account.findUnique({
+        where: { id: newAccountId },
+        select: { userId: true },
+      });
+      if (!account || account.userId !== userId) {
+        throw new BadRequestException(
+          this.i18n.t('recurringTransactions.errors.accountNotFound', {
+            args: { id: newAccountId },
+            lang: this.lang,
+          }),
+        );
+      }
+    }
+
     const updated = await this.prisma.recurringTransaction.update({
       where: { id },
       data: {
         categoryId: dto.categoryId,
+        accountId: newAccountId,
         description: dto.description,
         amount: dto.amount,
         type: newType,

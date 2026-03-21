@@ -34,6 +34,13 @@ export class CreateTransactionDto {
   date: string;
 
   @ApiProperty({
+    description: 'Account UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  accountId: string;
+
+  @ApiProperty({
     description: 'Optional description of the transaction',
     example: 'Grocery shopping at Walmart',
     required: false,

@@ -48,6 +48,23 @@ vi.mock('@/lib/categories', () => ({
   },
 }));
 
+vi.mock('@/lib/accounts', () => ({
+  accountsApi: {
+    getAll: vi.fn().mockResolvedValue([
+      {
+        id: 'acc-1',
+        name: 'Main Checking',
+        type: 'CHECKING',
+        initialBalance: '0.00',
+        currentBalance: 2850,
+        userId: 'test-user-id',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]),
+  },
+}));
+
 describe('TransactionForm', () => {
   const mockOnSubmit = vi.fn();
 
@@ -120,6 +137,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 150,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
           description: 'Test description',
         }}
@@ -155,6 +173,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: '',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -169,6 +188,29 @@ describe('TransactionForm', () => {
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
+  it('should show error toast when account is not selected', async () => {
+    renderWithProviders(
+      <TransactionForm
+        title="Create Transaction"
+        submitLabel="Create"
+        initialData={{
+          amount: 100,
+          categoryId: 'cat-2',
+          accountId: '',
+          date: '2026-03-05',
+        }}
+        onSubmit={mockOnSubmit}
+      />,
+    );
+
+    fireEvent.submit(document.querySelector('form')!);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Account is required');
+    });
+    expect(mockOnSubmit).not.toHaveBeenCalled();
+  });
+
   it('should submit form with valid data from initialData', async () => {
     renderWithProviders(
       <TransactionForm
@@ -177,6 +219,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
           description: 'Test transaction',
         }}
@@ -190,6 +233,7 @@ describe('TransactionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith({
         amount: 100,
         categoryId: 'cat-2',
+        accountId: 'acc-1',
         date: '2026-03-05T00:00:00.000Z',
         description: 'Test transaction',
       });
@@ -209,6 +253,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -236,6 +281,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -259,6 +305,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -283,6 +330,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -325,6 +373,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: -100,
           categoryId: 'cat-2',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -347,6 +396,7 @@ describe('TransactionForm', () => {
         initialData={{
           amount: 100,
           categoryId: 'cat-1',
+          accountId: 'acc-1',
           date: '2026-03-05',
         }}
         onSubmit={mockOnSubmit}
@@ -359,6 +409,7 @@ describe('TransactionForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith({
         amount: 100,
         categoryId: 'cat-1',
+        accountId: 'acc-1',
         date: '2026-03-05T00:00:00.000Z',
         description: undefined,
       });

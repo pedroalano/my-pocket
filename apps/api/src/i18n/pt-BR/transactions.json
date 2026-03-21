@@ -2,6 +2,7 @@
   "errors": {
     "notFound": "Transação com ID {id} não encontrada",
     "categoryNotFound": "Categoria com ID {id} não existe",
-    "invalidType": "Tipo de transação inválido: {type}"
+    "invalidType": "Tipo de transação inválido: {type}",
+    "accountNotFound": "Conta com ID {id} não existe ou não pertence a você"
   }
 }

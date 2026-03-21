@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "notFound": "Account with ID {id} not found",
+    "hasTransactions": "Cannot delete account because it has existing transactions"
+  }
+}

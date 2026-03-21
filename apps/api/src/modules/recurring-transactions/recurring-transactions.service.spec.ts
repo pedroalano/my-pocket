@@ -16,6 +16,7 @@ type RecurringRecord = {
   id: string;
   userId: string;
   categoryId: string;
+  accountId: string;
   description: string;
   amount: number;
   type: TransactionType;
@@ -42,6 +43,9 @@ const createPrismaMock = () => {
   ];
 
   return {
+    account: {
+      findUnique: jest.fn().mockResolvedValue({ userId: 'user-123' }),
+    },
     recurringTransaction: {
       findMany: jest.fn(({ where }) =>
         store.filter((r) => !where?.userId || r.userId === where.userId),
@@ -102,6 +106,7 @@ describe('RecurringTransactionsService', () => {
   const categoryId = '11111111-1111-1111-1111-111111111111';
   const otherCategoryId = '22222222-2222-2222-2222-222222222222';
   const missingId = '33333333-3333-3333-3333-333333333333';
+  const accountId = '44444444-4444-4444-4444-444444444444';
   let prismaMock: ReturnType<typeof createPrismaMock>;
 
   beforeEach(async () => {
@@ -146,11 +151,17 @@ describe('RecurringTransactionsService', () => {
         .spyOn(categoriesService, 'getCategoryById')
         .mockResolvedValue(buildCategory(categoryId));
 
+      prismaMock.account.findUnique
+        .mockResolvedValueOnce({ userId })
+        .mockResolvedValueOnce({ userId })
+        .mockResolvedValueOnce({ userId: otherUserId });
+
       const dto: CreateRecurringTransactionDto = {
         amount: 100,
         categoryId,
         description: 'Salary',
         interval: RecurringInterval.MONTHLY,
+        accountId,
         startDate: '2026-01-01T00:00:00.000Z',
       };
 
@@ -183,6 +194,7 @@ describe('RecurringTransactionsService', () => {
         categoryId,
         description: 'Salary',
         interval: RecurringInterval.MONTHLY,
+        accountId,
         startDate: '2026-01-01T00:00:00.000Z',
       };
 
@@ -204,6 +216,7 @@ describe('RecurringTransactionsService', () => {
         categoryId,
         description: 'Salary',
         interval: RecurringInterval.MONTHLY,
+        accountId,
         startDate: '2026-01-01T00:00:00.000Z',
       };
 
@@ -225,6 +238,7 @@ describe('RecurringTransactionsService', () => {
         categoryId,
         description: 'Monthly salary',
         interval: RecurringInterval.MONTHLY,
+        accountId,
         startDate: '2026-01-01T00:00:00.000Z',
       };
 
@@ -248,6 +262,7 @@ describe('RecurringTransactionsService', () => {
           categoryId,
           description: 'Salary',
           interval: RecurringInterval.MONTHLY,
+          accountId,
           startDate: '2026-01-01T00:00:00.000Z',
         },
         userId,
@@ -267,6 +282,7 @@ describe('RecurringTransactionsService', () => {
           categoryId,
           description: 'Netflix',
           interval: RecurringInterval.MONTHLY,
+          accountId,
           startDate: '2026-01-01T00:00:00.000Z',
         },
         userId,
@@ -287,6 +303,7 @@ describe('RecurringTransactionsService', () => {
             categoryId: otherCategoryId,
             description: 'test',
             interval: RecurringInterval.MONTHLY,
+            accountId,
             startDate: '2026-01-01T00:00:00.000Z',
           },
           userId,
@@ -305,6 +322,7 @@ describe('RecurringTransactionsService', () => {
           categoryId,
           description: 'Rent',
           interval: RecurringInterval.MONTHLY,
+          accountId,
           startDate: '2026-01-01T00:00:00.000Z',
           endDate: '2026-12-31T00:00:00.000Z',
         },
@@ -329,6 +347,7 @@ describe('RecurringTransactionsService', () => {
           categoryId,
           description: 'Salary',
           interval: RecurringInterval.MONTHLY,
+          accountId,
           startDate: '2026-01-01T00:00:00.000Z',
         },
         userId,
@@ -407,6 +426,7 @@ describe('RecurringTransactionsService', () => {
           categoryId,
           description: 'Salary',
           interval: RecurringInterval.MONTHLY,
+          accountId,
           startDate: '2026-01-01T00:00:00.000Z',
         },
         userId,
@@ -428,6 +448,7 @@ describe('RecurringTransactionsService', () => {
           categoryId,
           description: 'Salary',
           interval: RecurringInterval.MONTHLY,
+          accountId,
           startDate: '2026-01-01T00:00:00.000Z',
         },
         userId,

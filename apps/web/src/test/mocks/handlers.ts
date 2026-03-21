@@ -55,12 +55,36 @@ export const mockBudgets = [
   },
 ];
 
+export const mockAccounts = [
+  {
+    id: 'acc-1',
+    name: 'Main Checking',
+    type: 'CHECKING',
+    initialBalance: '0.00',
+    currentBalance: 2850,
+    userId: 'test-user-id',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'acc-2',
+    name: 'Savings',
+    type: 'SAVINGS',
+    initialBalance: '5000.00',
+    currentBalance: 5000,
+    userId: 'test-user-id',
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  },
+];
+
 export const mockTransactions = [
   {
     id: 'transaction-1',
     amount: '150.00',
     type: 'EXPENSE',
     categoryId: 'cat-2',
+    accountId: 'acc-1',
     date: '2026-03-01T10:00:00.000Z',
     description: 'Grocery shopping',
     userId: 'test-user-id',
@@ -72,6 +96,7 @@ export const mockTransactions = [
     amount: '3000.00',
     type: 'INCOME',
     categoryId: 'cat-1',
+    accountId: 'acc-1',
     date: '2026-03-05T09:00:00.000Z',
     description: 'Monthly salary',
     userId: 'test-user-id',
@@ -844,6 +869,7 @@ export const handlers = [
     const body = (await request.json()) as {
       amount: number;
       categoryId: string;
+      accountId: string;
       date: string;
       description?: string;
     };
@@ -853,6 +879,7 @@ export const handlers = [
       amount: body.amount.toFixed(2),
       type: category?.type ?? 'EXPENSE',
       categoryId: body.categoryId,
+      accountId: body.accountId ?? 'acc-1',
       date: body.date,
       description: body.description,
       userId: 'test-user-id',
@@ -879,6 +906,7 @@ export const handlers = [
     const body = (await request.json()) as {
       amount?: number;
       categoryId?: string;
+      accountId?: string;
       date?: string;
       description?: string;
     };
@@ -893,6 +921,7 @@ export const handlers = [
           ? (newCategory?.type ?? transaction.type)
           : transaction.type,
       categoryId: newCategoryId,
+      accountId: body.accountId ?? transaction.accountId,
       date: body.date ?? transaction.date,
       description: body.description ?? transaction.description,
       updatedAt: new Date().toISOString(),
@@ -1067,6 +1096,120 @@ export const handlers = [
       );
     }
     return HttpResponse.json(mockAdminUsers);
+  }),
+
+  // Accounts endpoints
+  http.get(`${API_URL}/accounts`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    return HttpResponse.json(mockAccounts);
+  }),
+
+  http.get(`${API_URL}/accounts/:id`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const account = mockAccounts.find((a) => a.id === params.id);
+    if (!account) {
+      return HttpResponse.json(
+        { message: 'Account not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(account);
+  }),
+
+  http.post(`${API_URL}/accounts`, async ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const body = (await request.json()) as {
+      name: string;
+      type: string;
+      initialBalance: number;
+    };
+    return HttpResponse.json({
+      id: 'new-account-id',
+      name: body.name,
+      type: body.type,
+      initialBalance: body.initialBalance.toFixed(2),
+      currentBalance: body.initialBalance,
+      userId: 'test-user-id',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }),
+
+  http.put(`${API_URL}/accounts/:id`, async ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const account = mockAccounts.find((a) => a.id === params.id);
+    if (!account) {
+      return HttpResponse.json(
+        { message: 'Account not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    const body = (await request.json()) as {
+      name?: string;
+      type?: string;
+      initialBalance?: number;
+    };
+    return HttpResponse.json({
+      ...account,
+      name: body.name ?? account.name,
+      type: body.type ?? account.type,
+      initialBalance:
+        body.initialBalance !== undefined
+          ? body.initialBalance.toFixed(2)
+          : account.initialBalance,
+      updatedAt: new Date().toISOString(),
+    });
+  }),
+
+  http.delete(`${API_URL}/accounts/:id`, ({ params, request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    if (params.id === 'acc-with-transactions') {
+      return HttpResponse.json(
+        {
+          message: 'Cannot delete account because it has existing transactions',
+          statusCode: 409,
+        },
+        { status: 409 },
+      );
+    }
+    const account = mockAccounts.find((a) => a.id === params.id);
+    if (!account) {
+      return HttpResponse.json(
+        { message: 'Account not found', statusCode: 404 },
+        { status: 404 },
+      );
+    }
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.patch(

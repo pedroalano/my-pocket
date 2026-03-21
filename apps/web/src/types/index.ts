@@ -103,6 +103,38 @@ export interface MessageResponse {
   message: string;
 }
 
+// Account types
+export enum AccountType {
+  CHECKING = 'CHECKING',
+  SAVINGS = 'SAVINGS',
+  CREDIT_CARD = 'CREDIT_CARD',
+  CASH = 'CASH',
+  INVESTMENT = 'INVESTMENT',
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  initialBalance: string;
+  currentBalance: number;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAccountDto {
+  name: string;
+  type: AccountType;
+  initialBalance: number;
+}
+
+export interface UpdateAccountDto {
+  name?: string;
+  type?: AccountType;
+  initialBalance?: number;
+}
+
 // Budget types
 export enum BudgetType {
   INCOME = 'INCOME',
@@ -196,6 +228,7 @@ export interface Transaction {
   amount: string;
   type: TransactionType;
   categoryId: string;
+  accountId: string;
   date: string;
   description?: string;
   userId: string;
@@ -206,6 +239,7 @@ export interface Transaction {
 export interface CreateTransactionDto {
   amount: number;
   categoryId: string;
+  accountId: string;
   date: string;
   description?: string;
 }
@@ -213,6 +247,7 @@ export interface CreateTransactionDto {
 export interface UpdateTransactionDto {
   amount?: number;
   categoryId?: string;
+  accountId?: string;
   date?: string;
   description?: string;
 }

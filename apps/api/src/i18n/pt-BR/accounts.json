@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "notFound": "Conta com ID {id} não encontrada",
+    "hasTransactions": "Não é possível excluir a conta pois ela possui transações vinculadas"
+  }
+}

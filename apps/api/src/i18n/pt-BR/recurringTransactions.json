@@ -1,6 +1,7 @@
 {
   "errors": {
     "notFound": "Transação recorrente com ID {id} não encontrada",
-    "categoryNotFound": "Categoria com ID {id} não existe"
+    "categoryNotFound": "Categoria com ID {id} não existe",
+    "accountNotFound": "Conta com ID {id} não existe ou não pertence a você"
   }
 }

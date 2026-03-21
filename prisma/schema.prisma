@@ -32,6 +32,14 @@ enum BudgetType {
   INCOME
 }
 
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CREDIT_CARD
+  CASH
+  INVESTMENT
+}
+
 model User {
   id                  String               @id @default(uuid()) @db.Uuid
   name                String
@@ -46,6 +54,7 @@ model User {
   categories                Category[]
   transactions              Transaction[]
   budgets                   Budget[]
+  accounts                  Account[]
   passwordResetTokens       PasswordResetToken[]
   recurringTransactions     RecurringTransaction[]
   emailVerificationTokens   EmailVerificationToken[]
@@ -74,6 +83,8 @@ model Transaction {
   type        TransactionType
   categoryId  String          @db.Uuid
   category    Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  accountId   String          @db.Uuid
+  account     Account         @relation(fields: [accountId], references: [id], onDelete: Restrict)
   userId      String          @db.Uuid
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime        @default(now())
@@ -96,12 +107,29 @@ model Budget {
   @@unique([categoryId, month, year, userId])
 }
 
+model Account {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  name                  String
+  type                  AccountType
+  initialBalance        Decimal                @db.Decimal(10, 2)
+  userId                String                 @db.Uuid
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@index([userId])
+}
+
 model RecurringTransaction {
   id          String            @id @default(uuid()) @db.Uuid
   userId      String            @db.Uuid
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   categoryId  String            @db.Uuid
   category    Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  accountId   String            @db.Uuid
+  account     Account           @relation(fields: [accountId], references: [id], onDelete: Restrict)
   description String
   amount      Decimal           @db.Decimal(10, 2)
   type        TransactionType

@@ -29,6 +29,7 @@ export class TransactionsService {
     amount: { toString(): string };
     type: TransactionType;
     categoryId: string;
+    accountId: string;
     date: Date;
     description: string | null;
   }) {
@@ -44,6 +45,7 @@ export class TransactionsService {
     amount: true,
     type: true,
     categoryId: true,
+    accountId: true,
     date: true,
     description: true,
     userId: true,
@@ -149,11 +151,25 @@ export class TransactionsService {
       );
     }
 
+    const account = await this.prisma.account.findUnique({
+      where: { id: createTransactionDto.accountId },
+      select: { userId: true },
+    });
+    if (!account || account.userId !== userId) {
+      throw new BadRequestException(
+        this.i18n.t('transactions.errors.accountNotFound', {
+          args: { id: createTransactionDto.accountId },
+          lang: this.lang,
+        }),
+      );
+    }
+
     const newTransaction = await this.prisma.transaction.create({
       data: {
         amount: createTransactionDto.amount,
         type: category.type as unknown as TransactionType,
         categoryId: createTransactionDto.categoryId,
+        accountId: createTransactionDto.accountId,
         date: new Date(createTransactionDto.date),
         description: createTransactionDto.description,
         userId,
@@ -210,12 +226,29 @@ export class TransactionsService {
       newType = category.type as unknown as TransactionType;
     }
 
+    const newAccountId = updateTransactionDto.accountId;
+    if (newAccountId !== undefined) {
+      const account = await this.prisma.account.findUnique({
+        where: { id: newAccountId },
+        select: { userId: true },
+      });
+      if (!account || account.userId !== userId) {
+        throw new BadRequestException(
+          this.i18n.t('transactions.errors.accountNotFound', {
+            args: { id: newAccountId },
+            lang: this.lang,
+          }),
+        );
+      }
+    }
+
     const updatedTransaction = await this.prisma.transaction.update({
       where: { id, userId },
       data: {
         amount: updateTransactionDto.amount,
         type: newType,
         categoryId: updateTransactionDto.categoryId,
+        accountId: newAccountId,
         date:
           updateTransactionDto.date !== undefined
             ? new Date(updateTransactionDto.date)
