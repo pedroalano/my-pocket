@@ -45,7 +45,26 @@
   "home": {
     "tagline": "Personal Finance Management",
     "signIn": "Sign in",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "headline": "When you don't know where your money goes, how can you expect to make more?",
+    "subheadline": "The first step for great gains is being fully aware of your actual financial situation.",
+    "features": {
+      "track": {
+        "title": "Track Every Transaction",
+        "description": "Know exactly where every cent goes. Log income and expenses in seconds."
+      },
+      "budgets": {
+        "title": "Set Smart Budgets",
+        "description": "Plan ahead by category. Set monthly targets and stay in control of your spending."
+      },
+      "insights": {
+        "title": "Visualize Your Progress",
+        "description": "Clear charts and reports give you a complete picture of your financial health."
+      }
+    },
+    "ctaTitle": "Start taking control today",
+    "ctaSubtitle": "Awareness is the foundation of every great financial decision.",
+    "ctaButton": "Get Started Free"
   },
   "auth": {
     "welcomeBack": "Welcome back",
