@@ -66,7 +66,7 @@ export class TransactionsService {
     const where: Record<string, unknown> = { userId };
 
     if (query.type) {
-      where['type'] = query.type as TransactionType;
+      where['type'] = query.type;
     }
 
     if (query.categoryId) {

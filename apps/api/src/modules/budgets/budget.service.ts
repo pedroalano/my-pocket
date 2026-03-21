@@ -221,7 +221,7 @@ export class BudgetService {
     }
 
     if (query.type) {
-      where['type'] = query.type as BudgetType;
+      where['type'] = query.type;
     }
 
     const [budgets, total] = await Promise.all([
