@@ -39,10 +39,10 @@ export class BudgetController {
 
   @Get()
   @ApiGetAllBudgets()
-  async getAllBudgets(
+  getAllBudgets(
     @Request() req: AuthenticatedRequest,
     @Query() query: GetBudgetsQueryDto,
-  ) {
+  ): ReturnType<BudgetService['getAllBudgets']> {
     return this.budgetService.getAllBudgets(req.user.userId, query);
   }
 

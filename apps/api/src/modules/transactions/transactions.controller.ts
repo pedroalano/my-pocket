@@ -35,10 +35,10 @@ export class TransactionController {
 
   @Get()
   @ApiGetAllTransactions()
-  async getAllTransactions(
+  getAllTransactions(
     @Request() req: AuthenticatedRequest,
     @Query() query: GetTransactionsQueryDto,
-  ) {
+  ): ReturnType<TransactionsService['getAllTransactions']> {
     return this.transactionsService.getAllTransactions(req.user.userId, query);
   }
 
