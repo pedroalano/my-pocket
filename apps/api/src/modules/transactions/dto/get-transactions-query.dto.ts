@@ -7,7 +7,7 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TransactionType } from '@my-pocket/shared';
+import { TransactionType } from '@prisma/client';
 
 export class GetTransactionsQueryDto {
   @IsOptional()

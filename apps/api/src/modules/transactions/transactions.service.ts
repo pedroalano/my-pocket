@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
-import { PaginatedResponse } from '@my-pocket/shared';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
@@ -53,7 +52,13 @@ export class TransactionsService {
   async getAllTransactions(
     userId: string,
     query: GetTransactionsQueryDto = {},
-  ): Promise<PaginatedResponse<ReturnType<typeof this.mapTransaction>>> {
+  ): Promise<{
+    data: ReturnType<typeof this.mapTransaction>[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;

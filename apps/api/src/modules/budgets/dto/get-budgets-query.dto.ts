@@ -1,6 +1,6 @@
 import { IsEnum, IsInt, IsOptional, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { BudgetType } from '@my-pocket/shared';
+import { BudgetType } from '@prisma/client';
 
 export class GetBudgetsQueryDto {
   @IsOptional()
