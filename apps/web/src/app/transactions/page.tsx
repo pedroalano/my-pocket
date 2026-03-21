@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { PaginatedResponse } from '@my-pocket/shared';
+import { PaginatedResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { transactionsApi, GetTransactionsParams } from '@/lib/transactions';
 import { categoriesApi } from '@/lib/categories';

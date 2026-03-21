@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { PaginatedResponse } from '@my-pocket/shared';
+import { PaginatedResponse } from '@/lib/types';
 import {
   Transaction,
   CreateTransactionDto,
