@@ -71,7 +71,9 @@ This is a **Turborepo + npm workspaces** monorepo:
 - `auths` — registration, login, logout, refresh token rotation, email verification; JWT strategy (`jwt.strategy.ts`), guard (`jwt-auth.guard.ts`); `EmailVerificationService` handles token creation/validation via `email_verification_tokens` table
 - `users` — user profile management; `GET /users/me` (profile), `PATCH /users/me` (update name), `PATCH /users/me/email` (update email, 409 on duplicate), `PATCH /users/me/password` (verify current password, enforces complexity, clears refreshToken), `DELETE /users/me` (deletes account + all associated data via cascade); all endpoints are JWT-guarded
 - `categories` — CRUD + `POST /categories/batch` (creates multiple at once, silently skips P2002 duplicates, returns `{ created, skipped }`)
+- `accounts` — CRUD for financial accounts (`AccountType`: CHECKING, SAVINGS, CREDIT_CARD, CASH, INVESTMENT); `currentBalance` computed on read (`initialBalance + INCOME - EXPENSE`); `deleteAccount` blocked with 409 `ConflictException` if the account has transactions (DB-level RESTRICT FK as safety net)
 - `transactions`, `budgets`, `dashboard` — domain modules, each with controller/service/dto
+- `recurring-transactions` — CRUD for recurring transaction templates; hourly cron scheduler (`RecurringTransactionsScheduler`) fires `createTransaction` for each due record (batch size 100, cursor-based pagination), then advances `nextRun` or sets `isActive=false` when `newNextRun > endDate`
 - `health` — single `GET /health` endpoint for service availability checks
 - `shared` — exports `PrismaService` (extends `PrismaClient`) and `formatDecimal` utility; imported as `SharedModule` globally
 - `config` — env loading via `ConfigModule.forRoot`, Joi validation schema (`env.validation.ts`), typed config accessors
@@ -99,7 +101,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **Logging:** `nestjs-pino` with `LoggerModule.forRootAsync()` in `app.module.ts`. In production, logs are emitted as JSON to stdout; in development, `pino-pretty` is used (colorized, single-line). Every log entry includes a `userId` field extracted from the JWT. The `/health` endpoint is excluded from access logs. Log level is controlled by the `LOG_LEVEL` env var (default: `info`). The aggregation stack (Loki + Promtail + Grafana) is defined in `docker-compose.prod.yml` only.
 
-**i18n:** `nestjs-i18n` with `AcceptLanguageResolver`. Translation JSON files in `src/i18n/en/` and `src/i18n/pt-BR/` (one file per module: `auth`, `categories`, `transactions`, `budgets`, `dashboard`, `validation`). All service error messages use `this.i18n.t('module.errors.key', { args, lang })`. `I18nValidationPipe` and `I18nValidationExceptionFilter` replace the default NestJS pipe in `main.ts`. In unit tests, mock `I18nService` as `{ t: jest.fn((key) => key) }`.
+**i18n:** `nestjs-i18n` with `AcceptLanguageResolver`. Translation JSON files in `src/i18n/en/` and `src/i18n/pt-BR/` (one file per module: `auth`, `categories`, `transactions`, `budgets`, `dashboard`, `validation`, `accounts`, `recurringTransactions`). All service error messages use `this.i18n.t('module.errors.key', { args, lang })`. `I18nValidationPipe` and `I18nValidationExceptionFilter` replace the default NestJS pipe in `main.ts`. In unit tests, mock `I18nService` as `{ t: jest.fn((key) => key) }`.
 
 ### Frontend (`apps/web`)
 
@@ -111,7 +113,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 - `src/lib/api.ts` — `apiRequest` base function (fetch + Bearer token injection + `Accept-Language` header + error handling), exported as `api.get/post/put/delete`
 - `src/lib/auths.ts` — `authsApi` with `forgotPassword`, `resetPassword`, `verifyEmail`, `resendVerification`
-- `src/lib/categories.ts`, `transactions.ts`, `budgets.ts`, `dashboard.ts` — domain-specific API helpers built on `api`
+- `src/lib/categories.ts`, `transactions.ts`, `budgets.ts`, `dashboard.ts`, `accounts.ts`, `recurring-transactions.ts` — domain-specific API helpers built on `api`
 - `src/lib/formatters.ts` — locale-aware `formatCurrency` / `formatCurrencyFromString` / `formatDate` / `formatMonthYear`; pass the locale from `useLocale()` (next-intl)
 - `ApiException` is thrown for non-2xx responses, carrying `statusCode` and message
 
@@ -127,7 +129,7 @@ This is a **Turborepo + npm workspaces** monorepo:
 
 **Error logging:** `src/lib/errorLogger.ts` exports `logError(error, context?)`, which POSTs structured JSON to `POST /api/log-error` (Next.js API route). The route writes JSON to stdout; Promtail scrapes it into Loki automatically via Docker SD. `ErrorBoundary.componentDidCatch` calls `logError`. `src/app/global-error.tsx` handles root layout errors and also calls `logError`. In tests, mock `@/lib/errorLogger` in `setup.ts`.
 
-**UI:** shadcn/ui components in `src/components/ui/` (auto-generated, don't hand-edit). Feature components (`CategoryForm`, `TransactionForm`, `BudgetForm`, `BudgetDetails`, `ThemeToggle`, `LanguageToggle`) live directly in `src/components/`. Charts use `recharts` (PieChart, BarChart) in the dashboard page.
+**UI:** shadcn/ui components in `src/components/ui/` (auto-generated, don't hand-edit). Feature components (`CategoryForm`, `TransactionForm`, `BudgetForm`, `BudgetDetails`, `AccountForm`, `ThemeToggle`, `LanguageToggle`) live directly in `src/components/`. Charts use `recharts` (PieChart, BarChart) in the dashboard page.
 
 **Register flow:** After successful registration the page redirects to `/verify-email` (no token), which shows a "check your inbox" message. No session is established until the user clicks the email link.
 
@@ -143,13 +145,15 @@ Contains TypeScript interfaces (`ApiResponse`, `PaginatedResponse`, base entity 
 
 ### Database Schema
 
-Five models in `prisma/schema.prisma`:
+Seven models in `prisma/schema.prisma`:
 
 - `User` — owns all other entities; `refreshToken String?` stores the bcrypt hash of the active refresh token (null after logout); `emailVerified Boolean @default(false)`
 - `Category` — `(name, type, userId)` unique; type is `INCOME | EXPENSE`
-- `Transaction` — linked to a category; amount stored as `Decimal(10,2)`
+- `Transaction` — linked to a category and an account (`accountId` required); amount stored as `Decimal(10,2)`
 - `Budget` — `(categoryId, month, year, userId)` unique; tracks budget per category per month
 - `EmailVerificationToken` — `tokenHash` (SHA256), `expiresAt` (24h); one per user (old tokens deleted on resend); mapped to `email_verification_tokens`
+- `Account` — `AccountType` enum (CHECKING/SAVINGS/CREDIT_CARD/CASH/INVESTMENT); `initialBalance Decimal(10,2)`; `currentBalance` computed on read (not stored); RESTRICT FK prevents deletion when transactions or recurring transactions exist
+- `RecurringTransaction` — linked to a category and an account; `interval RecurringInterval` (DAILY/WEEKLY/MONTHLY/YEARLY); `nextRun`, `endDate?`, `isActive Boolean`; processed hourly by the scheduler
 
 All data access is scoped by `userId`. Cascade deletes are set on all foreign keys.
 

@@ -319,6 +319,11 @@ Once the API is running, visit:
 | `/transactions`                 | POST   | Create a new transaction                                              |
 | `/transactions/:id`             | PUT    | Update a transaction                                                  |
 | `/transactions/:id`             | DELETE | Delete a transaction                                                  |
+| `/accounts`                     | GET    | List all accounts                                                     |
+| `/accounts/:id`                 | GET    | Get account by ID                                                     |
+| `/accounts`                     | POST   | Create a new account                                                  |
+| `/accounts/:id`                 | PUT    | Update an account                                                     |
+| `/accounts/:id`                 | DELETE | Delete an account (409 if it has transactions)                        |
 | `/budgets`                      | GET    | List all budgets                                                      |
 | `/budgets/:id`                  | GET    | Get budget by ID                                                      |
 | `/budgets/:id/details`          | GET    | Get budget with spending details                                      |
@@ -326,6 +331,11 @@ Once the API is running, visit:
 | `/budgets`                      | POST   | Create a new budget                                                   |
 | `/budgets/:id`                  | PUT    | Update a budget                                                       |
 | `/budgets/:id`                  | DELETE | Delete a budget                                                       |
+| `/recurring-transactions`       | GET    | List all recurring transactions                                       |
+| `/recurring-transactions/:id`   | GET    | Get recurring transaction by ID                                       |
+| `/recurring-transactions`       | POST   | Create a recurring transaction                                        |
+| `/recurring-transactions/:id`   | PUT    | Update a recurring transaction                                        |
+| `/recurring-transactions/:id`   | DELETE | Delete a recurring transaction                                        |
 | `/dashboard/monthly-summary`    | GET    | Get monthly income/expense summary                                    |
 | `/dashboard/budget-vs-actual`   | GET    | Compare budgets vs actual spending                                    |
 | `/dashboard/category-breakdown` | GET    | Get spending breakdown by category                                    |
@@ -342,6 +352,8 @@ Once the API is running, visit:
 - ✅ Authentication with JWT; login blocked until email is verified
 - ✅ Protected routes with authentication guards
 - ✅ Categories, Transactions, and Budgets management
+- ✅ Financial accounts management (CHECKING, SAVINGS, CREDIT_CARD, CASH, INVESTMENT) with live currentBalance
+- ✅ Recurring transactions with configurable intervals (DAILY, WEEKLY, MONTHLY, YEARLY) and hourly auto-scheduling
 - ✅ Budget analytics and spending tracking
 - ✅ Dashboard with financial analytics
 - ✅ Strict per-user data isolation
@@ -362,6 +374,8 @@ Once the API is running, visit:
 - ✅ EN / PT-BR language toggle in header (persisted via `NEXT_LOCALE` cookie)
 - ✅ Locale-aware currency formatting (USD for EN, BRL for PT-BR)
 - ✅ Full CRUD for Categories, Transactions, and Budgets
+- ✅ Full CRUD for Accounts with current balance display
+- ✅ Full CRUD for Recurring Transactions
 - ✅ Budget spending tracking with utilization indicators
 - ✅ Email verification flow: check-inbox page, token validation, inline resend on login
 - ✅ User profile management: update name, email, password, and delete account (`/settings/profile`)
