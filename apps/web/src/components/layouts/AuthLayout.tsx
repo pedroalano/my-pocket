@@ -70,6 +70,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 {t('budgets')}
               </Link>
               <Link
+                href="/accounts"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                {t('accounts')}
+              </Link>
+              <Link
                 href="/transactions"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
@@ -147,6 +153,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('budgets')}
+            </Link>
+            <Link
+              href="/accounts"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t('accounts')}
             </Link>
             <Link
               href="/transactions"

@@ -75,6 +75,7 @@ export default function EditTransactionPage() {
             initialData={{
               amount: parseFloat(transaction.amount),
               categoryId: transaction.categoryId,
+              accountId: transaction.accountId,
               date: formatDateForInput(transaction.date),
               description: transaction.description,
             }}

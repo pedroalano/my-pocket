@@ -28,6 +28,15 @@ export class UpdateTransactionDto {
   categoryId?: string;
 
   @ApiProperty({
+    description: 'Account UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
+
+  @ApiProperty({
     description: 'Transaction date in ISO 8601 format',
     example: '2026-02-26T10:00:00.000Z',
     required: false,

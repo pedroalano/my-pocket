@@ -17,6 +17,8 @@ describe('Personal Finance API E2E', () => {
   let categoryId: string;
   let transactionId: string;
   let budgetId: string;
+  let user1AccountId: string;
+  let user2AccountId: string;
 
   const authUser1 = {
     name: 'Test User 1',
@@ -93,6 +95,18 @@ describe('Personal Finance API E2E', () => {
 
     user1Token = await registerAndGetToken(seededUser1);
     user2Token = await registerAndGetToken(seededUser2);
+
+    const user1AccountRes = await request(app.getHttpServer())
+      .post('/accounts')
+      .set('Authorization', `Bearer ${user1Token}`)
+      .send({ name: 'Main', type: 'CHECKING', initialBalance: 0 });
+    user1AccountId = user1AccountRes.body.id;
+
+    const user2AccountRes = await request(app.getHttpServer())
+      .post('/accounts')
+      .set('Authorization', `Bearer ${user2Token}`)
+      .send({ name: 'Main', type: 'CHECKING', initialBalance: 0 });
+    user2AccountId = user2AccountRes.body.id;
   });
 
   afterAll(async () => {
@@ -515,6 +529,7 @@ describe('Personal Finance API E2E', () => {
           .send({
             amount: 50.5,
             categoryId: catId,
+            accountId: user1AccountId,
             date: '2026-01-15',
             description: 'Test transaction',
           })
@@ -557,6 +572,7 @@ describe('Personal Finance API E2E', () => {
           .send({
             amount: 50.5,
             categoryId,
+            accountId: user1AccountId,
             date: '2026-01-15',
             description: 'Weekly groceries',
           })
@@ -577,6 +593,7 @@ describe('Personal Finance API E2E', () => {
           .send({
             amount: 100,
             categoryId,
+            accountId: user1AccountId,
             date: '2026-01-16',
           })
           .expect(201);
@@ -751,6 +768,7 @@ describe('Personal Finance API E2E', () => {
           .send({
             amount: 25,
             categoryId,
+            accountId: user1AccountId,
             date: '2026-01-15',
           });
 
@@ -882,6 +900,7 @@ describe('Personal Finance API E2E', () => {
           .send({
             amount: 1000,
             categoryId: testCatId,
+            accountId: user1AccountId,
             date: '2026-03-15',
           });
 
@@ -1376,6 +1395,7 @@ describe('Personal Finance API E2E', () => {
         .send({
           amount: 200,
           categoryId: user1Category.body.id,
+          accountId: user1AccountId,
           date: '2026-04-15',
         });
 
@@ -1393,6 +1413,7 @@ describe('Personal Finance API E2E', () => {
         .send({
           amount: 50,
           categoryId: user2Category.body.id,
+          accountId: user2AccountId,
           date: '2026-04-15',
         });
 

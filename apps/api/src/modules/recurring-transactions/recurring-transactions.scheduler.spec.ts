@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { RecurringInterval, TransactionType } from '@prisma/client';
 import { RecurringTransactionsScheduler } from './recurring-transactions.scheduler';
 import { TransactionsService } from '../transactions/transactions.service';
@@ -8,6 +9,7 @@ type RecurringRecord = {
   id: string;
   userId: string;
   categoryId: string;
+  accountId: string;
   description: string;
   amount: { toString(): string };
   type: TransactionType;
@@ -22,6 +24,7 @@ const makeRecord = (
   id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   userId: 'user-123',
   categoryId: 'cat-111',
+  accountId: 'acc-111',
   description: 'Netflix',
   amount: { toString: () => '15.00' },
   type: TransactionType.EXPENSE,
@@ -42,6 +45,8 @@ describe('RecurringTransactionsScheduler', () => {
   };
 
   beforeEach(async () => {
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
     prismaMock = {
       recurringTransaction: {
         findMany: jest.fn().mockResolvedValue([]),
@@ -87,6 +92,7 @@ describe('RecurringTransactionsScheduler', () => {
     expect(transactionsService.createTransaction).toHaveBeenCalledWith(
       expect.objectContaining({
         categoryId: record.categoryId,
+        accountId: record.accountId,
         description: record.description,
         date: record.nextRun.toISOString(),
         amount: 15,

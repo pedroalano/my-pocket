@@ -63,6 +63,7 @@ describe('transactionsApi', () => {
         amount: 99.99,
         type: TransactionType.EXPENSE,
         categoryId: 'cat-2',
+        accountId: 'acc-1',
         date: '2026-03-05T10:00:00.000Z',
         description: 'Test transaction',
       };
@@ -82,6 +83,7 @@ describe('transactionsApi', () => {
         amount: 50,
         type: TransactionType.INCOME,
         categoryId: 'cat-1',
+        accountId: 'acc-1',
         date: '2026-03-05T10:00:00.000Z',
       };
 

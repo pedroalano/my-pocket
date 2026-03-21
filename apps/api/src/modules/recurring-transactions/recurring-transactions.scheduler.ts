@@ -52,6 +52,7 @@ export class RecurringTransactionsScheduler {
           id: true,
           userId: true,
           categoryId: true,
+          accountId: true,
           description: true,
           amount: true,
           type: true,
@@ -74,6 +75,7 @@ export class RecurringTransactionsScheduler {
     id: string;
     userId: string;
     categoryId: string;
+    accountId: string;
     description: string;
     amount: { toString(): string };
     interval: RecurringInterval;
@@ -85,6 +87,7 @@ export class RecurringTransactionsScheduler {
         {
           amount: Number(record.amount.toString()),
           categoryId: record.categoryId,
+          accountId: record.accountId,
           date: record.nextRun.toISOString(),
           description: record.description,
         },

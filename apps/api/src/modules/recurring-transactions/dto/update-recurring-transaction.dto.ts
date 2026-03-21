@@ -34,6 +34,15 @@ export class UpdateRecurringTransactionDto {
   categoryId?: string;
 
   @ApiProperty({
+    description: 'Account UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
+
+  @ApiProperty({
     description: 'Description of the recurring transaction',
     example: 'Monthly Netflix subscription',
     maxLength: 500,

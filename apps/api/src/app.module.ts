@@ -19,6 +19,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 import { RecurringTransactionsModule } from './modules/recurring-transactions/recurring-transactions.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
 
 const envFileMap: Record<string, string> = {
   test: '.env.test',
@@ -84,6 +85,7 @@ const resolveEnvFilePath = () =>
     UsersModule,
     RecurringTransactionsModule,
     AdminModule,
+    AccountsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

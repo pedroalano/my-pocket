@@ -13,6 +13,7 @@ type TransactionRecord = {
   amount: number;
   type: TransactionType;
   categoryId: string;
+  accountId: string;
   userId: string;
   date: Date;
   description: string | null;
@@ -33,6 +34,9 @@ const createPrismaMock = () => {
   ];
 
   return {
+    account: {
+      findUnique: jest.fn().mockResolvedValue({ userId: 'user-123' }),
+    },
     transaction: {
       findMany: jest.fn(({ where, skip, take }) => {
         const filtered = store.filter(
@@ -170,12 +174,16 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
 
       await service.createTransaction(createDto, userId);
       await service.createTransaction(createDto, userId);
+      prismaMock.account.findUnique.mockResolvedValueOnce({
+        userId: otherUserId,
+      });
       await service.createTransaction(createDto, otherUserId);
 
       const userResult = await service.getAllTransactions(userId);
@@ -195,6 +203,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -229,6 +238,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -253,6 +263,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -273,6 +284,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -296,6 +308,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -318,6 +331,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId: otherCategoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -330,6 +344,27 @@ describe('TransactionsService', () => {
       ).rejects.toThrow('transactions.errors.categoryNotFound');
     });
 
+    it('should throw BadRequestException if account does not belong to user', async () => {
+      jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
+        ...buildCategory(categoryId, 'Salary'),
+      });
+      prismaMock.account.findUnique.mockResolvedValue(null);
+
+      const createDto: CreateTransactionDto = {
+        amount: 1000,
+        categoryId,
+        accountId: 'bad-account-id',
+        date: '2025-01-01',
+      };
+
+      await expect(
+        service.createTransaction(createDto, userId),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createTransaction(createDto, userId),
+      ).rejects.toThrow('transactions.errors.accountNotFound');
+    });
+
     it('should persist transaction with userId', async () => {
       jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
         ...buildCategory(categoryId, 'Salary'),
@@ -338,6 +373,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -358,6 +394,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
       };
 
@@ -374,6 +411,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 50,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
       };
 
@@ -391,6 +429,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -455,6 +494,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -518,6 +558,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -556,6 +597,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
       };
 
@@ -620,6 +662,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };
@@ -661,6 +704,7 @@ describe('TransactionsService', () => {
       const createDto: CreateTransactionDto = {
         amount: 1000,
         categoryId,
+        accountId: 'default-account-id',
         date: '2025-01-01',
         description: 'Monthly salary',
       };

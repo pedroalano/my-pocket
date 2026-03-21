@@ -21,15 +21,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CreateTransactionDto, Category } from '@/types';
+import { CreateTransactionDto, Category, Account } from '@/types';
 import { toast } from 'sonner';
 import { ApiException } from '@/lib/api';
 import { categoriesApi } from '@/lib/categories';
+import { accountsApi } from '@/lib/accounts';
 
 interface TransactionFormProps {
   initialData?: {
     amount: number;
     categoryId: string;
+    accountId?: string;
     date: string;
     description?: string;
   };
@@ -53,6 +55,9 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState<string>(
     initialData?.categoryId || '',
   );
+  const [accountId, setAccountId] = useState<string>(
+    initialData?.accountId || '',
+  );
   const [date, setDate] = useState<string>(initialData?.date || '');
   const [description, setDescription] = useState<string>(
     initialData?.description || '',
@@ -60,6 +65,8 @@ export function TransactionForm({
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const router = useRouter();
   const t = useTranslations('transactionForm');
   const tCommon = useTranslations('common');
@@ -80,7 +87,18 @@ export function TransactionForm({
         setIsLoadingCategories(false);
       }
     };
+    const loadAccounts = async () => {
+      try {
+        const data = await accountsApi.getAll();
+        setAccounts(data);
+      } catch {
+        toast.error(t('failedToLoadAccounts'));
+      } finally {
+        setIsLoadingAccounts(false);
+      }
+    };
     loadCategories();
+    loadAccounts();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,6 +119,11 @@ export function TransactionForm({
       return;
     }
 
+    if (!accountId) {
+      toast.error(t('accountRequired'));
+      return;
+    }
+
     if (!date) {
       toast.error(t('dateRequired'));
       return;
@@ -111,6 +134,7 @@ export function TransactionForm({
       await onSubmit({
         amount: amountFloat,
         categoryId,
+        accountId,
         date: new Date(date).toISOString(),
         description: description || undefined,
       });
@@ -170,6 +194,32 @@ export function TransactionForm({
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="account">{t('selectAccount')}</Label>
+            {isLoadingAccounts ? (
+              <div className="text-sm text-muted-foreground">
+                {t('loadingAccounts')}
+              </div>
+            ) : (
+              <Select
+                value={accountId}
+                onValueChange={setAccountId}
+                disabled={isLoading}
+              >
+                <SelectTrigger id="account">
+                  <SelectValue placeholder={t('selectAccount')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
