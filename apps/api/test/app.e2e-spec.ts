@@ -532,7 +532,7 @@ describe('Personal Finance API E2E', () => {
           .set('Authorization', `Bearer ${user1Token}`)
           .expect(200);
 
-        const filtered = transactionsResponse.body.filter(
+        const filtered = transactionsResponse.body.data.filter(
           (t: any) => t.categoryId === catId,
         );
         expect(filtered.length).toBe(0);
@@ -650,11 +650,11 @@ describe('Personal Finance API E2E', () => {
           .set('Authorization', `Bearer ${user1Token}`)
           .expect(200);
 
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.length).toBeGreaterThan(0);
-        expect(response.body.some((t: any) => t.id === transactionId)).toBe(
-          true,
-        );
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        expect(
+          response.body.data.some((t: any) => t.id === transactionId),
+        ).toBe(true);
       });
 
       it('should not return other users transactions', async () => {
@@ -664,7 +664,7 @@ describe('Personal Finance API E2E', () => {
           .expect(200);
 
         expect(
-          user2Response.body.every((t: any) => t.id !== transactionId),
+          user2Response.body.data.every((t: any) => t.id !== transactionId),
         ).toBe(true);
       });
 
@@ -910,8 +910,10 @@ describe('Personal Finance API E2E', () => {
           .set('Authorization', `Bearer ${user1Token}`)
           .expect(200);
 
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.some((b: any) => b.id === budgetId)).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.some((b: any) => b.id === budgetId)).toBe(
+          true,
+        );
       });
 
       it('should not return other users budgets', async () => {
@@ -920,7 +922,9 @@ describe('Personal Finance API E2E', () => {
           .set('Authorization', `Bearer ${user2Token}`)
           .expect(200);
 
-        expect(response.body.every((b: any) => b.id !== budgetId)).toBe(true);
+        expect(response.body.data.every((b: any) => b.id !== budgetId)).toBe(
+          true,
+        );
       });
 
       it('should reject without authentication', async () => {
