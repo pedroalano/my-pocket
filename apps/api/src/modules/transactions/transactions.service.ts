@@ -7,6 +7,7 @@ import { TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
@@ -48,12 +49,61 @@ export class TransactionsService {
     userId: true,
   };
 
-  async getAllTransactions(userId: string) {
-    const transactions = await this.prisma.transaction.findMany({
-      where: { userId },
-      select: this.transactionSelect,
-    });
-    return transactions.map((transaction) => this.mapTransaction(transaction));
+  async getAllTransactions(
+    userId: string,
+    query: GetTransactionsQueryDto = {},
+  ): Promise<{
+    data: ReturnType<typeof this.mapTransaction>[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = { userId };
+
+    if (query.type) {
+      where['type'] = query.type;
+    }
+
+    if (query.categoryId) {
+      where['categoryId'] = query.categoryId;
+    }
+
+    if (query.startDate || query.endDate) {
+      const dateFilter: Record<string, Date> = {};
+      if (query.startDate) {
+        dateFilter['gte'] = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        dateFilter['lte'] = new Date(
+          `${query.endDate.slice(0, 10)}T23:59:59.999Z`,
+        );
+      }
+      where['date'] = dateFilter;
+    }
+
+    const [transactions, total] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where,
+        select: this.transactionSelect,
+        skip,
+        take: limit,
+        orderBy: { date: 'desc' },
+      }),
+      this.prisma.transaction.count({ where }),
+    ]);
+
+    return {
+      data: transactions.map((transaction) => this.mapTransaction(transaction)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getTransactionById(id: string, userId: string) {

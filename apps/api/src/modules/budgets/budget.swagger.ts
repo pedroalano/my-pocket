@@ -1,15 +1,44 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { BudgetDto } from './dto/budget.dto';
 import { BudgetWithSpendingDto } from './dto/budget-with-spending.dto';
 
 export function ApiGetAllBudgets() {
   return applyDecorators(
     ApiOperation({ summary: 'Get all budgets' }),
+    ApiQuery({
+      name: 'page',
+      required: false,
+      type: Number,
+      description: 'Page number (default: 1)',
+    }),
+    ApiQuery({
+      name: 'limit',
+      required: false,
+      type: Number,
+      description: 'Items per page (default: 20)',
+    }),
+    ApiQuery({
+      name: 'month',
+      required: false,
+      type: Number,
+      description: 'Filter by month (1-12)',
+    }),
+    ApiQuery({
+      name: 'year',
+      required: false,
+      type: Number,
+      description: 'Filter by year (>= 2000)',
+    }),
+    ApiQuery({
+      name: 'type',
+      required: false,
+      enum: ['INCOME', 'EXPENSE'],
+      description: 'Filter by budget type',
+    }),
     ApiResponse({
       status: 200,
-      description: 'List of all budgets for the authenticated user',
-      type: [BudgetDto],
+      description: 'Paginated list of budgets for the authenticated user',
     }),
     ApiResponse({
       status: 401,

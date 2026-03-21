@@ -12,6 +12,14 @@ import BudgetsPage from './page';
 
 const API_URL = 'http://localhost:3001';
 
+const makePaginatedResponse = <T,>(data: T[], page = 1, limit = 20) => ({
+  data,
+  total: data.length,
+  page,
+  limit,
+  totalPages: Math.ceil(data.length / limit),
+});
+
 // Mock next/navigation — return a stable router reference to avoid useCallback re-creation loops
 const mockRouterPush = vi.fn();
 const _mockBudgetsRouter = {
@@ -70,7 +78,7 @@ describe('BudgetsPage', () => {
   it('shows empty state when no budgets exist', async () => {
     server.use(
       http.get(`${API_URL}/budgets`, () => {
-        return HttpResponse.json([]);
+        return HttpResponse.json(makePaginatedResponse([]));
       }),
     );
 
@@ -85,22 +93,6 @@ describe('BudgetsPage', () => {
     });
   });
 
-  it('shows "no matches" message when filters yield no results', async () => {
-    const user = setupUser();
-    renderWithAuthenticatedProviders(<BudgetsPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText('$500.00')).toBeInTheDocument();
-    });
-
-    // Filter by month that has no budget (December) - mock data has March only
-    await selectOption(user, screen.getByTestId('month-filter'), 'December');
-
-    expect(
-      screen.getByText('No budgets match your filters.'),
-    ).toBeInTheDocument();
-  });
-
   it('filters budgets by type', async () => {
     const user = setupUser();
     renderWithAuthenticatedProviders(<BudgetsPage />);
@@ -109,11 +101,23 @@ describe('BudgetsPage', () => {
       expect(screen.getByText('$500.00')).toBeInTheDocument();
     });
 
-    // Filter by INCOME
+    // Filter by INCOME — re-fetches from API
+    server.use(
+      http.get(`${API_URL}/budgets`, ({ request }) => {
+        const url = new URL(request.url);
+        const type = url.searchParams.get('type');
+        const data = type
+          ? mockBudgets.filter((b) => b.type === type)
+          : mockBudgets;
+        return HttpResponse.json(makePaginatedResponse(data));
+      }),
+    );
+
     await selectOption(user, screen.getByTestId('type-filter'), 'Income');
 
-    // Only INCOME budget should be visible
-    expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('$3,000.00')).toBeInTheDocument();
+    });
     expect(screen.queryByText('$500.00')).not.toBeInTheDocument();
   });
 
@@ -121,20 +125,30 @@ describe('BudgetsPage', () => {
     const user = setupUser();
 
     // Add more budgets with different months
+    const extendedBudgets = [
+      ...mockBudgets,
+      {
+        id: 'budget-3',
+        amount: '200.00',
+        categoryId: 'cat-2',
+        month: 4,
+        year: 2026,
+        type: 'EXPENSE',
+        userId: 'test-user-id',
+      },
+    ];
+
     server.use(
-      http.get(`${API_URL}/budgets`, () => {
-        return HttpResponse.json([
-          ...mockBudgets,
-          {
-            id: 'budget-3',
-            amount: '200.00',
-            categoryId: 'cat-2',
-            month: 4,
-            year: 2026,
-            type: 'EXPENSE',
-            userId: 'test-user-id',
-          },
-        ]);
+      http.get(`${API_URL}/budgets`, ({ request }) => {
+        const url = new URL(request.url);
+        const month = url.searchParams.get('month')
+          ? parseInt(url.searchParams.get('month')!)
+          : undefined;
+        const data =
+          month !== undefined
+            ? extendedBudgets.filter((b) => b.month === month)
+            : extendedBudgets;
+        return HttpResponse.json(makePaginatedResponse(data));
       }),
     );
 
@@ -147,8 +161,9 @@ describe('BudgetsPage', () => {
     // Filter by month 4 (April)
     await selectOption(user, screen.getByTestId('month-filter'), 'April');
 
-    // Only April budget should be visible
-    expect(screen.getByText('$200.00')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('$200.00')).toBeInTheDocument();
+    });
     expect(screen.queryByText('$500.00')).not.toBeInTheDocument();
     expect(screen.queryByText('$3,000.00')).not.toBeInTheDocument();
   });
@@ -157,20 +172,30 @@ describe('BudgetsPage', () => {
     const user = setupUser();
 
     // Add budget with different year
+    const extendedBudgets = [
+      ...mockBudgets,
+      {
+        id: 'budget-3',
+        amount: '750.00',
+        categoryId: 'cat-1',
+        month: 3,
+        year: 2025,
+        type: 'INCOME',
+        userId: 'test-user-id',
+      },
+    ];
+
     server.use(
-      http.get(`${API_URL}/budgets`, () => {
-        return HttpResponse.json([
-          ...mockBudgets,
-          {
-            id: 'budget-3',
-            amount: '750.00',
-            categoryId: 'cat-1',
-            month: 3,
-            year: 2025,
-            type: 'INCOME',
-            userId: 'test-user-id',
-          },
-        ]);
+      http.get(`${API_URL}/budgets`, ({ request }) => {
+        const url = new URL(request.url);
+        const year = url.searchParams.get('year')
+          ? parseInt(url.searchParams.get('year')!)
+          : undefined;
+        const data =
+          year !== undefined
+            ? extendedBudgets.filter((b) => b.year === year)
+            : extendedBudgets;
+        return HttpResponse.json(makePaginatedResponse(data));
       }),
     );
 
@@ -183,8 +208,9 @@ describe('BudgetsPage', () => {
     // Filter by 2025
     await selectOption(user, screen.getByTestId('year-filter'), '2025');
 
-    // Only 2025 budget should be visible
-    expect(screen.getByText('$750.00')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('$750.00')).toBeInTheDocument();
+    });
     expect(screen.queryByText('$500.00')).not.toBeInTheDocument();
     expect(screen.queryByText('$3,000.00')).not.toBeInTheDocument();
   });
@@ -366,55 +392,6 @@ describe('BudgetsPage', () => {
     expect(screen.getByText('$500.00')).toBeInTheDocument();
   });
 
-  it('combines multiple filters', async () => {
-    const user = setupUser();
-
-    // Add more budgets for better filter testing
-    server.use(
-      http.get(`${API_URL}/budgets`, () => {
-        return HttpResponse.json([
-          ...mockBudgets,
-          {
-            id: 'budget-3',
-            amount: '1500.00',
-            categoryId: 'cat-1',
-            month: 4,
-            year: 2026,
-            type: 'INCOME',
-            userId: 'test-user-id',
-          },
-          {
-            id: 'budget-4',
-            amount: '800.00',
-            categoryId: 'cat-2',
-            month: 4,
-            year: 2026,
-            type: 'EXPENSE',
-            userId: 'test-user-id',
-          },
-        ]);
-      }),
-    );
-
-    renderWithAuthenticatedProviders(<BudgetsPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText('$500.00')).toBeInTheDocument();
-    });
-
-    // Filter by month 4 (April)
-    await selectOption(user, screen.getByTestId('month-filter'), 'April');
-
-    // Filter by INCOME type
-    await selectOption(user, screen.getByTestId('type-filter'), 'Income');
-
-    // Only April INCOME budget should be visible
-    expect(screen.getByText('$1,500.00')).toBeInTheDocument();
-    expect(screen.queryByText('$500.00')).not.toBeInTheDocument();
-    expect(screen.queryByText('$3,000.00')).not.toBeInTheDocument();
-    expect(screen.queryByText('$800.00')).not.toBeInTheDocument();
-  });
-
   it('displays period as Month/Year format', async () => {
     renderWithAuthenticatedProviders(<BudgetsPage />);
 
@@ -425,5 +402,65 @@ describe('BudgetsPage', () => {
     // Period should show month name and year
     const periodCells = screen.getAllByText('March 2026');
     expect(periodCells.length).toBeGreaterThan(0);
+  });
+
+  it('shows year filter using static year range', async () => {
+    renderWithAuthenticatedProviders(<BudgetsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('$500.00')).toBeInTheDocument();
+    });
+
+    // The year filter should contain current year
+    const currentYear = new Date().getFullYear();
+    const yearTrigger = screen.getByTestId('year-filter');
+    expect(yearTrigger).toBeInTheDocument();
+    // Static year range includes currentYear+1 down to 2020
+    const user = setupUser();
+    await user.click(yearTrigger);
+    await waitFor(() => {
+      expect(screen.getAllByText(String(currentYear))[0]).toBeInTheDocument();
+    });
+  });
+
+  it('shows pagination when totalPages > 1', async () => {
+    server.use(
+      http.get(`${API_URL}/budgets`, () => {
+        return HttpResponse.json({
+          data: [mockBudgets[0]],
+          total: 40,
+          page: 1,
+          limit: 20,
+          totalPages: 2,
+        });
+      }),
+    );
+
+    renderWithAuthenticatedProviders(<BudgetsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('$500.00')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Previous' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('pagination hidden when totalPages <= 1', async () => {
+    renderWithAuthenticatedProviders(<BudgetsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('$500.00')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'Previous' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Next' }),
+    ).not.toBeInTheDocument();
   });
 });

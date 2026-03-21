@@ -7,6 +7,7 @@ import {
   Delete,
   Put,
   ParseUUIDPipe,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import {
 } from './transactions.swagger';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
 
@@ -33,8 +35,11 @@ export class TransactionController {
 
   @Get()
   @ApiGetAllTransactions()
-  async getAllTransactions(@Request() req: AuthenticatedRequest) {
-    return this.transactionsService.getAllTransactions(req.user.userId);
+  getAllTransactions(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: GetTransactionsQueryDto,
+  ): ReturnType<TransactionsService['getAllTransactions']> {
+    return this.transactionsService.getAllTransactions(req.user.userId, query);
   }
 
   @Get(':id')

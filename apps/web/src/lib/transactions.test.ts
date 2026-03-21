@@ -13,13 +13,18 @@ describe('transactionsApi', () => {
     it('should fetch all transactions', async () => {
       const result = await transactionsApi.getAll();
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0]).toHaveProperty('id');
-      expect(result[0]).toHaveProperty('amount');
-      expect(result[0]).toHaveProperty('type');
-      expect(result[0]).toHaveProperty('categoryId');
-      expect(result[0]).toHaveProperty('date');
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('total');
+      expect(result).toHaveProperty('page');
+      expect(result).toHaveProperty('limit');
+      expect(result).toHaveProperty('totalPages');
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data.length).toBeGreaterThan(0);
+      expect(result.data[0]).toHaveProperty('id');
+      expect(result.data[0]).toHaveProperty('amount');
+      expect(result.data[0]).toHaveProperty('type');
+      expect(result.data[0]).toHaveProperty('categoryId');
+      expect(result.data[0]).toHaveProperty('date');
     });
 
     it('should throw ApiException on 401', async () => {

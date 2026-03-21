@@ -454,7 +454,33 @@ export const handlers = [
         { status: 401 },
       );
     }
-    return HttpResponse.json(mockBudgets);
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') ?? '1');
+    const limit = parseInt(url.searchParams.get('limit') ?? '20');
+    const month = url.searchParams.get('month')
+      ? parseInt(url.searchParams.get('month')!)
+      : undefined;
+    const year = url.searchParams.get('year')
+      ? parseInt(url.searchParams.get('year')!)
+      : undefined;
+    const type = url.searchParams.get('type') ?? undefined;
+
+    let filtered = [...mockBudgets];
+    if (month !== undefined)
+      filtered = filtered.filter((b) => b.month === month);
+    if (year !== undefined) filtered = filtered.filter((b) => b.year === year);
+    if (type) filtered = filtered.filter((b) => b.type === type);
+
+    const total = filtered.length;
+    const skip = (page - 1) * limit;
+    const data = filtered.slice(skip, skip + limit);
+    return HttpResponse.json({
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
   }),
 
   http.get(`${API_URL}/budgets/:id`, ({ params, request }) => {
@@ -756,7 +782,37 @@ export const handlers = [
         { status: 401 },
       );
     }
-    return HttpResponse.json(mockTransactions);
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') ?? '1');
+    const limit = parseInt(url.searchParams.get('limit') ?? '20');
+    const type = url.searchParams.get('type') ?? undefined;
+    const categoryId = url.searchParams.get('categoryId') ?? undefined;
+    const startDate = url.searchParams.get('startDate') ?? undefined;
+    const endDate = url.searchParams.get('endDate') ?? undefined;
+
+    let filtered = [...mockTransactions];
+    if (type) filtered = filtered.filter((t) => t.type === type);
+    if (categoryId)
+      filtered = filtered.filter((t) => t.categoryId === categoryId);
+    if (startDate) {
+      const start = new Date(startDate);
+      filtered = filtered.filter((t) => new Date(t.date) >= start);
+    }
+    if (endDate) {
+      const end = new Date(`${endDate.slice(0, 10)}T23:59:59.999Z`);
+      filtered = filtered.filter((t) => new Date(t.date) <= end);
+    }
+
+    const total = filtered.length;
+    const skip = (page - 1) * limit;
+    const data = filtered.slice(skip, skip + limit);
+    return HttpResponse.json({
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
   }),
 
   http.get(`${API_URL}/transactions/:id`, ({ params, request }) => {

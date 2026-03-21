@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+import { PaginatedResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { budgetsApi } from '@/lib/budgets';
+import { budgetsApi, GetBudgetsParams } from '@/lib/budgets';
 import { categoriesApi } from '@/lib/categories';
 import { Budget, Category, BudgetType } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { BudgetsTableSkeleton } from '@/components/BudgetsTableSkeleton';
+import { Pagination } from '@/components/Pagination';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -60,12 +62,6 @@ function getProgressValue(budget: BudgetDisplay): string | undefined {
   return budget.spent;
 }
 
-// Get unique years from budgets for the filter
-function getUniqueYears(budgets: BudgetDisplay[]): number[] {
-  const years = [...new Set(budgets.map((b) => b.year))];
-  return years.sort((a, b) => b - a); // Sort descending
-}
-
 function getUtilizationColor(
   percentage: number | undefined,
   budgetType?: BudgetType,
@@ -82,7 +78,10 @@ function getUtilizationColor(
 }
 
 export default function BudgetsPage() {
-  const [budgets, setBudgets] = useState<BudgetDisplay[]>([]);
+  const [budgets, setBudgets] = useState<PaginatedResponse<Budget> | null>(
+    null,
+  );
+  const [categoryBudgets, setCategoryBudgets] = useState<BudgetDisplay[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteBudget, setDeleteBudget] = useState<BudgetDisplay | null>(null);
@@ -92,6 +91,7 @@ export default function BudgetsPage() {
   const [filterType, setFilterType] = useState<FilterType>('ALL');
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('ALL');
   const [hasSpendingInfo, setHasSpendingInfo] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const t = useTranslations('budgets');
@@ -99,29 +99,22 @@ export default function BudgetsPage() {
   const tMonths = useTranslations('months');
   const locale = useLocale();
 
+  const currentYear = new Date().getFullYear();
   const MONTHS = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
     label: tMonths(String(i + 1)),
   }));
 
-  const loadAllBudgets = useCallback(async () => {
-    try {
-      const budgetsData = await budgetsApi.getAll();
-      setBudgets(budgetsData);
-      setHasSpendingInfo(false);
-    } catch (error) {
-      if (error instanceof ApiException) {
-        if (error.statusCode === 401) {
-          logout();
-          router.push('/login');
-          return;
-        }
-        toast.error(error.message);
-      } else {
-        toast.error(t('failedToLoad'));
-      }
-    }
-  }, [logout, router, t]);
+  const YEARS = Array.from(
+    { length: currentYear - 2020 + 2 },
+    (_, i) => currentYear + 1 - i,
+  );
+
+  // Stable router ref to avoid re-creating loadBudgetsByCategory
+  const routerRef = useRef(router);
+  routerRef.current = router;
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
 
   const loadBudgetsByCategory = useCallback(
     async (categoryId: string) => {
@@ -132,13 +125,13 @@ export default function BudgetsPage() {
           ...b,
           userId: '',
         }));
-        setBudgets(budgetsWithUserId);
+        setCategoryBudgets(budgetsWithUserId);
         setHasSpendingInfo(true);
       } catch (error) {
         if (error instanceof ApiException) {
           if (error.statusCode === 401) {
-            logout();
-            router.push('/login');
+            logoutRef.current();
+            routerRef.current.push('/login');
             return;
           }
           toast.error(error.message);
@@ -147,7 +140,7 @@ export default function BudgetsPage() {
         }
       }
     },
-    [logout, router, t],
+    [t],
   );
 
   useEffect(() => {
@@ -168,18 +161,49 @@ export default function BudgetsPage() {
     if (isAuthenticated) {
       loadCategories();
     }
-  }, [isAuthenticated, logout, router, t]);
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
     setIsLoading(true);
     if (filterCategory === 'ALL') {
-      loadAllBudgets().finally(() => setIsLoading(false));
+      const params: GetBudgetsParams = { page: currentPage, limit: 20 };
+      if (filterMonth !== 'ALL') params.month = filterMonth as number;
+      if (filterYear !== 'ALL') params.year = filterYear as number;
+      if (filterType !== 'ALL') params.type = filterType;
+
+      budgetsApi
+        .getAll(params)
+        .then((data) => {
+          setBudgets(data);
+          setHasSpendingInfo(false);
+        })
+        .catch((error) => {
+          if (error instanceof ApiException) {
+            if (error.statusCode === 401) {
+              logoutRef.current();
+              routerRef.current.push('/login');
+              return;
+            }
+            toast.error(error.message);
+          } else {
+            toast.error(t('failedToLoad'));
+          }
+        })
+        .finally(() => setIsLoading(false));
     } else {
       loadBudgetsByCategory(filterCategory).finally(() => setIsLoading(false));
     }
-  }, [isAuthenticated, filterCategory, loadAllBudgets, loadBudgetsByCategory]);
+  }, [
+    isAuthenticated,
+    filterCategory,
+    filterMonth,
+    filterYear,
+    filterType,
+    currentPage,
+    loadBudgetsByCategory,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const categoryMap = useMemo(() => {
     return categories.reduce(
@@ -191,17 +215,29 @@ export default function BudgetsPage() {
     );
   }, [categories]);
 
-  const availableYears = useMemo(() => getUniqueYears(budgets), [budgets]);
+  // The displayed budgets depend on whether we're in category filter mode
+  const displayedBudgets: BudgetDisplay[] =
+    filterCategory === 'ALL' ? (budgets?.data ?? []) : categoryBudgets;
 
-  const filteredBudgets = useMemo(() => {
-    return budgets.filter((budget) => {
-      const matchesMonth =
-        filterMonth === 'ALL' || budget.month === filterMonth;
-      const matchesYear = filterYear === 'ALL' || budget.year === filterYear;
-      const matchesType = filterType === 'ALL' || budget.type === filterType;
-      return matchesMonth && matchesYear && matchesType;
-    });
-  }, [budgets, filterMonth, filterYear, filterType]);
+  const handleFilterMonthChange = (value: string) => {
+    setFilterMonth(value === 'ALL' ? 'ALL' : parseInt(value));
+    setCurrentPage(1);
+  };
+
+  const handleFilterYearChange = (value: string) => {
+    setFilterYear(value === 'ALL' ? 'ALL' : parseInt(value));
+    setCurrentPage(1);
+  };
+
+  const handleFilterTypeChange = (value: FilterType) => {
+    setFilterType(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterCategoryChange = (value: FilterCategory) => {
+    setFilterCategory(value);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async () => {
     if (!deleteBudget) return;
@@ -209,7 +245,28 @@ export default function BudgetsPage() {
     setIsDeleting(true);
     try {
       await budgetsApi.delete(deleteBudget.id);
-      setBudgets((prev) => prev.filter((b) => b.id !== deleteBudget.id));
+      if (filterCategory === 'ALL') {
+        setBudgets((prev) => {
+          if (!prev) return prev;
+          const newData = prev.data.filter((b) => b.id !== deleteBudget.id);
+          const newTotal = prev.total - 1;
+          const newTotalPages = Math.ceil(newTotal / prev.limit);
+          if (newData.length === 0 && currentPage > 1) {
+            setCurrentPage((p) => p - 1);
+            return prev;
+          }
+          return {
+            ...prev,
+            data: newData,
+            total: newTotal,
+            totalPages: newTotalPages,
+          };
+        });
+      } else {
+        setCategoryBudgets((prev) =>
+          prev.filter((b) => b.id !== deleteBudget.id),
+        );
+      }
       toast.success(t('deleteSuccess'));
       setDeleteBudget(null);
     } catch (error) {
@@ -223,6 +280,16 @@ export default function BudgetsPage() {
     }
   };
 
+  const isEmpty =
+    filterCategory === 'ALL'
+      ? !budgets || (budgets.data.length === 0 && budgets.total === 0)
+      : categoryBudgets.length === 0;
+
+  const hasNoMatch =
+    filterCategory === 'ALL'
+      ? budgets?.data.length === 0 && (budgets?.total ?? 0) > 0
+      : false;
+
   return (
     <AuthLayout>
       <div className="flex items-center justify-between mb-6">
@@ -235,9 +302,7 @@ export default function BudgetsPage() {
       <div className="flex flex-wrap gap-4 mb-4">
         <Select
           value={filterMonth === 'ALL' ? 'ALL' : String(filterMonth)}
-          onValueChange={(value) =>
-            setFilterMonth(value === 'ALL' ? 'ALL' : parseInt(value))
-          }
+          onValueChange={handleFilterMonthChange}
         >
           <SelectTrigger
             className="w-full sm:w-[150px]"
@@ -257,9 +322,7 @@ export default function BudgetsPage() {
 
         <Select
           value={filterYear === 'ALL' ? 'ALL' : String(filterYear)}
-          onValueChange={(value) =>
-            setFilterYear(value === 'ALL' ? 'ALL' : parseInt(value))
-          }
+          onValueChange={handleFilterYearChange}
         >
           <SelectTrigger
             className="w-full sm:w-[120px]"
@@ -269,7 +332,7 @@ export default function BudgetsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">{tCommon('allYears')}</SelectItem>
-            {availableYears.map((year) => (
+            {YEARS.map((year) => (
               <SelectItem key={year} value={String(year)}>
                 {year}
               </SelectItem>
@@ -279,7 +342,7 @@ export default function BudgetsPage() {
 
         <Select
           value={filterType}
-          onValueChange={(value) => setFilterType(value as FilterType)}
+          onValueChange={(value) => handleFilterTypeChange(value as FilterType)}
         >
           <SelectTrigger
             className="w-full sm:w-[150px]"
@@ -296,7 +359,9 @@ export default function BudgetsPage() {
 
         <Select
           value={filterCategory}
-          onValueChange={(value) => setFilterCategory(value as FilterCategory)}
+          onValueChange={(value) =>
+            handleFilterCategoryChange(value as FilterCategory)
+          }
         >
           <SelectTrigger
             className="w-full sm:w-[180px]"
@@ -324,11 +389,11 @@ export default function BudgetsPage() {
       <div className="bg-card rounded-lg shadow">
         {isLoading ? (
           <BudgetsTableSkeleton />
-        ) : budgets.length === 0 ? (
+        ) : isEmpty ? (
           <div className="p-8 text-center text-muted-foreground">
             {t('noBudgets')}
           </div>
-        ) : filteredBudgets.length === 0 ? (
+        ) : hasNoMatch ? (
           <div className="p-8 text-center text-muted-foreground">
             {t('noMatch')}
           </div>
@@ -354,7 +419,7 @@ export default function BudgetsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBudgets.map((budget) => {
+                {displayedBudgets.map((budget) => {
                   const progressValue = getProgressValue(budget);
                   return (
                     <TableRow
@@ -436,6 +501,15 @@ export default function BudgetsPage() {
           </div>
         )}
       </div>
+
+      {filterCategory === 'ALL' && budgets && (
+        <Pagination
+          page={budgets.page}
+          totalPages={budgets.totalPages}
+          onPageChange={setCurrentPage}
+          disabled={isLoading}
+        />
+      )}
 
       <Dialog open={!!deleteBudget} onOpenChange={() => setDeleteBudget(null)}>
         <DialogContent>

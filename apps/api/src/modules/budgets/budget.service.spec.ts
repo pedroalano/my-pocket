@@ -93,6 +93,20 @@ const createPrismaMock = () => {
           })
           .map(({ userId: _userId, ...rest }) => rest);
       }),
+      count: jest.fn(({ where } = {}) => {
+        if (!where) {
+          return budgets.length;
+        }
+        return budgets.filter((budget) => {
+          if (where.userId && budget.userId !== where.userId) {
+            return false;
+          }
+          if (where.categoryId && budget.categoryId !== where.categoryId) {
+            return false;
+          }
+          return true;
+        }).length;
+      }),
       findUnique: jest.fn(({ where: { id } }) => {
         const budget = budgets.find((budget) => budget.id === id);
         if (!budget) {
@@ -395,7 +409,7 @@ describe('BudgetService', () => {
       const result2 = await service.createBudget(createDto2, userId);
 
       expect(result1.id).not.toBe(result2.id);
-      expect(await service.getAllBudgets(userId)).toHaveLength(2);
+      expect((await service.getAllBudgets(userId)).data).toHaveLength(2);
     });
   });
 
@@ -415,7 +429,7 @@ describe('BudgetService', () => {
         amount: 700,
       };
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.updateBudget(budget.id, updateDto, userId);
 
       expect(result).toEqual({
@@ -443,7 +457,7 @@ describe('BudgetService', () => {
         month: 13,
       };
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
 
       await expect(
         service.updateBudget(budget.id, updateDto, userId),
@@ -466,7 +480,7 @@ describe('BudgetService', () => {
         categoryId: otherCategoryId,
       };
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
 
       await expect(
         service.updateBudget(budget.id, updateDto, userId),
@@ -483,7 +497,7 @@ describe('BudgetService', () => {
         year: 2026,
       };
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.updateBudget(budget.id, updateDto, userId);
 
       expect(result).toEqual({
@@ -520,8 +534,8 @@ describe('BudgetService', () => {
         month: 1,
       };
 
-      const budgets = await service.getAllBudgets(userId);
-      const secondBudget = budgets.find(
+      const { data: budgetsData } = await service.getAllBudgets(userId);
+      const secondBudget = budgetsData.find(
         (budget) => budget.categoryId === otherCategoryId,
       );
 
@@ -589,7 +603,7 @@ describe('BudgetService', () => {
     });
 
     it('should calculate spent amount for budget', async () => {
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const spent = await service.getSpentAmount(budget.id, userId);
 
       expect(spent).toBe(250);
@@ -603,7 +617,7 @@ describe('BudgetService', () => {
 
     it('should return 0 when no transactions match', async () => {
       prismaMock.__setTransactions([]);
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const spent = await service.getSpentAmount(budget.id, userId);
 
       expect(spent).toBe(0);
@@ -653,7 +667,7 @@ describe('BudgetService', () => {
     });
 
     it('should calculate remaining budget', async () => {
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const remaining = await service.getRemainingBudget(budget.id, userId);
 
       expect(remaining).toBe('300.00');
@@ -672,7 +686,7 @@ describe('BudgetService', () => {
         },
       ]);
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const remaining = await service.getRemainingBudget(budget.id, userId);
 
       expect(remaining).toBe('-100.00');
@@ -709,7 +723,7 @@ describe('BudgetService', () => {
         },
       ]);
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.getBudgetWithSpending(budget.id, userId);
 
       if (!result) {
@@ -764,7 +778,7 @@ describe('BudgetService', () => {
         },
       ]);
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.getBudgetWithSpending(budget.id, userId);
 
       if (!result) {
@@ -914,7 +928,7 @@ describe('BudgetService', () => {
     });
 
     it('should return budget with category', async () => {
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.getBudgetWithCategory(budget.id, userId);
 
       expect(result).toEqual({
@@ -948,7 +962,7 @@ describe('BudgetService', () => {
           new NotFoundException(`Category with ID ${categoryId} not found`),
         );
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.getBudgetWithCategory(budget.id, userId);
 
       expect(result!.category).toBeNull();
@@ -988,7 +1002,7 @@ describe('BudgetService', () => {
     });
 
     it('should return budget with category, transactions, and calculations', async () => {
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.getBudgetsWithTransactions(
         budget.id,
         userId,
@@ -1054,7 +1068,7 @@ describe('BudgetService', () => {
         },
       ]);
 
-      const [budget] = await service.getAllBudgets(userId);
+      const [budget] = (await service.getAllBudgets(userId)).data;
       const result = await service.getBudgetsWithTransactions(
         budget.id,
         userId,
@@ -1189,8 +1203,9 @@ describe('BudgetService', () => {
       await service.createBudget(createDto, userId);
       await service.createBudget({ ...createDto, amount: 600 }, otherUserId);
 
-      const userBudgets = await service.getAllBudgets(userId);
-      const otherUserBudgets = await service.getAllBudgets(otherUserId);
+      const { data: userBudgets } = await service.getAllBudgets(userId);
+      const { data: otherUserBudgets } =
+        await service.getAllBudgets(otherUserId);
 
       expect(userBudgets).toHaveLength(1);
       expect(userBudgets[0].amount).toBe('500.00');
