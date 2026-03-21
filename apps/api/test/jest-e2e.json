@@ -6,6 +6,9 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "moduleNameMapper": {
+    "^@my-pocket/shared$": "<rootDir>/../../../node_modules/@my-pocket/shared/dist/index.js"
+  },
   "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
   "testTimeout": 30000
 }
