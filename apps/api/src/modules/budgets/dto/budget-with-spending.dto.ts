@@ -16,6 +16,14 @@ export class BudgetWithSpendingDto {
   amount: string;
 
   @ApiProperty({
+    description: 'Optional notes about the budget',
+    example: 'Monthly grocery target',
+    required: false,
+    nullable: true,
+  })
+  description: string | null;
+
+  @ApiProperty({
     description: 'Category UUID',
     example: '123e4567-e89b-12d3-a456-426614174001',
   })

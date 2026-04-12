@@ -144,6 +144,7 @@ export enum BudgetType {
 export interface Budget {
   id: string;
   amount: string;
+  description: string | null;
   categoryId: string;
   month: number;
   year: number;
@@ -156,6 +157,7 @@ export interface CreateBudgetDto {
   categoryId: string;
   month: number;
   year: number;
+  description?: string;
 }
 
 export interface CreateBatchBudgetDto {
@@ -177,11 +179,13 @@ export interface UpdateBudgetDto {
   categoryId?: string;
   month?: number;
   year?: number;
+  description?: string | null;
 }
 
 interface BudgetWithSpendingBase {
   id: string;
   amount: string;
+  description: string | null;
   categoryId: string;
   month: number;
   year: number;

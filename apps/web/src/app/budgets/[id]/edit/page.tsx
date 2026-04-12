@@ -71,6 +71,7 @@ export default function EditBudgetPage() {
               categoryId: budget.categoryId,
               month: budget.month,
               year: budget.year,
+              description: budget.description,
             }}
             onSubmit={handleUpdate}
           />

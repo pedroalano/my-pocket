@@ -38,6 +38,7 @@ export const mockBudgets = [
   {
     id: 'budget-1',
     amount: '500.00',
+    description: null,
     categoryId: 'cat-2',
     month: 3,
     year: 2026,
@@ -47,6 +48,7 @@ export const mockBudgets = [
   {
     id: 'budget-2',
     amount: '3000.00',
+    description: null,
     categoryId: 'cat-1',
     month: 3,
     year: 2026,
@@ -109,6 +111,7 @@ export const mockTransactions = [
 export const mockBudgetWithDetails = {
   id: 'budget-1',
   amount: '500.00',
+  description: null,
   categoryId: 'cat-2',
   month: 3,
   year: 2026,
@@ -124,6 +127,7 @@ export const mockBudgetsWithSpending = [
   {
     id: 'budget-1',
     amount: '500.00',
+    description: null,
     categoryId: 'cat-2',
     month: 3,
     year: 2026,
@@ -135,6 +139,7 @@ export const mockBudgetsWithSpending = [
   {
     id: 'budget-2',
     amount: '3000.00',
+    description: null,
     categoryId: 'cat-1',
     month: 3,
     year: 2026,

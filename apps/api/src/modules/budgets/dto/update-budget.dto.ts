@@ -1,4 +1,10 @@
-import { IsNumber, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateBudgetDto {
@@ -39,4 +45,15 @@ export class UpdateBudgetDto {
   @IsOptional()
   @IsNumber()
   year?: number;
+
+  @ApiProperty({
+    description: 'Optional notes about the budget',
+    example: 'Monthly grocery target',
+    required: false,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string | null;
 }
