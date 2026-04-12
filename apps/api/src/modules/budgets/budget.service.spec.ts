@@ -20,6 +20,7 @@ import { PrismaService } from '../shared/prisma.service';
 type BudgetRecord = {
   id: string;
   amount: number;
+  description: string | null;
   categoryId: string;
   userId: string;
   month: number;
@@ -307,6 +308,7 @@ describe('BudgetService', () => {
       expect(result).toEqual({
         ...createDto,
         amount: '500.00',
+        description: null,
         id: result.id,
         type: BudgetType.EXPENSE,
       });
@@ -411,6 +413,33 @@ describe('BudgetService', () => {
       expect(result1.id).not.toBe(result2.id);
       expect((await service.getAllBudgets(userId)).data).toHaveLength(2);
     });
+
+    it('should create a budget with a description', async () => {
+      const createDto: CreateBudgetDto = {
+        amount: 500,
+        categoryId,
+        month: 1,
+        year: 2026,
+        description: 'Monthly grocery target',
+      };
+
+      const result = await service.createBudget(createDto, userId);
+
+      expect(result.description).toBe('Monthly grocery target');
+    });
+
+    it('should set description to null when not provided', async () => {
+      const createDto: CreateBudgetDto = {
+        amount: 500,
+        categoryId,
+        month: 1,
+        year: 2026,
+      };
+
+      const result = await service.createBudget(createDto, userId);
+
+      expect(result.description).toBeNull();
+    });
   });
 
   describe('updateBudget', () => {
@@ -435,6 +464,7 @@ describe('BudgetService', () => {
       expect(result).toEqual({
         id: budget.id,
         amount: '700.00',
+        description: null,
         categoryId,
         month: 1,
         year: 2026,
@@ -490,6 +520,35 @@ describe('BudgetService', () => {
       ).rejects.toThrow('budgets.errors.categoryNotFound');
     });
 
+    it('should update budget description', async () => {
+      const [budget] = (await service.getAllBudgets(userId)).data;
+      const result = await service.updateBudget(
+        budget.id,
+        { description: 'New note' },
+        userId,
+      );
+
+      expect(result.description).toBe('New note');
+    });
+
+    it('should clear budget description when null is passed', async () => {
+      const [budget] = (await service.getAllBudgets(userId)).data;
+      // First set a description
+      await service.updateBudget(
+        budget.id,
+        { description: 'Some note' },
+        userId,
+      );
+      // Then clear it
+      const result = await service.updateBudget(
+        budget.id,
+        { description: null },
+        userId,
+      );
+
+      expect(result.description).toBeNull();
+    });
+
     it('should allow budget to update itself without duplicate error', async () => {
       const updateDto: UpdateBudgetDto = {
         amount: 800,
@@ -503,6 +562,7 @@ describe('BudgetService', () => {
       expect(result).toEqual({
         id: budget.id,
         amount: '800.00',
+        description: null,
         categoryId,
         month: 1,
         year: 2026,
@@ -934,6 +994,7 @@ describe('BudgetService', () => {
       expect(result).toEqual({
         id: budget.id,
         amount: '500.00',
+        description: null,
         categoryId,
         month: 1,
         year: 2026,
@@ -1011,6 +1072,7 @@ describe('BudgetService', () => {
       expect(result).toEqual({
         id: budget.id,
         amount: '500.00',
+        description: null,
         categoryId,
         month: 1,
         year: 2026,

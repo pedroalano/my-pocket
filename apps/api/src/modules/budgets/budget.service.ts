@@ -43,6 +43,7 @@ type BudgetWithSpending = BudgetWithSpendingExpense | BudgetWithSpendingIncome;
 type BudgetBase = {
   id: string;
   amount: string;
+  description: string | null;
   categoryId: string;
   month: number;
   year: number;
@@ -108,6 +109,7 @@ export class BudgetService {
   private readonly budgetSelect = {
     id: true,
     amount: true,
+    description: true,
     categoryId: true,
     month: true,
     year: true,
@@ -127,6 +129,7 @@ export class BudgetService {
   private mapBudget(budget: {
     id: string;
     amount: { toString(): string };
+    description: string | null;
     categoryId: string;
     month: number;
     year: number;
@@ -294,6 +297,7 @@ export class BudgetService {
       const newBudget = await this.prisma.budget.create({
         data: {
           amount: budgetData.amount,
+          description: budgetData.description ?? null,
           categoryId: budgetData.categoryId,
           month: budgetData.month,
           year: budgetData.year,
@@ -443,6 +447,7 @@ export class BudgetService {
         where: { id },
         data: {
           amount: budgetData.amount,
+          description: budgetData.description,
           categoryId: budgetData.categoryId,
           month: budgetData.month,
           year: budgetData.year,

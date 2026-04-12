@@ -7,6 +7,7 @@ import CurrencyInput from 'react-currency-input-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -33,6 +34,7 @@ interface BudgetFormProps {
     categoryId: string;
     month: number;
     year: number;
+    description?: string | null;
   };
   onSubmit: (data: CreateBudgetDto) => Promise<unknown>;
   title: string;
@@ -62,6 +64,9 @@ export function BudgetForm({
   const [endMonth, setEndMonth] = useState<number | ''>('');
   const [endYear, setEndYear] = useState<string>(
     new Date().getFullYear().toString(),
+  );
+  const [description, setDescription] = useState<string>(
+    initialData?.description ?? '',
   );
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -177,6 +182,7 @@ export function BudgetForm({
         categoryId,
         month: month as number,
         year: yearNum,
+        description: description.trim() || undefined,
       });
       toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
       router.push('/budgets');
@@ -239,6 +245,18 @@ export function BudgetForm({
                 </SelectContent>
               </Select>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">{tCommon('description')}</Label>
+            <Textarea
+              id="description"
+              placeholder={t('descriptionPlaceholder')}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isLoading}
+              rows={3}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -22,6 +22,7 @@ vi.mock('next/navigation', () => ({
 const mockExpenseBudget: BudgetWithDetailsExpense = {
   id: 'budget-1',
   amount: '500.00',
+  description: null,
   categoryId: 'cat-1',
   month: 3,
   year: 2026,
@@ -42,6 +43,7 @@ const mockExpenseBudget: BudgetWithDetailsExpense = {
 const mockIncomeBudget: BudgetWithDetailsIncome = {
   id: 'budget-2',
   amount: '2000.00',
+  description: null,
   categoryId: 'cat-2',
   month: 3,
   year: 2026,
@@ -320,6 +322,26 @@ describe('BudgetDetails', () => {
 
       const backLink = screen.getByRole('link', { name: 'Back to Budgets' });
       expect(backLink).toHaveAttribute('href', '/budgets');
+    });
+  });
+
+  describe('description', () => {
+    it('should display description when present', () => {
+      const budgetWithDesc: BudgetWithDetailsExpense = {
+        ...mockExpenseBudget,
+        description: 'Monthly grocery target',
+      };
+
+      renderWithProviders(<BudgetDetails budget={budgetWithDesc} />);
+
+      expect(screen.getByText('Description')).toBeInTheDocument();
+      expect(screen.getByText('Monthly grocery target')).toBeInTheDocument();
+    });
+
+    it('should not display description section when null', () => {
+      renderWithProviders(<BudgetDetails budget={mockExpenseBudget} />);
+
+      expect(screen.queryByText('Description')).not.toBeInTheDocument();
     });
   });
 });

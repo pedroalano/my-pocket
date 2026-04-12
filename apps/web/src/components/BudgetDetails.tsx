@@ -115,6 +115,16 @@ export function BudgetDetails({ budget }: BudgetDetailsProps) {
             </p>
           </div>
 
+          {/* Description */}
+          {budget.description && (
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {t('description')}
+              </p>
+              <p className="text-sm">{budget.description}</p>
+            </div>
+          )}
+
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">

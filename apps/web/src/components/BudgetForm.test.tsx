@@ -82,6 +82,7 @@ describe('BudgetForm', () => {
     expect(screen.getByLabelText('Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Month')).toBeInTheDocument();
     expect(screen.getByLabelText('Year')).toBeInTheDocument();
+    expect(screen.getByLabelText('Description')).toBeInTheDocument();
   });
 
   it('should load categories in dropdown', async () => {
@@ -131,6 +132,27 @@ describe('BudgetForm', () => {
       expect(screen.getByDisplayValue('$500.00')).toBeInTheDocument();
       expect(screen.getByDisplayValue('2026')).toBeInTheDocument();
     });
+  });
+
+  it('should render form with initial description', async () => {
+    renderWithProviders(
+      <BudgetForm
+        title="Edit Budget"
+        submitLabel="Save"
+        initialData={{
+          amount: 500,
+          categoryId: 'cat-2',
+          month: 3,
+          year: 2026,
+          description: 'Monthly grocery target',
+        }}
+        onSubmit={mockOnSubmit}
+      />,
+    );
+
+    expect(
+      screen.getByDisplayValue('Monthly grocery target'),
+    ).toBeInTheDocument();
   });
 
   it('should have required attribute on amount and year inputs', () => {
@@ -193,6 +215,7 @@ describe('BudgetForm', () => {
         categoryId: 'cat-2',
         month: 3,
         year: 2026,
+        description: undefined,
       });
     });
 
@@ -317,6 +340,31 @@ describe('BudgetForm', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(mockRouterPush).toHaveBeenCalledWith('/budgets');
+  });
+
+  it('should include description in submission when provided', async () => {
+    renderWithProviders(
+      <BudgetForm
+        title="Create Budget"
+        submitLabel="Create"
+        initialData={{
+          amount: 500,
+          categoryId: 'cat-2',
+          month: 3,
+          year: 2026,
+          description: 'Monthly grocery target',
+        }}
+        onSubmit={mockOnSubmit}
+      />,
+    );
+
+    fireEvent.submit(document.querySelector('form')!);
+
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ description: 'Monthly grocery target' }),
+      );
+    });
   });
 
   it('should validate amount is positive', async () => {

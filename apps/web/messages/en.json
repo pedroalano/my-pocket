@@ -286,7 +286,8 @@
     "endMonthRequired": "End month is required",
     "endYearRequired": "End year is required",
     "endDateBeforeStart": "End date must be after or equal to start date",
-    "batchCreateSuccess": "{created} budgets created ({skipped} skipped)"
+    "batchCreateSuccess": "{created} budgets created ({skipped} skipped)",
+    "descriptionPlaceholder": "e.g., Monthly grocery target"
   },
   "budgetDetails": {
     "budgetAmount": "Budget Amount",
@@ -300,7 +301,8 @@
     "transactionsFor": "Transactions in {categoryName} for {period}",
     "noTransactions": "No transactions found for this budget period.",
     "unknownCategory": "Unknown Category",
-    "noDescriptionLabel": "No description"
+    "noDescriptionLabel": "No description",
+    "description": "Description"
   },
   "errorBoundary": {
     "title": "Something went wrong",

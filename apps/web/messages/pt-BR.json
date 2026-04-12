@@ -286,7 +286,8 @@
     "endMonthRequired": "Mês de término é obrigatório",
     "endYearRequired": "Ano de término é obrigatório",
     "endDateBeforeStart": "A data de término deve ser igual ou posterior à data de início",
-    "batchCreateSuccess": "{created} orçamentos criados ({skipped} ignorados)"
+    "batchCreateSuccess": "{created} orçamentos criados ({skipped} ignorados)",
+    "descriptionPlaceholder": "ex.: Meta mensal de supermercado"
   },
   "budgetDetails": {
     "budgetAmount": "Valor do Orçamento",
@@ -300,7 +301,8 @@
     "transactionsFor": "Transações em {categoryName} para {period}",
     "noTransactions": "Nenhuma transação encontrada para este período de orçamento.",
     "unknownCategory": "Categoria Desconhecida",
-    "noDescriptionLabel": "Sem descrição"
+    "noDescriptionLabel": "Sem descrição",
+    "description": "Descrição"
   },
   "errorBoundary": {
     "title": "Algo deu errado",
