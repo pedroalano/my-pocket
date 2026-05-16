@@ -4,5 +4,19 @@
     "categoryNotFound": "Category with ID {id} does not exist",
     "invalidType": "Invalid transaction type: {type}",
     "accountNotFound": "Account with ID {id} does not exist or does not belong to you"
+  },
+  "csv": {
+    "headers": {
+      "date": "Date",
+      "type": "Type",
+      "amount": "Amount",
+      "category": "Category",
+      "account": "Account",
+      "description": "Description"
+    },
+    "values": {
+      "income": "Income",
+      "expense": "Expense"
+    }
   }
 }

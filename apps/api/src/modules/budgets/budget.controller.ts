@@ -10,8 +10,11 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { BudgetService } from './budget.service';
 import {
   ApiGetAllBudgets,
@@ -27,8 +30,16 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { GetBudgetsQueryDto } from './dto/get-budgets-query.dto';
+import { ExportBudgetsQueryDto } from './dto/export-budgets-query.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
+
+function resolveLang(header?: string): string {
+  if (!header) return 'en';
+  const first = header.split(',')[0]?.trim().toLowerCase() ?? 'en';
+  if (first.startsWith('pt')) return 'pt-BR';
+  return 'en';
+}
 
 @ApiTags('budgets')
 @Controller('budgets')
@@ -44,6 +55,25 @@ export class BudgetController {
     @Query() query: GetBudgetsQueryDto,
   ): ReturnType<BudgetService['getAllBudgets']> {
     return this.budgetService.getAllBudgets(req.user.userId, query);
+  }
+
+  @Get('export')
+  async exportBudgets(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: ExportBudgetsQueryDto,
+    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    const lang = resolveLang(acceptLanguage);
+    const csv = await this.budgetService.exportBudgets(
+      req.user.userId,
+      query,
+      lang,
+    );
+    const filename = `budgets-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
   }
 
   @Get(':id')

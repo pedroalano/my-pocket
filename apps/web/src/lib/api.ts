@@ -78,16 +78,21 @@ async function tryRefreshToken(): Promise<string | null> {
   }
 }
 
+export interface ApiRequestOptions extends RequestInit {
+  responseType?: 'json' | 'blob';
+}
+
 export async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiRequestOptions = {},
   _isRetry = false,
 ): Promise<T> {
   const token = getToken();
+  const { responseType = 'json', ...fetchOptions } = options;
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     'Accept-Language': getLocale(),
-    ...options.headers,
+    ...fetchOptions.headers,
   };
 
   if (token) {
@@ -95,7 +100,7 @@ export async function apiRequest<T>(
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
@@ -128,6 +133,10 @@ export async function apiRequest<T>(
   // Handle 204 No Content
   if (response.status === 204) {
     return undefined as T;
+  }
+
+  if (responseType === 'blob') {
+    return (await response.blob()) as unknown as T;
   }
 
   return response.json();

@@ -726,4 +726,52 @@ describe('TransactionsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('exportTransactions', () => {
+    it('should return CSV with BOM, translated headers, and joined names', async () => {
+      prismaMock.transaction.findMany = jest.fn().mockResolvedValueOnce([
+        {
+          id: 'tx-1',
+          amount: 12.5,
+          type: TransactionType.EXPENSE,
+          date: new Date('2025-03-15T12:00:00.000Z'),
+          description: 'Lunch, with friend',
+          category: { name: 'Food' },
+          account: { name: 'Wallet' },
+        },
+      ]);
+
+      const csv = await service.exportTransactions(userId, {}, 'en');
+
+      expect(csv.charCodeAt(0)).toBe(0xfeff);
+      expect(csv).toContain('transactions.csv.headers.date');
+      expect(csv).toContain('transactions.csv.values.expense');
+      expect(csv).toContain('"Lunch, with friend"');
+      expect(csv).toContain('Food');
+      expect(csv).toContain('Wallet');
+      expect(csv).toContain('2025-03-15');
+      expect(csv).toContain('12.50');
+    });
+
+    it('should pass date filters to prisma where clause', async () => {
+      const spy = jest.fn().mockResolvedValue([]);
+      prismaMock.transaction.findMany = spy;
+      await service.exportTransactions(
+        userId,
+        { startDate: '2025-01-01', endDate: '2025-01-31' },
+        'en',
+      );
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId,
+            date: expect.objectContaining({
+              gte: expect.any(Date),
+              lte: expect.any(Date),
+            }),
+          }),
+        }),
+      );
+    });
+  });
 });

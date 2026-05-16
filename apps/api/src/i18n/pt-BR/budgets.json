@@ -6,5 +6,19 @@
     "invalidType": "Tipo de orçamento inválido: {type}",
     "invalidMonth": "O mês deve estar entre 1 e 12",
     "invalidDateRange": "A data de término deve ser igual ou posterior à data de início"
+  },
+  "csv": {
+    "headers": {
+      "month": "Mês",
+      "year": "Ano",
+      "type": "Tipo",
+      "category": "Categoria",
+      "amount": "Valor",
+      "description": "Descrição"
+    },
+    "values": {
+      "income": "Receita",
+      "expense": "Despesa"
+    }
   }
 }

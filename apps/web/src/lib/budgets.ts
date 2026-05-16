@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api, apiRequest } from '@/lib/api';
 import { PaginatedResponse } from '@/lib/types';
 import {
   Budget,
@@ -13,6 +13,12 @@ import {
 export interface GetBudgetsParams {
   page?: number;
   limit?: number;
+  month?: number;
+  year?: number;
+  type?: string;
+}
+
+export interface ExportBudgetsParams {
   month?: number;
   year?: number;
   type?: string;
@@ -51,4 +57,18 @@ export const budgetsApi = {
     api.put<Budget>(`/budgets/${id}`, data),
 
   delete: (id: string) => api.delete<void>(`/budgets/${id}`),
+
+  exportCsv: (params?: ExportBudgetsParams) => {
+    const searchParams = new URLSearchParams();
+    if (params?.month !== undefined)
+      searchParams.set('month', String(params.month));
+    if (params?.year !== undefined)
+      searchParams.set('year', String(params.year));
+    if (params?.type) searchParams.set('type', params.type);
+    const qs = searchParams.toString();
+    return apiRequest<Blob>(`/budgets/export${qs ? `?${qs}` : ''}`, {
+      method: 'GET',
+      responseType: 'blob',
+    });
+  },
 };

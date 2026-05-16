@@ -1238,4 +1238,40 @@ export const handlers = [
       return HttpResponse.json({ ...user, isActive: body.isActive });
     },
   ),
+
+  http.get(`${API_URL}/transactions/export`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const csv = '﻿Date,Type,Amount,Category,Account,Description\n';
+    return new HttpResponse(csv, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="transactions-test.csv"',
+      },
+    });
+  }),
+
+  http.get(`${API_URL}/budgets/export`, ({ request }) => {
+    const auth = request.headers.get('Authorization');
+    if (!auth?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { message: 'Unauthorized', statusCode: 401 },
+        { status: 401 },
+      );
+    }
+    const csv = '﻿Month,Year,Type,Category,Amount,Description\n';
+    return new HttpResponse(csv, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="budgets-test.csv"',
+      },
+    });
+  }),
 ];

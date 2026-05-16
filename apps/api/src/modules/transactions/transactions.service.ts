@@ -5,9 +5,11 @@ import {
 } from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
+import { stringify } from 'csv-stringify/sync';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
+import { ExportTransactionsQueryDto } from './dto/export-transactions-query.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
@@ -259,6 +261,75 @@ export class TransactionsService {
     });
 
     return this.mapTransaction(updatedTransaction);
+  }
+
+  async exportTransactions(
+    userId: string,
+    query: ExportTransactionsQueryDto = {},
+    lang: string = 'en',
+  ): Promise<string> {
+    const where: Record<string, unknown> = { userId };
+
+    if (query.type) {
+      where['type'] = query.type;
+    }
+
+    if (query.categoryId) {
+      where['categoryId'] = query.categoryId;
+    }
+
+    if (query.startDate || query.endDate) {
+      const dateFilter: Record<string, Date> = {};
+      if (query.startDate) {
+        dateFilter['gte'] = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        dateFilter['lte'] = new Date(
+          `${query.endDate.slice(0, 10)}T23:59:59.999Z`,
+        );
+      }
+      where['date'] = dateFilter;
+    }
+
+    const transactions = await this.prisma.transaction.findMany({
+      where,
+      select: {
+        id: true,
+        amount: true,
+        type: true,
+        date: true,
+        description: true,
+        category: { select: { name: true } },
+        account: { select: { name: true } },
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    const t = (key: string): string =>
+      this.i18n.t(`transactions.csv.${key}`, { lang });
+
+    const headers = [
+      t('headers.date'),
+      t('headers.type'),
+      t('headers.amount'),
+      t('headers.category'),
+      t('headers.account'),
+      t('headers.description'),
+    ];
+
+    const rows = transactions.map((row) => [
+      row.date.toISOString().slice(0, 10),
+      row.type === TransactionType.INCOME
+        ? t('values.income')
+        : t('values.expense'),
+      formatDecimal(row.amount),
+      row.category?.name ?? '',
+      row.account?.name ?? '',
+      row.description ?? '',
+    ]);
+
+    const csv = stringify([headers, ...rows]);
+    return `\uFEFF${csv}`;
   }
 
   async deleteTransaction(id: string, userId: string) {

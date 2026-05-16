@@ -1694,4 +1694,44 @@ describe('BudgetService', () => {
       expect(result).toEqual({ created: 1, skipped: 0 });
     });
   });
+
+  describe('exportBudgets', () => {
+    it('should return CSV with BOM, translated headers, and joined category name', async () => {
+      prismaMock.budget.findMany = jest.fn().mockResolvedValueOnce([
+        {
+          id: 'b-1',
+          amount: 200,
+          description: 'May groceries',
+          month: 5,
+          year: 2026,
+          type: BudgetType.EXPENSE,
+          category: { name: 'Groceries' },
+        },
+      ]);
+
+      const csv = await service.exportBudgets(userId, {}, 'en');
+
+      expect(csv.charCodeAt(0)).toBe(0xfeff);
+      expect(csv).toContain('budgets.csv.headers.month');
+      expect(csv).toContain('budgets.csv.values.expense');
+      expect(csv).toContain('Groceries');
+      expect(csv).toContain('May groceries');
+      expect(csv).toContain('200.00');
+    });
+
+    it('should pass month/year/type to prisma where clause', async () => {
+      const spy = jest.fn().mockResolvedValue([]);
+      prismaMock.budget.findMany = spy;
+      await service.exportBudgets(
+        userId,
+        { month: 5, year: 2026, type: BudgetType.INCOME },
+        'en',
+      );
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId, month: 5, year: 2026, type: BudgetType.INCOME },
+        }),
+      );
+    });
+  });
 });

@@ -10,8 +10,11 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { TransactionsService } from './transactions.service';
 import {
   ApiGetAllTransactions,
@@ -23,8 +26,16 @@ import {
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
+import { ExportTransactionsQueryDto } from './dto/export-transactions-query.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
+
+function resolveLang(header?: string): string {
+  if (!header) return 'en';
+  const first = header.split(',')[0]?.trim().toLowerCase() ?? 'en';
+  if (first.startsWith('pt')) return 'pt-BR';
+  return 'en';
+}
 
 @ApiTags('transactions')
 @Controller('transactions')
@@ -40,6 +51,25 @@ export class TransactionController {
     @Query() query: GetTransactionsQueryDto,
   ): ReturnType<TransactionsService['getAllTransactions']> {
     return this.transactionsService.getAllTransactions(req.user.userId, query);
+  }
+
+  @Get('export')
+  async exportTransactions(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: ExportTransactionsQueryDto,
+    @Headers('accept-language') acceptLanguage: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    const lang = resolveLang(acceptLanguage);
+    const csv = await this.transactionsService.exportTransactions(
+      req.user.userId,
+      query,
+      lang,
+    );
+    const filename = `transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
   }
 
   @Get(':id')

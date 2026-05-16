@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api, apiRequest } from '@/lib/api';
 import { PaginatedResponse } from '@/lib/types';
 import {
   Transaction,
@@ -9,6 +9,13 @@ import {
 export interface GetTransactionsParams {
   page?: number;
   limit?: number;
+  type?: string;
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ExportTransactionsParams {
   type?: string;
   categoryId?: string;
   startDate?: string;
@@ -41,4 +48,17 @@ export const transactionsApi = {
     api.put<Transaction>(`/transactions/${id}`, data),
 
   delete: (id: string) => api.delete<void>(`/transactions/${id}`),
+
+  exportCsv: (params?: ExportTransactionsParams) => {
+    const searchParams = new URLSearchParams();
+    if (params?.type) searchParams.set('type', params.type);
+    if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
+    if (params?.startDate) searchParams.set('startDate', params.startDate);
+    if (params?.endDate) searchParams.set('endDate', params.endDate);
+    const qs = searchParams.toString();
+    return apiRequest<Blob>(`/transactions/export${qs ? `?${qs}` : ''}`, {
+      method: 'GET',
+      responseType: 'blob',
+    });
+  },
 };

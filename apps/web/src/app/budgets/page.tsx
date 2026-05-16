@@ -12,6 +12,7 @@ import { Budget, Category, BudgetType } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { BudgetsTableSkeleton } from '@/components/BudgetsTableSkeleton';
 import { Pagination } from '@/components/Pagination';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -378,6 +379,21 @@ export default function BudgetsPage() {
             ))}
           </SelectContent>
         </Select>
+
+        <ExportCsvButton
+          onExport={() =>
+            budgetsApi.exportCsv({
+              month:
+                filterMonth !== 'ALL' ? (filterMonth as number) : undefined,
+              year: filterYear !== 'ALL' ? (filterYear as number) : undefined,
+              type: filterType !== 'ALL' ? filterType : undefined,
+            })
+          }
+          filenamePrefix="budgets"
+          label={t('exportCsv')}
+          successMessage={t('exportSuccess')}
+          errorMessage={t('exportError')}
+        />
       </div>
 
       {hasSpendingInfo && filterCategory !== 'ALL' && (
