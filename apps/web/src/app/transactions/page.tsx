@@ -12,6 +12,7 @@ import { Transaction, Category, TransactionType } from '@/types';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { TransactionsTableSkeleton } from '@/components/TransactionsTableSkeleton';
 import { Pagination } from '@/components/Pagination';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -258,6 +259,21 @@ export default function TransactionsPage() {
         <Button variant="outline" onClick={clearFilters}>
           {tCommon('clearFilters')}
         </Button>
+
+        <ExportCsvButton
+          onExport={() =>
+            transactionsApi.exportCsv({
+              type: filterType !== 'ALL' ? filterType : undefined,
+              categoryId: filterCategory !== 'ALL' ? filterCategory : undefined,
+              startDate: filterStartDate || undefined,
+              endDate: filterEndDate || undefined,
+            })
+          }
+          filenamePrefix="transactions"
+          label={t('exportCsv')}
+          successMessage={t('exportSuccess')}
+          errorMessage={t('exportError')}
+        />
       </div>
 
       <div className="bg-card rounded-lg shadow">

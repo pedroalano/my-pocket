@@ -185,7 +185,10 @@
     "failedToDelete": "Failed to delete transaction",
     "createTitle": "Create Transaction",
     "editTitle": "Edit Transaction",
-    "failedToLoadSingle": "Failed to load transaction"
+    "failedToLoadSingle": "Failed to load transaction",
+    "exportCsv": "Export CSV",
+    "exportSuccess": "Transactions exported successfully",
+    "exportError": "Failed to export transactions"
   },
   "accounts": {
     "title": "Accounts",
@@ -260,7 +263,10 @@
     "editTitle": "Edit Budget",
     "failedToLoadSingle": "Failed to load budget",
     "notFound": "Budget not found",
-    "detailsTitle": "Budget Details"
+    "detailsTitle": "Budget Details",
+    "exportCsv": "Export CSV",
+    "exportSuccess": "Budgets exported successfully",
+    "exportError": "Failed to export budgets"
   },
   "budgetForm": {
     "amountPlaceholder": "e.g., 500.00",

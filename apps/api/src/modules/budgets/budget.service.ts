@@ -6,10 +6,12 @@ import {
 } from '@nestjs/common';
 import { BudgetType, Prisma, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
+import { stringify } from 'csv-stringify/sync';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { GetBudgetsQueryDto } from './dto/get-budgets-query.dto';
+import { ExportBudgetsQueryDto } from './dto/export-budgets-query.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
@@ -697,6 +699,62 @@ export class BudgetService {
       remaining: formatDecimal(remaining),
       utilizationPercentage,
     };
+  }
+
+  async exportBudgets(
+    userId: string,
+    query: ExportBudgetsQueryDto = {},
+    lang: string = 'en',
+  ): Promise<string> {
+    const where: Record<string, unknown> = { userId };
+
+    if (query.month !== undefined) {
+      where['month'] = query.month;
+    }
+    if (query.year !== undefined) {
+      where['year'] = query.year;
+    }
+    if (query.type) {
+      where['type'] = query.type;
+    }
+
+    const budgets = await this.prisma.budget.findMany({
+      where,
+      select: {
+        id: true,
+        amount: true,
+        description: true,
+        month: true,
+        year: true,
+        type: true,
+        category: { select: { name: true } },
+      },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    });
+
+    const t = (key: string): string =>
+      this.i18n.t(`budgets.csv.${key}`, { lang });
+
+    const headers = [
+      t('headers.month'),
+      t('headers.year'),
+      t('headers.type'),
+      t('headers.category'),
+      t('headers.amount'),
+      t('headers.description'),
+    ];
+
+    const rows = budgets.map((row) => [
+      String(row.month),
+      String(row.year),
+      row.type === BudgetType.INCOME ? t('values.income') : t('values.expense'),
+      row.category?.name ?? '',
+      formatDecimal(row.amount),
+      row.description ?? '',
+    ]);
+
+    const csv = stringify([headers, ...rows]);
+    return `\uFEFF${csv}`;
   }
 
   async getBudgetsByCategory(

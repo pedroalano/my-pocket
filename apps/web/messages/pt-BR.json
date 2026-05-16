@@ -185,7 +185,10 @@
     "failedToDelete": "Falha ao excluir transação",
     "createTitle": "Criar Transação",
     "editTitle": "Editar Transação",
-    "failedToLoadSingle": "Falha ao carregar transação"
+    "failedToLoadSingle": "Falha ao carregar transação",
+    "exportCsv": "Exportar CSV",
+    "exportSuccess": "Transações exportadas com sucesso",
+    "exportError": "Falha ao exportar transações"
   },
   "accounts": {
     "title": "Contas",
@@ -260,7 +263,10 @@
     "editTitle": "Editar Orçamento",
     "failedToLoadSingle": "Falha ao carregar orçamento",
     "notFound": "Orçamento não encontrado",
-    "detailsTitle": "Detalhes do Orçamento"
+    "detailsTitle": "Detalhes do Orçamento",
+    "exportCsv": "Exportar CSV",
+    "exportSuccess": "Orçamentos exportados com sucesso",
+    "exportError": "Falha ao exportar orçamentos"
   },
   "budgetForm": {
     "amountPlaceholder": "ex.: 500,00",
