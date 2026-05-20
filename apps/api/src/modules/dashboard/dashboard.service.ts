@@ -147,12 +147,33 @@ export class DashboardService {
       });
     });
 
+    const budgetByCategory = new Map<
+      string,
+      {
+        category: { id: string; name: string; type: CategoryType };
+        budgetAmount: number;
+      }
+    >();
+
+    budgets.forEach((budget) => {
+      const amount = Number(budget.amount);
+      const existing = budgetByCategory.get(budget.categoryId);
+      if (existing) {
+        existing.budgetAmount += amount;
+      } else {
+        budgetByCategory.set(budget.categoryId, {
+          category: budget.category,
+          budgetAmount: amount,
+        });
+      }
+    });
+
     const results: BudgetVsActualDto[] = [];
     const budgetCategoryIds = new Set<string>();
 
-    budgets.forEach((budget) => {
-      const budgetAmount = Number(budget.amount);
-      const actualEntry = actualByCategory.get(budget.categoryId);
+    budgetByCategory.forEach((entry, categoryId) => {
+      const budgetAmount = entry.budgetAmount;
+      const actualEntry = actualByCategory.get(categoryId);
       const actualAmount = actualEntry?.actualAmount ?? 0;
       const difference = budgetAmount - actualAmount;
       const percentageUsed =
@@ -163,15 +184,15 @@ export class DashboardService {
           : (actualAmount / budgetAmount) * 100;
 
       results.push({
-        categoryId: budget.categoryId,
-        category: budget.category,
+        categoryId,
+        category: entry.category,
         budget: budgetAmount,
         actual: actualAmount,
         difference,
         percentageUsed,
       });
 
-      budgetCategoryIds.add(budget.categoryId);
+      budgetCategoryIds.add(categoryId);
     });
 
     actualByCategory.forEach((entry, categoryId) => {
