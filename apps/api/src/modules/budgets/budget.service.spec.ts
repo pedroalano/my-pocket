@@ -1,13 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   BadRequestException,
-  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import {
   BudgetType,
   CategoryType,
-  Prisma,
   TransactionType,
 } from '@prisma/client';
 import { I18nService } from 'nestjs-i18n';
@@ -69,13 +67,6 @@ const createPrismaMock = () => {
     '11111111-2222-3333-4444-555555555555',
   ];
 
-  const matchesBudgetUnique = (budget: BudgetRecord, compare: BudgetRecord) =>
-    budget.categoryId === compare.categoryId &&
-    budget.userId === compare.userId &&
-    budget.month === compare.month &&
-    budget.year === compare.year &&
-    budget.type === compare.type;
-
   return {
     budget: {
       findMany: jest.fn(({ where } = {}) => {
@@ -123,18 +114,6 @@ const createPrismaMock = () => {
             budgetIds[budgetIndex++] ?? 'dddddddd-dddd-dddd-dddd-dddddddddddd',
           ...payload,
         };
-        const duplicate = budgets.find((budget) =>
-          matchesBudgetUnique(budget, nextBudget),
-        );
-        if (duplicate) {
-          throw new Prisma.PrismaClientKnownRequestError(
-            'Unique constraint failed',
-            {
-              code: 'P2002',
-              clientVersion: 'test',
-            },
-          );
-        }
         budgets.push(nextBudget);
         // Return with userId for service to use
         return nextBudget;
@@ -151,18 +130,6 @@ const createPrismaMock = () => {
           ...budgets[index],
           ...payload,
         } as BudgetRecord;
-        const duplicate = budgets.find(
-          (budget) => budget.id !== id && matchesBudgetUnique(budget, updated),
-        );
-        if (duplicate) {
-          throw new Prisma.PrismaClientKnownRequestError(
-            'Unique constraint failed',
-            {
-              code: 'P2002',
-              clientVersion: 'test',
-            },
-          );
-        }
         budgets[index] = updated;
         // Return with userId for service to use
         return updated;
@@ -374,7 +341,7 @@ describe('BudgetService', () => {
       );
     });
 
-    it('should throw BadRequestException when duplicate budget exists', async () => {
+    it('should allow creating multiple budgets for the same category and month', async () => {
       const createDto: CreateBudgetDto = {
         amount: 500,
         categoryId,
@@ -382,14 +349,11 @@ describe('BudgetService', () => {
         year: 2026,
       };
 
-      await service.createBudget(createDto, userId);
+      const result1 = await service.createBudget(createDto, userId);
+      const result2 = await service.createBudget(createDto, userId);
 
-      await expect(service.createBudget(createDto, userId)).rejects.toThrow(
-        ConflictException,
-      );
-      await expect(service.createBudget(createDto, userId)).rejects.toThrow(
-        'budgets.errors.alreadyExists',
-      );
+      expect(result1.id).not.toBe(result2.id);
+      expect((await service.getAllBudgets(userId)).data).toHaveLength(2);
     });
 
     it('should allow creating different budgets for different months', async () => {
@@ -570,46 +534,6 @@ describe('BudgetService', () => {
       });
     });
 
-    it('should throw BadRequestException when updating creates duplicate', async () => {
-      // Create second budget
-      jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
-        ...buildCategory(otherCategoryId, 'Entertainment', userId),
-      });
-
-      const createDto2: CreateBudgetDto = {
-        amount: 300,
-        categoryId: otherCategoryId,
-        month: 2,
-        year: 2026,
-      };
-      await service.createBudget(createDto2, userId);
-
-      // Try to update second budget to conflict with first
-      jest.spyOn(categoriesService, 'getCategoryById').mockResolvedValue({
-        ...buildCategory(categoryId, 'Groceries', userId),
-      });
-
-      const updateDto: UpdateBudgetDto = {
-        categoryId,
-        month: 1,
-      };
-
-      const { data: budgetsData } = await service.getAllBudgets(userId);
-      const secondBudget = budgetsData.find(
-        (budget) => budget.categoryId === otherCategoryId,
-      );
-
-      if (!secondBudget) {
-        throw new Error('Expected second budget to exist');
-      }
-
-      await expect(
-        service.updateBudget(secondBudget.id, updateDto, userId),
-      ).rejects.toThrow(ConflictException);
-      await expect(
-        service.updateBudget(secondBudget.id, updateDto, userId),
-      ).rejects.toThrow('budgets.errors.alreadyExists');
-    });
   });
 
   describe('getSpentAmount', () => {
@@ -1567,7 +1491,7 @@ describe('BudgetService', () => {
       expect(result).toEqual({ created: 3, skipped: 0 });
     });
 
-    it('should skip months that already have a budget (P2002) and increment skipped', async () => {
+    it('should create all budgets in range even when category+month already has a budget', async () => {
       // Pre-create budget for month 2
       await service.createBatchBudgets(
         {
@@ -1581,7 +1505,7 @@ describe('BudgetService', () => {
         userId,
       );
 
-      // Now create range 1–3; month 2 already exists
+      // Now create range 1–3; month 2 already has one budget — all 3 months are still created
       const result = await service.createBatchBudgets(
         {
           amount: 500,
@@ -1594,8 +1518,8 @@ describe('BudgetService', () => {
         userId,
       );
 
-      expect(result.created).toBe(2);
-      expect(result.skipped).toBe(1);
+      expect(result.created).toBe(3);
+      expect(result.skipped).toBe(0);
     });
 
     it('should throw BadRequestException when endDate < startDate', async () => {
