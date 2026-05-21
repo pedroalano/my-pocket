@@ -855,7 +855,7 @@ describe('Personal Finance API E2E', () => {
           .expect(400);
       });
 
-      it('should reject duplicate budget for same month/category', async () => {
+      it('should allow multiple budgets for the same month/category', async () => {
         // Create first budget
         await request(app.getHttpServer())
           .post('/budgets')
@@ -868,7 +868,7 @@ describe('Personal Finance API E2E', () => {
           })
           .expect(201);
 
-        // Try to create duplicate
+        // Create second budget for the same category/month — now allowed
         await request(app.getHttpServer())
           .post('/budgets')
           .set('Authorization', `Bearer ${user1Token}`)
@@ -878,7 +878,7 @@ describe('Personal Finance API E2E', () => {
             month: 2,
             year: 2026,
           })
-          .expect(409);
+          .expect(201);
       });
 
       it('should prevent overspending (budget validation)', async () => {
