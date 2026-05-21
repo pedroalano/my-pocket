@@ -1,10 +1,9 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BudgetType, Prisma, TransactionType } from '@prisma/client';
+import { BudgetType, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 import { stringify } from 'csv-stringify/sync';
 import { CreateBudgetDto } from './dto/create-budget.dto';
@@ -295,40 +294,20 @@ export class BudgetService {
       );
     }
 
-    try {
-      const newBudget = await this.prisma.budget.create({
-        data: {
-          amount: budgetData.amount,
-          description: budgetData.description ?? null,
-          categoryId: budgetData.categoryId,
-          month: budgetData.month,
-          year: budgetData.year,
-          type: category.type as unknown as BudgetType,
-          userId,
-        },
-        select: this.budgetSelect,
-      });
-      const { userId: _userId, ...budgetWithoutUserId } = newBudget;
-      return this.mapBudget(budgetWithoutUserId);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          this.i18n.t('budgets.errors.alreadyExists', {
-            args: {
-              categoryName: category.name,
-              type: category.type,
-              month: budgetData.month,
-              year: budgetData.year,
-            },
-            lang: this.lang,
-          }),
-        );
-      }
-      throw error;
-    }
+    const newBudget = await this.prisma.budget.create({
+      data: {
+        amount: budgetData.amount,
+        description: budgetData.description ?? null,
+        categoryId: budgetData.categoryId,
+        month: budgetData.month,
+        year: budgetData.year,
+        type: category.type as unknown as BudgetType,
+        userId,
+      },
+      select: this.budgetSelect,
+    });
+    const { userId: _userId, ...budgetWithoutUserId } = newBudget;
+    return this.mapBudget(budgetWithoutUserId);
   }
 
   async createBatchBudgets(dto: CreateBatchBudgetDto, userId: string) {
@@ -363,38 +342,26 @@ export class BudgetService {
     }
 
     let created = 0;
-    let skipped = 0;
 
     for (let ordinal = startOrdinal; ordinal <= endOrdinal; ordinal++) {
       const year = Math.floor((ordinal - 1) / 12);
       const month = ((ordinal - 1) % 12) + 1;
 
-      try {
-        await this.prisma.budget.create({
-          data: {
-            amount: dto.amount,
-            categoryId: dto.categoryId,
-            month,
-            year,
-            type: category.type as unknown as BudgetType,
-            userId,
-          },
-          select: this.budgetSelect,
-        });
-        created++;
-      } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002'
-        ) {
-          skipped++;
-        } else {
-          throw error;
-        }
-      }
+      await this.prisma.budget.create({
+        data: {
+          amount: dto.amount,
+          categoryId: dto.categoryId,
+          month,
+          year,
+          type: category.type as unknown as BudgetType,
+          userId,
+        },
+        select: this.budgetSelect,
+      });
+      created++;
     }
 
-    return { created, skipped };
+    return { created, skipped: 0 };
   }
 
   async updateBudget(id: string, budgetData: UpdateBudgetDto, userId: string) {
@@ -417,7 +384,6 @@ export class BudgetService {
     }
 
     let newType: BudgetType | undefined;
-    let categoryName: string | undefined;
 
     if (budgetData.categoryId !== undefined) {
       let category = null;
@@ -441,62 +407,22 @@ export class BudgetService {
         );
       }
       newType = category.type as unknown as BudgetType;
-      categoryName = category.name;
     }
 
-    try {
-      const updatedBudget = await this.prisma.budget.update({
-        where: { id },
-        data: {
-          amount: budgetData.amount,
-          description: budgetData.description,
-          categoryId: budgetData.categoryId,
-          month: budgetData.month,
-          year: budgetData.year,
-          type: newType,
-        },
-        select: this.budgetSelect,
-      });
-      const { userId: _userId, ...budgetWithoutUserId } = updatedBudget;
-      return this.mapBudget(budgetWithoutUserId);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        const resolvedCategoryId =
-          budgetData.categoryId ?? existingBudget.categoryId;
-        if (!categoryName) {
-          try {
-            const cat = await this.categoriesService.getCategoryById(
-              resolvedCategoryId,
-              userId,
-            );
-            categoryName = cat?.name;
-          } catch {
-            categoryName = resolvedCategoryId;
-          }
-        }
-        const payload = {
-          categoryName: categoryName ?? resolvedCategoryId,
-          type: newType ?? existingBudget.type,
-          month: budgetData.month ?? existingBudget.month,
-          year: budgetData.year ?? existingBudget.year,
-        };
-        throw new ConflictException(
-          this.i18n.t('budgets.errors.alreadyExists', {
-            args: {
-              categoryName: payload.categoryName,
-              type: payload.type,
-              month: payload.month,
-              year: payload.year,
-            },
-            lang: this.lang,
-          }),
-        );
-      }
-      throw error;
-    }
+    const updatedBudget = await this.prisma.budget.update({
+      where: { id },
+      data: {
+        amount: budgetData.amount,
+        description: budgetData.description,
+        categoryId: budgetData.categoryId,
+        month: budgetData.month,
+        year: budgetData.year,
+        type: newType,
+      },
+      select: this.budgetSelect,
+    });
+    const { userId: _userId, ...budgetWithoutUserId } = updatedBudget;
+    return this.mapBudget(budgetWithoutUserId);
   }
 
   async deleteBudget(id: string, userId: string) {

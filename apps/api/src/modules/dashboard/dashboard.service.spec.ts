@@ -360,6 +360,48 @@ describe('DashboardService', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('should sum multiple budgets for the same category into a single result', async () => {
+      const budgets = [
+        {
+          amount: 400,
+          categoryId: 'cat-1',
+          category: { id: 'cat-1', name: 'Food', type: CategoryType.EXPENSE },
+        },
+        {
+          amount: 600,
+          categoryId: 'cat-1',
+          category: { id: 'cat-1', name: 'Food', type: CategoryType.EXPENSE },
+        },
+      ];
+
+      const transactions = [
+        {
+          amount: 700,
+          categoryId: 'cat-1',
+          category: { id: 'cat-1', name: 'Food', type: CategoryType.EXPENSE },
+        },
+      ];
+
+      jest
+        .spyOn(prismaService.budget, 'findMany')
+        .mockResolvedValue(budgets as any);
+      jest
+        .spyOn(prismaService.transaction, 'findMany')
+        .mockResolvedValue(transactions as any);
+
+      const result = await service.getBudgetVsActual(mockUserId, 1, 2026);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Food', type: CategoryType.EXPENSE },
+        budget: 1000,
+        actual: 700,
+        difference: 300,
+        percentageUsed: 70,
+      });
+    });
   });
 
   describe('getCategoryBreakdown', () => {
