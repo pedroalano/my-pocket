@@ -355,6 +355,7 @@ export class BudgetService {
           year,
           type: category.type as unknown as BudgetType,
           userId,
+          description: dto.description,
         },
         select: this.budgetSelect,
       });
