@@ -167,6 +167,7 @@ export interface CreateBatchBudgetDto {
   startYear: number;
   endMonth: number;
   endYear: number;
+  description?: string;
 }
 
 export interface BatchBudgetResponse {

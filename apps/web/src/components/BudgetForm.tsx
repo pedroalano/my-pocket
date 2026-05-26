@@ -155,6 +155,7 @@ export function BudgetForm({
           startYear: yearNum,
           endMonth: endMonth as number,
           endYear: endYearNum,
+          description: description || undefined,
         });
         toast.success(
           t('batchCreateSuccess', {
