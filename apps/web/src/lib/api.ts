@@ -1,4 +1,6 @@
 import { ApiError } from '@/types';
+import { getLocale } from './cookies';
+import { SKIP_REFRESH_ENDPOINTS, tryRefreshToken } from './auth-refresh';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -21,61 +23,6 @@ export function setAccessToken(token: string | null): void {
 
 function getToken(): string | null {
   return _accessToken;
-}
-
-function getRefreshTokenFromCookie(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie
-    .split('; ')
-    .find((r) => r.startsWith('refresh_token='));
-  return match ? decodeURIComponent(match.split('=')[1]) : null;
-}
-
-function getLocale(): string {
-  if (typeof document === 'undefined') return 'en';
-  const match = document.cookie
-    .split('; ')
-    .find((r) => r.startsWith('NEXT_LOCALE='));
-  return match ? match.split('=')[1] : 'en';
-}
-
-// Auth endpoints that should NOT trigger the 401 refresh interceptor
-const SKIP_REFRESH_ENDPOINTS = [
-  '/auths/refresh',
-  '/auths/login',
-  '/auths/register',
-];
-
-async function tryRefreshToken(): Promise<string | null> {
-  const refreshToken = getRefreshTokenFromCookie();
-  if (!refreshToken) return null;
-
-  try {
-    const response = await fetch(`${API_URL}/auths/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-
-    if (!response.ok) {
-      // Revoke the stale refresh token cookie
-      const secureFlag =
-        window.location.protocol === 'https:' ? '; Secure' : '';
-      document.cookie = `refresh_token=; path=/; max-age=0; SameSite=Strict${secureFlag}`;
-      return null;
-    }
-
-    const data = await response.json();
-    if (data.refresh_token) {
-      const maxAge = 60 * 60 * 24 * 7;
-      const secureFlag =
-        window.location.protocol === 'https:' ? '; Secure' : '';
-      document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=${maxAge}; SameSite=Strict${secureFlag}`;
-    }
-    return data.access_token ?? null;
-  } catch {
-    return null;
-  }
 }
 
 export interface ApiRequestOptions extends RequestInit {
@@ -114,7 +61,6 @@ export async function apiRequest<T>(
       setAccessToken(newToken);
       return apiRequest<T>(endpoint, options, true);
     }
-    // Refresh failed — clear state and redirect to login
     setAccessToken(null);
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
@@ -130,7 +76,6 @@ export async function apiRequest<T>(
     throw new ApiException(response.status, error.message);
   }
 
-  // Handle 204 No Content
   if (response.status === 204) {
     return undefined as T;
   }
