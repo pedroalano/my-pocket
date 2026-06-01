@@ -9,6 +9,8 @@ import {
   ReactNode,
 } from 'react';
 import { api, ApiException, setAccessToken } from '@/lib/api';
+import { getRefreshToken, setRefreshToken, clearRefreshToken } from '@/lib/cookies';
+import { decodeToken } from '@/lib/token';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types';
 
 interface AuthContextType {
@@ -26,42 +28,6 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
-
-function decodeToken(token: string): User | null {
-  try {
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
-    return {
-      id: decoded.userId,
-      email: decoded.email,
-      name: decoded.name || decoded.email.split('@')[0],
-      isAdmin: decoded.isAdmin ?? false,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function setRefreshTokenCookie(token: string): void {
-  const maxAge = 60 * 60 * 24 * 7; // 7 days — matches backend refresh token expiry
-  const secure =
-    typeof location !== 'undefined' && location.protocol === 'https:'
-      ? '; Secure'
-      : '';
-  document.cookie = `refresh_token=${token}; path=/; max-age=${maxAge}; SameSite=Strict${secure}`;
-}
-
-function getRefreshTokenCookie(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie
-    .split('; ')
-    .find((r) => r.startsWith('refresh_token='));
-  return match ? decodeURIComponent(match.split('=')[1]) : null;
-}
-
-function clearRefreshTokenCookie(): void {
-  document.cookie = 'refresh_token=; path=/; max-age=0; SameSite=Strict';
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -82,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const refreshToken = getRefreshTokenCookie();
+    const refreshToken = getRefreshToken();
     if (!refreshToken) {
       setIsLoading(false);
       return;
@@ -91,12 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .post<AuthResponse>('/auths/refresh', { refresh_token: refreshToken })
       .then((response) => {
         if (response.refresh_token) {
-          setRefreshTokenCookie(response.refresh_token);
+          setRefreshToken(response.refresh_token);
         }
         applySession(response.access_token);
       })
       .catch(() => {
-        clearRefreshTokenCookie();
+        clearRefreshToken();
         clearSession();
       })
       .finally(() => {
@@ -112,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new ApiException(401, 'Invalid token received');
     }
     if (response.refresh_token) {
-      setRefreshTokenCookie(response.refresh_token);
+      setRefreshToken(response.refresh_token);
     }
     setAccessToken(response.access_token);
     setToken(response.access_token);
@@ -125,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithTokens = useCallback(
     (accessToken: string, refreshToken: string) => {
-      setRefreshTokenCookie(refreshToken);
+      setRefreshToken(refreshToken);
       applySession(accessToken);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     api.post('/auths/logout').catch(() => {}); // best-effort server-side revocation
-    clearRefreshTokenCookie();
+    clearRefreshToken();
     clearSession();
   }, []);
 
