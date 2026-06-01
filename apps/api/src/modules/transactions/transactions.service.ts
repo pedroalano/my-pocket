@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CategoryType, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
-import { stringify } from 'csv-stringify/sync';
+import { buildCsv } from '../shared/utils/build-csv';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
@@ -334,8 +334,7 @@ export class TransactionsService {
       row.description ?? '',
     ]);
 
-    const csv = stringify([headers, ...rows]);
-    return `\uFEFF${csv}`;
+    return buildCsv(headers, rows);
   }
 
   async deleteTransaction(id: string, userId: string) {

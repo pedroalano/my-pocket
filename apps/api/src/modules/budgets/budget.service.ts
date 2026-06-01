@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { BudgetType, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
-import { stringify } from 'csv-stringify/sync';
+import { buildCsv } from '../shared/utils/build-csv';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
@@ -633,8 +633,7 @@ export class BudgetService {
       row.description ?? '',
     ]);
 
-    const csv = stringify([headers, ...rows]);
-    return `\uFEFF${csv}`;
+    return buildCsv(headers, rows);
   }
 
   async getBudgetsByCategory(
