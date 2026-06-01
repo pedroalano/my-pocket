@@ -1,43 +1,44 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
-import { I18nService } from 'nestjs-i18n';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
+import {
+  GetDashboardQueryDto,
+  GetTopExpensesQueryDto,
+} from './dto/get-dashboard-query.dto';
 
 describe('DashboardController', () => {
   let controller: DashboardController;
   let service: DashboardService;
 
   const mockUserId = 'user-123';
-  const mockAuthenticatedRequest = {
-    user: {
-      userId: mockUserId,
-      email: 'test@example.com',
-      name: 'Test User',
-    },
+  const mockReq = {
+    user: { userId: mockUserId, email: 'test@example.com', name: 'Test User' },
   } as unknown as AuthenticatedRequest;
 
-  beforeEach(async () => {
-    const mockDashboardService = {
-      getMonthlySummary: jest.fn(),
-      getBudgetVsActual: jest.fn(),
-      getCategoryBreakdown: jest.fn(),
-      getTopExpenses: jest.fn(),
-    };
+  const query = (month: number, year: number): GetDashboardQueryDto =>
+    ({ month, year }) as GetDashboardQueryDto;
 
+  const topQuery = (
+    month: number,
+    year: number,
+    limit = 10,
+  ): GetTopExpensesQueryDto => ({ month, year, limit }) as GetTopExpensesQueryDto;
+
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DashboardController],
       providers: [
         {
           provide: DashboardService,
-          useValue: mockDashboardService,
-        },
-        {
-          provide: I18nService,
-          useValue: { t: jest.fn((key: string) => key) },
+          useValue: {
+            getMonthlySummary: jest.fn(),
+            getBudgetVsActual: jest.fn(),
+            getCategoryBreakdown: jest.fn(),
+            getTopExpenses: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -56,536 +57,95 @@ describe('DashboardController', () => {
   });
 
   describe('getMonthlySummary', () => {
-    it('should return monthly summary for valid month and year', async () => {
-      const expectedResult = {
-        totalIncome: 5000,
-        totalExpense: 2000,
-        balance: 3000,
-        totalBudgetIncome: 0,
-        totalBudgetExpense: 0,
-        budgetBalance: 0,
-      };
+    const summary = {
+      totalIncome: 5000,
+      totalExpense: 2000,
+      balance: 3000,
+      totalBudgetIncome: 0,
+      totalBudgetExpense: 0,
+      budgetBalance: 0,
+    };
 
-      jest
-        .spyOn(service, 'getMonthlySummary')
-        .mockResolvedValue(expectedResult);
+    it('should delegate to service with userId and query params', async () => {
+      jest.spyOn(service, 'getMonthlySummary').mockResolvedValue(summary);
 
-      const result = await controller.getMonthlySummary(
-        mockAuthenticatedRequest,
-        2,
-        2026,
-      );
+      const result = await controller.getMonthlySummary(mockReq, query(2, 2026));
 
-      expect(result).toEqual(expectedResult);
-      expect(service.getMonthlySummary).toHaveBeenCalledWith(
-        mockUserId,
-        2,
-        2026,
-      );
-    });
-
-    it('should throw BadRequestException for invalid month (0)', async () => {
-      await expect(
-        controller.getMonthlySummary(mockAuthenticatedRequest, 0, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid month (13)', async () => {
-      await expect(
-        controller.getMonthlySummary(mockAuthenticatedRequest, 13, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should accept month 1 (January)', async () => {
-      const expectedResult = {
-        totalIncome: 1000,
-        totalExpense: 500,
-        balance: 500,
-        totalBudgetIncome: 0,
-        totalBudgetExpense: 0,
-        budgetBalance: 0,
-      };
-
-      jest
-        .spyOn(service, 'getMonthlySummary')
-        .mockResolvedValue(expectedResult);
-
-      const result = await controller.getMonthlySummary(
-        mockAuthenticatedRequest,
-        1,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getMonthlySummary).toHaveBeenCalledWith(
-        mockUserId,
-        1,
-        2026,
-      );
-    });
-
-    it('should accept month 12 (December)', async () => {
-      const expectedResult = {
-        totalIncome: 2000,
-        totalExpense: 1000,
-        balance: 1000,
-        totalBudgetIncome: 0,
-        totalBudgetExpense: 0,
-        budgetBalance: 0,
-      };
-
-      jest
-        .spyOn(service, 'getMonthlySummary')
-        .mockResolvedValue(expectedResult);
-
-      const result = await controller.getMonthlySummary(
-        mockAuthenticatedRequest,
-        12,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getMonthlySummary).toHaveBeenCalledWith(
-        mockUserId,
-        12,
-        2026,
-      );
+      expect(result).toEqual(summary);
+      expect(service.getMonthlySummary).toHaveBeenCalledWith(mockUserId, 2, 2026);
     });
 
     it('should return zero values when no transactions exist', async () => {
-      const expectedResult = {
-        totalIncome: 0,
-        totalExpense: 0,
-        balance: 0,
-        totalBudgetIncome: 0,
-        totalBudgetExpense: 0,
-        budgetBalance: 0,
-      };
+      const empty = { totalIncome: 0, totalExpense: 0, balance: 0, totalBudgetIncome: 0, totalBudgetExpense: 0, budgetBalance: 0 };
+      jest.spyOn(service, 'getMonthlySummary').mockResolvedValue(empty);
 
-      jest
-        .spyOn(service, 'getMonthlySummary')
-        .mockResolvedValue(expectedResult);
-
-      const result = await controller.getMonthlySummary(
-        mockAuthenticatedRequest,
-        3,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-    });
-
-    it('should use userId from authenticated request', async () => {
-      jest.spyOn(service, 'getMonthlySummary').mockResolvedValue({
-        totalIncome: 0,
-        totalExpense: 0,
-        balance: 0,
-        totalBudgetIncome: 0,
-        totalBudgetExpense: 0,
-        budgetBalance: 0,
-      });
-
-      await controller.getMonthlySummary(mockAuthenticatedRequest, 6, 2026);
-
-      expect(service.getMonthlySummary).toHaveBeenCalledWith(
-        mockUserId,
-        6,
-        2026,
-      );
+      const result = await controller.getMonthlySummary(mockReq, query(3, 2026));
+      expect(result).toEqual(empty);
     });
   });
 
   describe('getBudgetVsActual', () => {
-    it('should return budget vs actual comparison for valid month and year', async () => {
-      const expectedResult = [
-        {
-          category: { id: 'cat-1', name: 'Food', type: 'EXPENSE' },
-          budgetAmount: 1000,
-          actualAmount: 500,
-          difference: 500,
-          percentageUsed: 50,
-        },
-      ];
+    it('should delegate to service with userId and query params', async () => {
+      const expected = [{ categoryId: 'cat-1', category: { id: 'cat-1', name: 'Food', type: 'EXPENSE' }, budget: 1000, actual: 500, difference: 500, percentageUsed: 50 }];
+      jest.spyOn(service, 'getBudgetVsActual').mockResolvedValue(expected as any);
 
-      jest
-        .spyOn(service, 'getBudgetVsActual')
-        .mockResolvedValue(expectedResult as any);
+      const result = await controller.getBudgetVsActual(mockReq, query(2, 2026));
 
-      const result = await controller.getBudgetVsActual(
-        mockAuthenticatedRequest,
-        2,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getBudgetVsActual).toHaveBeenCalledWith(
-        mockUserId,
-        2,
-        2026,
-      );
+      expect(result).toEqual(expected);
+      expect(service.getBudgetVsActual).toHaveBeenCalledWith(mockUserId, 2, 2026);
     });
 
-    it('should throw BadRequestException for invalid month (0)', async () => {
-      await expect(
-        controller.getBudgetVsActual(mockAuthenticatedRequest, 0, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid month (13)', async () => {
-      await expect(
-        controller.getBudgetVsActual(mockAuthenticatedRequest, 13, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should use userId from authenticated request', async () => {
+    it('should return empty array when no budgets exist', async () => {
       jest.spyOn(service, 'getBudgetVsActual').mockResolvedValue([]);
-
-      await controller.getBudgetVsActual(mockAuthenticatedRequest, 6, 2026);
-
-      expect(service.getBudgetVsActual).toHaveBeenCalledWith(
-        mockUserId,
-        6,
-        2026,
-      );
+      const result = await controller.getBudgetVsActual(mockReq, query(6, 2026));
+      expect(result).toEqual([]);
     });
   });
 
   describe('getCategoryBreakdown', () => {
-    it('should return category breakdown for valid month and year', async () => {
-      const expectedResult = [
-        {
-          category: { id: 'cat-1', name: 'Food', type: 'EXPENSE' },
-          totalAmount: 500,
-          percentage: 50,
-        },
-        {
-          category: { id: 'cat-2', name: 'Transport', type: 'EXPENSE' },
-          totalAmount: 500,
-          percentage: 50,
-        },
-      ];
+    it('should delegate to service with userId and query params', async () => {
+      const expected = [{ categoryId: 'cat-1', category: { id: 'cat-1', name: 'Food', type: 'EXPENSE' }, totalAmount: 500, percentage: 100 }];
+      jest.spyOn(service, 'getCategoryBreakdown').mockResolvedValue(expected as any);
 
-      jest
-        .spyOn(service, 'getCategoryBreakdown')
-        .mockResolvedValue(expectedResult as any);
+      const result = await controller.getCategoryBreakdown(mockReq, query(3, 2026));
 
-      const result = await controller.getCategoryBreakdown(
-        mockAuthenticatedRequest,
-        3,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getCategoryBreakdown).toHaveBeenCalledWith(
-        mockUserId,
-        3,
-        2026,
-      );
-    });
-
-    it('should throw BadRequestException for invalid month (0)', async () => {
-      await expect(
-        controller.getCategoryBreakdown(mockAuthenticatedRequest, 0, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid month (13)', async () => {
-      await expect(
-        controller.getCategoryBreakdown(mockAuthenticatedRequest, 13, 2026),
-      ).rejects.toThrow(BadRequestException);
+      expect(result).toEqual(expected);
+      expect(service.getCategoryBreakdown).toHaveBeenCalledWith(mockUserId, 3, 2026);
     });
 
     it('should return empty array when no expenses exist', async () => {
       jest.spyOn(service, 'getCategoryBreakdown').mockResolvedValue([]);
-
-      const result = await controller.getCategoryBreakdown(
-        mockAuthenticatedRequest,
-        4,
-        2026,
-      );
-
+      const result = await controller.getCategoryBreakdown(mockReq, query(4, 2026));
       expect(result).toEqual([]);
-      expect(service.getCategoryBreakdown).toHaveBeenCalledWith(
-        mockUserId,
-        4,
-        2026,
-      );
-    });
-
-    it('should accept month 1 (January)', async () => {
-      const expectedResult = [
-        {
-          category: { id: 'cat-1', name: 'Food', type: 'EXPENSE' },
-          totalAmount: 1000,
-          percentage: 100,
-        },
-      ];
-
-      jest
-        .spyOn(service, 'getCategoryBreakdown')
-        .mockResolvedValue(expectedResult as any);
-
-      const result = await controller.getCategoryBreakdown(
-        mockAuthenticatedRequest,
-        1,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getCategoryBreakdown).toHaveBeenCalledWith(
-        mockUserId,
-        1,
-        2026,
-      );
-    });
-
-    it('should accept month 12 (December)', async () => {
-      const expectedResult = [
-        {
-          category: { id: 'cat-1', name: 'Food', type: 'EXPENSE' },
-          totalAmount: 750,
-          percentage: 75,
-        },
-        {
-          category: { id: 'cat-2', name: 'Transport', type: 'EXPENSE' },
-          totalAmount: 250,
-          percentage: 25,
-        },
-      ];
-
-      jest
-        .spyOn(service, 'getCategoryBreakdown')
-        .mockResolvedValue(expectedResult as any);
-
-      const result = await controller.getCategoryBreakdown(
-        mockAuthenticatedRequest,
-        12,
-        2026,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getCategoryBreakdown).toHaveBeenCalledWith(
-        mockUserId,
-        12,
-        2026,
-      );
-    });
-
-    it('should use userId from authenticated request', async () => {
-      jest.spyOn(service, 'getCategoryBreakdown').mockResolvedValue([]);
-
-      await controller.getCategoryBreakdown(mockAuthenticatedRequest, 6, 2026);
-
-      expect(service.getCategoryBreakdown).toHaveBeenCalledWith(
-        mockUserId,
-        6,
-        2026,
-      );
     });
   });
 
   describe('getTopExpenses', () => {
-    it('should return top expenses for valid month and year with default limit', async () => {
-      const expectedResult = [
-        {
-          id: 'tx-1',
-          description: 'Rent',
-          date: '2026-03-01T00:00:00.000Z',
-          amount: 1500,
-          category: { id: 'cat-1', name: 'Housing', type: 'EXPENSE' },
-        },
-        {
-          id: 'tx-2',
-          description: 'Groceries',
-          date: '2026-03-15T00:00:00.000Z',
-          amount: 300,
-          category: { id: 'cat-2', name: 'Food', type: 'EXPENSE' },
-        },
-      ];
+    const expenses = [
+      { id: 'tx-1', description: 'Rent', date: '2026-03-01T00:00:00.000Z', amount: 1500, category: { id: 'cat-1', name: 'Housing', type: 'EXPENSE' } },
+    ];
 
-      jest
-        .spyOn(service, 'getTopExpenses')
-        .mockResolvedValue(expectedResult as any);
+    it('should delegate to service with default limit of 10', async () => {
+      jest.spyOn(service, 'getTopExpenses').mockResolvedValue(expenses as any);
 
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        3,
-        2026,
-      );
+      const result = await controller.getTopExpenses(mockReq, topQuery(3, 2026));
 
-      expect(result).toEqual(expectedResult);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        3,
-        2026,
-        10,
-      );
+      expect(result).toEqual(expenses);
+      expect(service.getTopExpenses).toHaveBeenCalledWith(mockUserId, 3, 2026, 10);
     });
 
-    it('should return top expenses with custom limit', async () => {
-      const expectedResult = [
-        {
-          id: 'tx-1',
-          description: 'Rent',
-          date: '2026-03-01T00:00:00.000Z',
-          amount: 1500,
-          category: { id: 'cat-1', name: 'Housing', type: 'EXPENSE' },
-        },
-      ];
+    it('should pass custom limit to service', async () => {
+      jest.spyOn(service, 'getTopExpenses').mockResolvedValue(expenses as any);
 
-      jest
-        .spyOn(service, 'getTopExpenses')
-        .mockResolvedValue(expectedResult as any);
+      await controller.getTopExpenses(mockReq, topQuery(3, 2026, 5));
 
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        3,
-        2026,
-        5,
-      );
-
-      expect(result).toEqual(expectedResult);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        3,
-        2026,
-        5,
-      );
-    });
-
-    it('should throw BadRequestException for invalid month (0)', async () => {
-      await expect(
-        controller.getTopExpenses(mockAuthenticatedRequest, 0, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid month (13)', async () => {
-      await expect(
-        controller.getTopExpenses(mockAuthenticatedRequest, 13, 2026),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid limit (0)', async () => {
-      await expect(
-        controller.getTopExpenses(mockAuthenticatedRequest, 6, 2026, 0),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid limit (101)', async () => {
-      await expect(
-        controller.getTopExpenses(mockAuthenticatedRequest, 6, 2026, 101),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for negative limit', async () => {
-      await expect(
-        controller.getTopExpenses(mockAuthenticatedRequest, 6, 2026, -5),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should accept limit 1', async () => {
-      jest.spyOn(service, 'getTopExpenses').mockResolvedValue([]);
-
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        6,
-        2026,
-        1,
-      );
-
-      expect(result).toEqual([]);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        6,
-        2026,
-        1,
-      );
-    });
-
-    it('should accept limit 100', async () => {
-      jest.spyOn(service, 'getTopExpenses').mockResolvedValue([]);
-
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        6,
-        2026,
-        100,
-      );
-
-      expect(result).toEqual([]);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        6,
-        2026,
-        100,
-      );
+      expect(service.getTopExpenses).toHaveBeenCalledWith(mockUserId, 3, 2026, 5);
     });
 
     it('should return empty array when no expenses exist', async () => {
       jest.spyOn(service, 'getTopExpenses').mockResolvedValue([]);
-
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        4,
-        2026,
-      );
-
+      const result = await controller.getTopExpenses(mockReq, topQuery(4, 2026));
       expect(result).toEqual([]);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        4,
-        2026,
-        10,
-      );
-    });
-
-    it('should use userId from authenticated request', async () => {
-      jest.spyOn(service, 'getTopExpenses').mockResolvedValue([]);
-
-      await controller.getTopExpenses(mockAuthenticatedRequest, 6, 2026, 10);
-
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        6,
-        2026,
-        10,
-      );
-    });
-
-    it('should accept month 1 (January)', async () => {
-      jest.spyOn(service, 'getTopExpenses').mockResolvedValue([]);
-
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        1,
-        2026,
-      );
-
-      expect(result).toEqual([]);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        1,
-        2026,
-        10,
-      );
-    });
-
-    it('should accept month 12 (December)', async () => {
-      jest.spyOn(service, 'getTopExpenses').mockResolvedValue([]);
-
-      const result = await controller.getTopExpenses(
-        mockAuthenticatedRequest,
-        12,
-        2026,
-      );
-
-      expect(result).toEqual([]);
-      expect(service.getTopExpenses).toHaveBeenCalledWith(
-        mockUserId,
-        12,
-        2026,
-        10,
-      );
     });
   });
 });
