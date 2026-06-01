@@ -16,32 +16,6 @@ import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
 import { getMonthRange } from '../shared/utils/get-month-range';
 
-type BudgetWithSpendingExpense = {
-  id: string;
-  amount: string;
-  categoryId: string;
-  month: number;
-  year: number;
-  type: typeof BudgetType.EXPENSE;
-  spent: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
-
-type BudgetWithSpendingIncome = {
-  id: string;
-  amount: string;
-  categoryId: string;
-  month: number;
-  year: number;
-  type: typeof BudgetType.INCOME;
-  earned: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
-
-type BudgetWithSpending = BudgetWithSpendingExpense | BudgetWithSpendingIncome;
-
 type BudgetBase = {
   id: string;
   amount: string;
@@ -70,31 +44,15 @@ type TransactionInfo = {
   description: string | null;
 };
 
-type BudgetWithCategory = BudgetBase & {
-  category: CategoryInfo;
-};
+type BudgetWithCategory = BudgetBase & { category: CategoryInfo };
 
-type BudgetWithTransactionsExpense = BudgetBase & {
-  type: typeof BudgetType.EXPENSE;
-  category: CategoryInfo;
-  transactions: TransactionInfo[];
-  spent: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
-
-type BudgetWithTransactionsIncome = BudgetBase & {
-  type: typeof BudgetType.INCOME;
-  category: CategoryInfo;
-  transactions: TransactionInfo[];
-  earned: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
+type BudgetWithSpending =
+  | (BudgetBase & { type: typeof BudgetType.EXPENSE; spent: string; remaining: string; utilizationPercentage: number })
+  | (BudgetBase & { type: typeof BudgetType.INCOME; earned: string; remaining: string; utilizationPercentage: number });
 
 type BudgetWithTransactions =
-  | BudgetWithTransactionsExpense
-  | BudgetWithTransactionsIncome;
+  | (BudgetBase & { type: typeof BudgetType.EXPENSE; category: CategoryInfo; transactions: TransactionInfo[]; spent: string; remaining: string; utilizationPercentage: number })
+  | (BudgetBase & { type: typeof BudgetType.INCOME; category: CategoryInfo; transactions: TransactionInfo[]; earned: string; remaining: string; utilizationPercentage: number });
 
 @Injectable()
 export class BudgetService {
