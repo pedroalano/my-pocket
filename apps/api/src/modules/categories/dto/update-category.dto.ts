@@ -2,8 +2,6 @@ import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateCategoryDto {
-  //   @IsNumber()
-  //   id: number;
   @ApiProperty({ description: 'The name of the category', required: false })
   @IsOptional()
   @IsString()

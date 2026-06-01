@@ -25,37 +25,5 @@ export enum BudgetType {
   EXPENSE = 'EXPENSE',
 }
 
-// Common DTOs (can be extended in each app)
-export interface BaseUser {
-  id: string;
-  email: string;
-  name: string;
-}
-
-export interface BaseCategory {
-  id: string;
-  name: string;
-  type: TransactionType;
-}
-
-export interface BaseTransaction {
-  id: string;
-  description: string;
-  amount: number;
-  type: TransactionType;
-  date: Date;
-  categoryId: string;
-}
-
-export interface BaseBudget {
-  id: string;
-  name: string;
-  amount: number;
-  type: BudgetType;
-  month: number;
-  year: number;
-}
-
 // Utility types
-export type Nullable<T> = T | null;
 export type Optional<T> = T | undefined;
