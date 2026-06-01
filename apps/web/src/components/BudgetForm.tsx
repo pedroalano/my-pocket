@@ -100,92 +100,63 @@ export function BudgetForm({
     loadCategories();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const yearNum = parseInt(year, 10);
-
-    if (amountFloat === null || amountFloat === undefined) {
-      toast.error(t('amountRequired'));
-      return;
-    }
-
-    if (amountFloat <= 0) {
-      toast.error(t('amountPositive'));
-      return;
-    }
-
-    if (!categoryId) {
-      toast.error(t('categoryRequired'));
-      return;
-    }
-
-    if (!month) {
-      toast.error(t('monthRequired'));
-      return;
-    }
-
-    if (!year || isNaN(yearNum)) {
-      toast.error(t('yearRequired'));
-      return;
-    }
-
+  function validateForm(yearNum: number): string | null {
+    if (amountFloat === null || amountFloat === undefined) return 'amountRequired';
+    if (amountFloat <= 0) return 'amountPositive';
+    if (!categoryId) return 'categoryRequired';
+    if (!month) return 'monthRequired';
+    if (!year || isNaN(yearNum)) return 'yearRequired';
     if (repeatUntil && !initialData) {
-      if (!endMonth) {
-        toast.error(t('endMonthRequired'));
-        return;
-      }
+      if (!endMonth) return 'endMonthRequired';
       const endYearNum = parseInt(endYear, 10);
-      if (!endYear || isNaN(endYearNum)) {
-        toast.error(t('endYearRequired'));
-        return;
-      }
+      if (!endYear || isNaN(endYearNum)) return 'endYearRequired';
       const startOrdinal = yearNum * 12 + (month as number);
       const endOrdinal = endYearNum * 12 + (endMonth as number);
-      if (endOrdinal < startOrdinal) {
-        toast.error(t('endDateBeforeStart'));
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const result = await budgetsApi.createBatch({
-          amount: amountFloat,
-          categoryId,
-          startMonth: month as number,
-          startYear: yearNum,
-          endMonth: endMonth as number,
-          endYear: endYearNum,
-          description: description || undefined,
-        });
-        toast.success(
-          t('batchCreateSuccess', {
-            created: result.created,
-            skipped: result.skipped,
-          }),
-        );
-        router.push('/budgets');
-      } catch (error) {
-        if (error instanceof ApiException) {
-          toast.error(error.message);
-        } else {
-          toast.error(tCommon('unexpectedError'));
-        }
-      } finally {
-        setIsLoading(false);
-      }
+      if (endOrdinal < startOrdinal) return 'endDateBeforeStart';
+    }
+    return null;
+  }
+
+  async function submitBatch(yearNum: number): Promise<void> {
+    const endYearNum = parseInt(endYear, 10);
+    const result = await budgetsApi.createBatch({
+      amount: amountFloat!,
+      categoryId,
+      startMonth: month as number,
+      startYear: yearNum,
+      endMonth: endMonth as number,
+      endYear: endYearNum,
+      description: description || undefined,
+    });
+    toast.success(t('batchCreateSuccess', { created: result.created, skipped: result.skipped }));
+  }
+
+  async function submitSingle(yearNum: number): Promise<void> {
+    await onSubmit({
+      amount: amountFloat!,
+      categoryId,
+      month: month as number,
+      year: yearNum,
+      description: description.trim() || undefined,
+    });
+    toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const yearNum = parseInt(year, 10);
+    const validationError = validateForm(yearNum);
+    if (validationError) {
+      toast.error(t(validationError));
       return;
     }
-
     setIsLoading(true);
     try {
-      await onSubmit({
-        amount: amountFloat,
-        categoryId,
-        month: month as number,
-        year: yearNum,
-        description: description.trim() || undefined,
-      });
-      toast.success(initialData ? t('updateSuccess') : t('createSuccess'));
+      if (repeatUntil && !initialData) {
+        await submitBatch(yearNum);
+      } else {
+        await submitSingle(yearNum);
+      }
       router.push('/budgets');
     } catch (error) {
       if (error instanceof ApiException) {
