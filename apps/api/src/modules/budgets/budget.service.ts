@@ -14,6 +14,7 @@ import { ExportBudgetsQueryDto } from './dto/export-budgets-query.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
+import { getMonthRange } from '../shared/utils/get-month-range';
 
 type BudgetWithSpendingExpense = {
   id: string;
@@ -157,12 +158,6 @@ export class BudgetService {
     };
   }
 
-  private getMonthRange(month: number, year: number) {
-    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-    const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-    return { start, end };
-  }
-
   private getTransactionTypeForBudget(type: BudgetType): TransactionType {
     if (type === BudgetType.EXPENSE) {
       return TransactionType.EXPENSE;
@@ -180,7 +175,7 @@ export class BudgetService {
     },
     userId: string,
   ) {
-    const { start, end } = this.getMonthRange(budget.month, budget.year);
+    const { start, end } = getMonthRange(budget.month, budget.year);
     const transactionType = this.getTransactionTypeForBudget(budget.type);
     const spent = await this.prisma.transaction.aggregate({
       where: {
@@ -528,7 +523,7 @@ export class BudgetService {
       return [];
     }
 
-    const { start, end } = this.getMonthRange(budget.month, budget.year);
+    const { start, end } = getMonthRange(budget.month, budget.year);
     const transactionType = this.getTransactionTypeForBudget(budget.type);
     const transactions = await this.prisma.transaction.findMany({
       where: {
