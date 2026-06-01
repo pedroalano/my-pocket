@@ -33,13 +33,7 @@ import { GetBudgetsQueryDto } from './dto/get-budgets-query.dto';
 import { ExportBudgetsQueryDto } from './dto/export-budgets-query.dto';
 import { JwtAuthGuard } from '../auths/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auths/interfaces/authenticated-request.interface';
-
-function resolveLang(header?: string): string {
-  if (!header) return 'en';
-  const first = header.split(',')[0]?.trim().toLowerCase() ?? 'en';
-  if (first.startsWith('pt')) return 'pt-BR';
-  return 'en';
-}
+import { resolveLang } from '../shared/utils/resolve-lang';
 
 @ApiTags('budgets')
 @Controller('budgets')

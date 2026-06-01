@@ -12,8 +12,6 @@ describe('Personal Finance API E2E', () => {
   let prisma: PrismaClient;
   let user1Token: string;
   let user2Token: string;
-  let _user1Id: string;
-  let _user2Id: string;
   let categoryId: string;
   let transactionId: string;
   let budgetId: string;

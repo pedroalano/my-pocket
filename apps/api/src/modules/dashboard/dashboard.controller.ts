@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  ParseIntPipe,
-  BadRequestException,
-  Req,
-} from '@nestjs/common';
-import { I18nService, I18nContext } from 'nestjs-i18n';
+import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   ApiGetMonthlySummary,
@@ -22,96 +13,68 @@ import { BudgetVsActualDto } from './dto/budget-vs-actual.dto';
 import { MonthlySummaryDto } from './dto/monthly-summary.dto';
 import { CategoryBreakdownDto } from './dto/category-breakdown.dto';
 import { TopExpenseDto } from './dto/top-expenses.dto';
+import {
+  GetDashboardQueryDto,
+  GetTopExpensesQueryDto,
+} from './dto/get-dashboard-query.dto';
 
 @ApiTags('dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
-  constructor(
-    private dashboardService: DashboardService,
-    private i18n: I18nService,
-  ) {}
-
-  private get lang(): string {
-    return I18nContext.current()?.lang ?? 'en';
-  }
-
-  private validateMonth(month: number): void {
-    if (month < 1 || month > 12) {
-      throw new BadRequestException(
-        this.i18n.t('dashboard.errors.invalidMonth', { lang: this.lang }),
-      );
-    }
-  }
-
-  private validateLimit(limit: number): void {
-    if (limit < 1 || limit > 100) {
-      throw new BadRequestException(
-        this.i18n.t('dashboard.errors.invalidLimit', { lang: this.lang }),
-      );
-    }
-  }
+  constructor(private dashboardService: DashboardService) {}
 
   @Get('monthly-summary')
   @ApiGetMonthlySummary()
   async getMonthlySummary(
     @Req() req: AuthenticatedRequest,
-    @Query('month', ParseIntPipe) month: number,
-    @Query('year', ParseIntPipe) year: number,
+    @Query() query: GetDashboardQueryDto,
   ): Promise<MonthlySummaryDto> {
-    this.validateMonth(month);
-
-    const userId = req.user.userId;
-    return this.dashboardService.getMonthlySummary(userId, month, year);
+    return this.dashboardService.getMonthlySummary(
+      req.user.userId,
+      query.month,
+      query.year,
+    );
   }
 
   @Get('budget-vs-actual')
   @ApiGetBudgetVsActual()
   async getBudgetVsActual(
     @Req() req: AuthenticatedRequest,
-    @Query('month', ParseIntPipe) month: number,
-    @Query('year', ParseIntPipe) year: number,
+    @Query() query: GetDashboardQueryDto,
   ): Promise<BudgetVsActualDto[]> {
-    this.validateMonth(month);
-
-    const userId = req.user.userId;
-    return this.dashboardService.getBudgetVsActual(userId, month, year);
+    return this.dashboardService.getBudgetVsActual(
+      req.user.userId,
+      query.month,
+      query.year,
+    );
   }
 
   @Get('category-breakdown')
   @ApiGetCategoryBreakdown()
   async getCategoryBreakdown(
     @Req() req: AuthenticatedRequest,
-    @Query('month', ParseIntPipe) month: number,
-    @Query('year', ParseIntPipe) year: number,
+    @Query() query: GetDashboardQueryDto,
   ): Promise<CategoryBreakdownDto[]> {
-    this.validateMonth(month);
-
-    const userId = req.user.userId;
-    return this.dashboardService.getCategoryBreakdown(userId, month, year);
+    return this.dashboardService.getCategoryBreakdown(
+      req.user.userId,
+      query.month,
+      query.year,
+    );
   }
 
   @Get('top-expenses')
   @ApiGetTopExpenses()
   async getTopExpenses(
     @Req() req: AuthenticatedRequest,
-    @Query('month', ParseIntPipe) month: number,
-    @Query('year', ParseIntPipe) year: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query() query: GetTopExpensesQueryDto,
   ): Promise<TopExpenseDto[]> {
-    this.validateMonth(month);
-
-    if (limit !== undefined) {
-      this.validateLimit(limit);
-    }
-
-    const userId = req.user.userId;
     return this.dashboardService.getTopExpenses(
-      userId,
-      month,
-      year,
-      limit ?? 10,
+      req.user.userId,
+      query.month,
+      query.year,
+      query.limit,
     );
   }
 }

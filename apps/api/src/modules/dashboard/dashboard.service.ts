@@ -5,23 +5,18 @@ import { BudgetVsActualDto } from './dto/budget-vs-actual.dto';
 import { MonthlySummaryDto } from './dto/monthly-summary.dto';
 import { CategoryBreakdownDto } from './dto/category-breakdown.dto';
 import { TopExpenseDto } from './dto/top-expenses.dto';
+import { getMonthRange } from '../shared/utils/get-month-range';
 
 @Injectable()
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
-
-  private getMonthRange(month: number, year: number) {
-    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-    const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-    return { start, end };
-  }
 
   async getMonthlySummary(
     userId: string,
     month: number,
     year: number,
   ): Promise<MonthlySummaryDto> {
-    const { start, end } = this.getMonthRange(month, year);
+    const { start, end } = getMonthRange(month, year);
 
     // Fetch all transactions for the month
     const transactions = await this.prisma.transaction.findMany({
@@ -82,7 +77,7 @@ export class DashboardService {
     month: number,
     year: number,
   ): Promise<BudgetVsActualDto[]> {
-    const { start, end } = this.getMonthRange(month, year);
+    const { start, end } = getMonthRange(month, year);
 
     const budgets = await this.prisma.budget.findMany({
       where: {
@@ -223,7 +218,7 @@ export class DashboardService {
     month: number,
     year: number,
   ): Promise<CategoryBreakdownDto[]> {
-    const { start, end } = this.getMonthRange(month, year);
+    const { start, end } = getMonthRange(month, year);
 
     const transactions = await this.prisma.transaction.findMany({
       where: {
@@ -298,7 +293,7 @@ export class DashboardService {
     year: number,
     limit: number = 10,
   ): Promise<TopExpenseDto[]> {
-    const { start, end } = this.getMonthRange(month, year);
+    const { start, end } = getMonthRange(month, year);
 
     const transactions = await this.prisma.transaction.findMany({
       where: {

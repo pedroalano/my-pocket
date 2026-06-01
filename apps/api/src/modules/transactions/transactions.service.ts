@@ -3,9 +3,9 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { TransactionType } from '@prisma/client';
+import { CategoryType, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
-import { stringify } from 'csv-stringify/sync';
+import { buildCsv } from '../shared/utils/build-csv';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
@@ -169,7 +169,10 @@ export class TransactionsService {
     const newTransaction = await this.prisma.transaction.create({
       data: {
         amount: createTransactionDto.amount,
-        type: category.type as unknown as TransactionType,
+        type:
+          category.type === CategoryType.INCOME
+            ? TransactionType.INCOME
+            : TransactionType.EXPENSE,
         categoryId: createTransactionDto.categoryId,
         accountId: createTransactionDto.accountId,
         date: new Date(createTransactionDto.date),
@@ -225,7 +228,10 @@ export class TransactionsService {
         );
       }
 
-      newType = category.type as unknown as TransactionType;
+      newType =
+        category.type === CategoryType.INCOME
+          ? TransactionType.INCOME
+          : TransactionType.EXPENSE;
     }
 
     const newAccountId = updateTransactionDto.accountId;
@@ -328,8 +334,7 @@ export class TransactionsService {
       row.description ?? '',
     ]);
 
-    const csv = stringify([headers, ...rows]);
-    return `\uFEFF${csv}`;
+    return buildCsv(headers, rows);
   }
 
   async deleteTransaction(id: string, userId: string) {

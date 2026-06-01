@@ -27,6 +27,46 @@ import { ApiException } from '@/lib/api';
 import { categoriesApi } from '@/lib/categories';
 import { accountsApi } from '@/lib/accounts';
 
+function useTransactionFormData(
+  onErrorCategories: () => void,
+  onErrorAccounts: () => void,
+) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+
+  useEffect(() => {
+    categoriesApi
+      .getAll()
+      .then(setCategories)
+      .catch(onErrorCategories)
+      .finally(() => setIsLoadingCategories(false));
+
+    accountsApi
+      .getAll()
+      .then(setAccounts)
+      .catch(onErrorAccounts)
+      .finally(() => setIsLoadingAccounts(false));
+  }, []);
+
+  return { categories, isLoadingCategories, accounts, isLoadingAccounts };
+}
+
+function validateTransactionForm(
+  amountFloat: number | null,
+  categoryId: string,
+  accountId: string,
+  date: string,
+): string | null {
+  if (amountFloat === null || amountFloat === undefined) return 'amountRequired';
+  if (amountFloat <= 0) return 'amountPositive';
+  if (!categoryId) return 'categoryRequired';
+  if (!accountId) return 'accountRequired';
+  if (!date) return 'dateRequired';
+  return null;
+}
+
 interface TransactionFormProps {
   initialData?: {
     amount: number;
@@ -63,10 +103,6 @@ export function TransactionForm({
     initialData?.description || '',
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const router = useRouter();
   const t = useTranslations('transactionForm');
   const tCommon = useTranslations('common');
@@ -76,63 +112,23 @@ export function TransactionForm({
       ? { locale: 'pt-BR', currency: 'BRL' }
       : { locale: 'en-US', currency: 'USD' };
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await categoriesApi.getAll();
-        setCategories(data);
-      } catch {
-        toast.error(t('failedToLoadCategories'));
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-    const loadAccounts = async () => {
-      try {
-        const data = await accountsApi.getAll();
-        setAccounts(data);
-      } catch {
-        toast.error(t('failedToLoadAccounts'));
-      } finally {
-        setIsLoadingAccounts(false);
-      }
-    };
-    loadCategories();
-    loadAccounts();
-  }, []);
+  const { categories, isLoadingCategories, accounts, isLoadingAccounts } =
+    useTransactionFormData(
+      () => toast.error(t('failedToLoadCategories')),
+      () => toast.error(t('failedToLoadAccounts')),
+    );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (amountFloat === null || amountFloat === undefined) {
-      toast.error(t('amountRequired'));
+    const validationError = validateTransactionForm(amountFloat, categoryId, accountId, date);
+    if (validationError) {
+      toast.error(t(validationError));
       return;
     }
-
-    if (amountFloat <= 0) {
-      toast.error(t('amountPositive'));
-      return;
-    }
-
-    if (!categoryId) {
-      toast.error(t('categoryRequired'));
-      return;
-    }
-
-    if (!accountId) {
-      toast.error(t('accountRequired'));
-      return;
-    }
-
-    if (!date) {
-      toast.error(t('dateRequired'));
-      return;
-    }
-
     setIsLoading(true);
     try {
       await onSubmit({
-        amount: amountFloat,
+        amount: amountFloat!,
         categoryId,
         accountId,
         date: new Date(date).toISOString(),

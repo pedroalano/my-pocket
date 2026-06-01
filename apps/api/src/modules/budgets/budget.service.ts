@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { BudgetType, TransactionType } from '@prisma/client';
 import { I18nService, I18nContext } from 'nestjs-i18n';
-import { stringify } from 'csv-stringify/sync';
+import { buildCsv } from '../shared/utils/build-csv';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { CreateBatchBudgetDto } from './dto/create-batch-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
@@ -14,32 +14,7 @@ import { ExportBudgetsQueryDto } from './dto/export-budgets-query.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { PrismaService } from '../shared/prisma.service';
 import { formatDecimal } from '../shared';
-
-type BudgetWithSpendingExpense = {
-  id: string;
-  amount: string;
-  categoryId: string;
-  month: number;
-  year: number;
-  type: typeof BudgetType.EXPENSE;
-  spent: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
-
-type BudgetWithSpendingIncome = {
-  id: string;
-  amount: string;
-  categoryId: string;
-  month: number;
-  year: number;
-  type: typeof BudgetType.INCOME;
-  earned: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
-
-type BudgetWithSpending = BudgetWithSpendingExpense | BudgetWithSpendingIncome;
+import { getMonthRange } from '../shared/utils/get-month-range';
 
 type BudgetBase = {
   id: string;
@@ -69,31 +44,15 @@ type TransactionInfo = {
   description: string | null;
 };
 
-type BudgetWithCategory = BudgetBase & {
-  category: CategoryInfo;
-};
+type BudgetWithCategory = BudgetBase & { category: CategoryInfo };
 
-type BudgetWithTransactionsExpense = BudgetBase & {
-  type: typeof BudgetType.EXPENSE;
-  category: CategoryInfo;
-  transactions: TransactionInfo[];
-  spent: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
-
-type BudgetWithTransactionsIncome = BudgetBase & {
-  type: typeof BudgetType.INCOME;
-  category: CategoryInfo;
-  transactions: TransactionInfo[];
-  earned: string;
-  remaining: string;
-  utilizationPercentage: number;
-};
+type BudgetWithSpending =
+  | (BudgetBase & { type: typeof BudgetType.EXPENSE; spent: string; remaining: string; utilizationPercentage: number })
+  | (BudgetBase & { type: typeof BudgetType.INCOME; earned: string; remaining: string; utilizationPercentage: number });
 
 type BudgetWithTransactions =
-  | BudgetWithTransactionsExpense
-  | BudgetWithTransactionsIncome;
+  | (BudgetBase & { type: typeof BudgetType.EXPENSE; category: CategoryInfo; transactions: TransactionInfo[]; spent: string; remaining: string; utilizationPercentage: number })
+  | (BudgetBase & { type: typeof BudgetType.INCOME; category: CategoryInfo; transactions: TransactionInfo[]; earned: string; remaining: string; utilizationPercentage: number });
 
 @Injectable()
 export class BudgetService {
@@ -157,12 +116,6 @@ export class BudgetService {
     };
   }
 
-  private getMonthRange(month: number, year: number) {
-    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-    const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-    return { start, end };
-  }
-
   private getTransactionTypeForBudget(type: BudgetType): TransactionType {
     if (type === BudgetType.EXPENSE) {
       return TransactionType.EXPENSE;
@@ -180,7 +133,7 @@ export class BudgetService {
     },
     userId: string,
   ) {
-    const { start, end } = this.getMonthRange(budget.month, budget.year);
+    const { start, end } = getMonthRange(budget.month, budget.year);
     const transactionType = this.getTransactionTypeForBudget(budget.type);
     const spent = await this.prisma.transaction.aggregate({
       where: {
@@ -528,7 +481,7 @@ export class BudgetService {
       return [];
     }
 
-    const { start, end } = this.getMonthRange(budget.month, budget.year);
+    const { start, end } = getMonthRange(budget.month, budget.year);
     const transactionType = this.getTransactionTypeForBudget(budget.type);
     const transactions = await this.prisma.transaction.findMany({
       where: {
@@ -680,8 +633,7 @@ export class BudgetService {
       row.description ?? '',
     ]);
 
-    const csv = stringify([headers, ...rows]);
-    return `\uFEFF${csv}`;
+    return buildCsv(headers, rows);
   }
 
   async getBudgetsByCategory(
