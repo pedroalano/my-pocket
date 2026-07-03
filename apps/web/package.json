@@ -16,6 +16,7 @@
     "@my-pocket/shared": "*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.42.2",
     "lucide-react": "^0.576.0",
     "next": "^15.2.0",
     "next-intl": "^4.8.3",

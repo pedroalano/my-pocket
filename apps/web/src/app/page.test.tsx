@@ -3,7 +3,25 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/test-utils';
 import HomePage from './page';
 
-// Mock next/navigation
+vi.mock('framer-motion', async () => {
+  const actual = await vi.importActual<typeof import('framer-motion')>('framer-motion');
+  return {
+    ...actual,
+    motion: new Proxy(actual.motion, {
+      get: (target, prop: string) => {
+        const el = (target as Record<string, unknown>)[prop];
+        if (el) return el;
+        return ({ children, ...rest }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) => {
+          const Tag = prop as keyof JSX.IntrinsicElements;
+          return <Tag {...(rest as object)}>{children}</Tag>;
+        };
+      },
+    }),
+    useInView: () => true,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
+
 const mockRouterPush = vi.fn();
 vi.mock('next/navigation', async () => ({
   useRouter: () => ({
@@ -13,11 +31,9 @@ vi.mock('next/navigation', async () => ({
   }),
 }));
 
-// Mock useAuth
 const mockUseAuth = vi.fn();
 vi.mock('@/contexts/AuthContext', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/contexts/AuthContext')>();
+  const actual = await importOriginal<typeof import('@/contexts/AuthContext')>();
   return {
     ...actual,
     useAuth: () => mockUseAuth(),
@@ -29,105 +45,68 @@ describe('HomePage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders loading state when isLoading is true', () => {
+  it('renders nothing while loading', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: true });
-
-    renderWithProviders(<HomePage />);
-
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    const { container } = renderWithProviders(<HomePage />);
+    expect(container.firstChild).toBeNull();
   });
 
   it('redirects to /dashboard when authenticated', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: true, isLoading: false });
-
     renderWithProviders(<HomePage />);
-
     expect(mockRouterPush).toHaveBeenCalledWith('/dashboard');
   });
 
   it('renders hero headline for unauthenticated users', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
-
     renderWithProviders(<HomePage />);
-
-    expect(
-      screen.getByText(
-        "When you don't know where your money goes, how can you expect to make more?",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'The first step for great gains is being fully aware of your actual financial situation.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Take back control')).toBeInTheDocument();
+    expect(screen.getByText('of your money.')).toBeInTheDocument();
   });
 
-  it('renders all three feature cards', () => {
+  it('renders features section', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
-
     renderWithProviders(<HomePage />);
-
-    expect(screen.getByText('Track Every Transaction')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Know exactly where every cent goes. Log income and expenses in seconds.',
-      ),
-    ).toBeInTheDocument();
-
-    expect(screen.getByText('Set Smart Budgets')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Plan ahead by category. Set monthly targets and stay in control of your spending.',
-      ),
-    ).toBeInTheDocument();
-
-    expect(screen.getByText('Visualize Your Progress')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Clear charts and reports give you a complete picture of your financial health.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Dashboard at a glance')).toBeInTheDocument();
+    expect(screen.getByText('Smart budgets')).toBeInTheDocument();
+    expect(screen.getByText('Visual insights')).toBeInTheDocument();
   });
 
-  it('renders CTA section with button', () => {
+  it('renders "start for free" CTA links pointing to /register', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
-
     renderWithProviders(<HomePage />);
-
-    expect(screen.getByText('Start taking control today')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Awareness is the foundation of every great financial decision.',
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Get Started Free' }),
-    ).toHaveAttribute('href', '/register');
+    const ctaLinks = screen.getAllByRole('link', { name: /start for free/i });
+    expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
+    ctaLinks.forEach((link) => expect(link).toHaveAttribute('href', '/register'));
   });
 
-  it('Sign In link points to /login', () => {
+  it('renders sign in links pointing to /login', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
-
     renderWithProviders(<HomePage />);
-
-    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
-      'href',
-      '/login',
-    );
+    const signInLinks = screen.getAllByRole('link', { name: /sign in/i });
+    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
+    signInLinks.forEach((link) => expect(link).toHaveAttribute('href', '/login'));
   });
 
-  it('Get Started link in hero points to /register', () => {
+  it('renders testimonials section', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
-
     renderWithProviders(<HomePage />);
+    expect(screen.getByText('Marcus R.')).toBeInTheDocument();
+    expect(screen.getByText('Sofia C.')).toBeInTheDocument();
+    expect(screen.getByText('James T.')).toBeInTheDocument();
+  });
 
-    const getStartedLinks = screen.getAllByRole('link', {
-      name: /get started/i,
-    });
-    expect(
-      getStartedLinks.every(
-        (link) => link.getAttribute('href') === '/register',
-      ),
-    ).toBe(true);
+  it('renders free pricing section', () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
+    renderWithProviders(<HomePage />);
+    expect(screen.getByText('$0')).toBeInTheDocument();
+    expect(screen.getByText(/Completely free\./)).toBeInTheDocument();
+  });
+
+  it('renders FAQ section', () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false });
+    renderWithProviders(<HomePage />);
+    expect(screen.getByText('Is My Pocket really free?')).toBeInTheDocument();
+    expect(screen.getByText('Does it connect to my bank?')).toBeInTheDocument();
   });
 });
