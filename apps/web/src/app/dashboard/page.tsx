@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardApi } from '@/lib/dashboard';
 import {
@@ -14,7 +15,7 @@ import {
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { ApiException } from '@/lib/api';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { formatCurrency, formatDate, formatMonthYear } from '@/lib/formatters';
 import {
   PieChart,
@@ -160,7 +161,7 @@ export default function DashboardPage() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="bg-card rounded-lg shadow p-6 animate-pulse"
+              className="bg-card rounded-2xl shadow p-6 animate-pulse"
             >
               <div className="h-4 bg-muted rounded w-1/2 mb-3" />
               <div className="h-8 bg-muted rounded w-3/4" />
@@ -168,55 +169,69 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : summaryError ? (
-        <div className="bg-card rounded-lg shadow p-6 mb-6 text-center text-muted-foreground">
+        <div className="bg-card rounded-2xl shadow p-6 mb-6 text-center text-muted-foreground">
           {t('failedToLoad')}
         </div>
       ) : summary ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">
-              {t('totalIncome')}
-            </p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(summary.totalIncome, locale)}
-            </p>
-            {(summary.totalBudgetIncome > 0 ||
-              summary.totalBudgetExpense > 0) && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('budgeted')}:{' '}
-                {formatCurrency(summary.totalBudgetIncome, locale)}
-              </p>
-            )}
-          </div>
-          <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">
-              {t('totalExpenses')}
-            </p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {formatCurrency(summary.totalExpense, locale)}
-            </p>
-            {(summary.totalBudgetIncome > 0 ||
-              summary.totalBudgetExpense > 0) && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('budgeted')}:{' '}
-                {formatCurrency(summary.totalBudgetExpense, locale)}
-              </p>
-            )}
-          </div>
-          <div className="bg-card rounded-lg shadow p-6">
-            <p className="text-sm text-muted-foreground mb-1">{t('balance')}</p>
-            <p
-              className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}
+          {[
+            {
+              label: t('totalIncome'),
+              value: formatCurrency(summary.totalIncome, locale),
+              budgeted: summary.totalBudgetIncome,
+              icon: TrendingUp,
+              iconBg: 'bg-green-100 dark:bg-green-900/30',
+              iconColor: 'text-green-600 dark:text-green-400',
+              valueClass: 'text-green-600 dark:text-green-400',
+              gradient: false,
+            },
+            {
+              label: t('totalExpenses'),
+              value: formatCurrency(summary.totalExpense, locale),
+              budgeted: summary.totalBudgetExpense,
+              icon: TrendingDown,
+              iconBg: 'bg-red-100 dark:bg-red-900/30',
+              iconColor: 'text-red-600 dark:text-red-400',
+              valueClass: 'text-red-600 dark:text-red-400',
+              gradient: false,
+            },
+            {
+              label: t('balance'),
+              value: formatCurrency(summary.balance, locale),
+              budgeted: summary.budgetBalance,
+              icon: Wallet,
+              iconBg: 'bg-[oklch(0.696_0.17_162.48/15%)] dark:bg-[oklch(0.696_0.17_162.48/20%)]',
+              iconColor: 'text-[oklch(0.55_0.17_162.48)] dark:text-[oklch(0.75_0.17_162.48)]',
+              valueClass: summary.balance >= 0 ? '' : 'text-red-600 dark:text-red-400',
+              gradient: summary.balance >= 0,
+            },
+          ].map(({ label, value, budgeted, icon: Icon, iconBg, iconColor, valueClass, gradient }, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}
+              className="bg-card rounded-2xl shadow p-6 cursor-default"
             >
-              {formatCurrency(summary.balance, locale)}
-            </p>
-            {(summary.totalBudgetIncome > 0 ||
-              summary.totalBudgetExpense > 0) && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('budgeted')}: {formatCurrency(summary.budgetBalance, locale)}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <div className={`p-2 rounded-xl ${iconBg}`}>
+                  <Icon className={`size-4 ${iconColor}`} />
+                </div>
+              </div>
+              <p
+                className={`text-2xl font-bold ${gradient ? 'bg-gradient-to-r from-[oklch(0.696_0.17_162.48)] to-[oklch(0.7_0.15_220)] bg-clip-text text-transparent' : valueClass}`}
+              >
+                {value}
               </p>
-            )}
-          </div>
+              {(summary.totalBudgetIncome > 0 || summary.totalBudgetExpense > 0) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('budgeted')}: {formatCurrency(budgeted, locale)}
+                </p>
+              )}
+            </motion.div>
+          ))}
         </div>
       ) : null}
 
@@ -226,7 +241,7 @@ export default function DashboardPage() {
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="bg-card rounded-lg shadow p-6 animate-pulse"
+              className="bg-card rounded-2xl shadow p-6 animate-pulse"
             >
               <div className="h-4 bg-muted rounded w-1/3 mb-4" />
               <div className="h-48 bg-muted rounded" />
@@ -234,9 +249,14 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
+        >
           {/* Category Breakdown Pie Chart */}
-          <div className="bg-card rounded-lg shadow p-6">
+          <div className="bg-card rounded-2xl shadow p-6">
             <h3 className="text-base font-semibold text-foreground mb-4">
               {t('categoryBreakdown')}
             </h3>
@@ -281,7 +301,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Budget vs Actual Bar Chart */}
-          <div className="bg-card rounded-lg shadow p-6">
+          <div className="bg-card rounded-2xl shadow p-6">
             <h3 className="text-base font-semibold text-foreground mb-4">
               {t('budgetVsActual')}
             </h3>
@@ -313,11 +333,16 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Top Expenses Table */}
-      <div className="bg-card rounded-lg shadow">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.3 }}
+        className="bg-card rounded-2xl shadow"
+      >
         <div className="p-6 border-b">
           <h3 className="text-base font-semibold text-foreground">
             {t('topExpenses')}
@@ -359,7 +384,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {topExpenses.map((expense) => (
-                  <tr key={expense.id} className="border-b last:border-0">
+                  <tr key={expense.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4 text-muted-foreground">
                       {formatDate(expense.date, locale)}
                     </td>
@@ -378,7 +403,7 @@ export default function DashboardPage() {
             </table>
           </div>
         )}
-      </div>
+      </motion.div>
     </AuthLayout>
   );
 }
