@@ -44,11 +44,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/dashboard">
-              <h1 className="text-2xl font-bold text-foreground">My Pocket</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-[oklch(0.696_0.17_162.48)] to-[oklch(0.8_0.12_200)] bg-clip-text text-transparent">
+                My Pocket
+              </h1>
             </Link>
             <nav className="hidden md:flex items-center gap-4">
               <Link
